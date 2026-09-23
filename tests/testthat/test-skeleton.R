@@ -7,8 +7,8 @@ test_that("a skeleton is a tag with the type in its class", {
 })
 
 test_that("skeletons are hidden from screen readers", {
-  # Shiny already sets aria-busy on the recalculating output, so announcing the
-  # placeholder as well would be duplicate noise.
+  # Shiny sets aria-busy on the output while it calculates. A message from
+  # the placeholder as well would only repeat it.
   expect_match(as.character(bones_skeleton("text")), 'aria-hidden="true"')
 })
 
@@ -18,15 +18,15 @@ test_that("text draws one bar per line", {
   expect_equal(count_bars(bones_skeleton("text", lines = 7)), 7L)
 })
 
-test_that("the last text line is short, so it reads as a paragraph", {
+test_that("the last text line is short, so the lines look like a paragraph", {
   html <- as.character(bones_skeleton("text", lines = 3))
   expect_match(html, "62%")
 
-  # A single line has nothing to trail off from.
+  # One line is not a paragraph, so it is not short.
   expect_false(grepl("62%", as.character(bones_skeleton("text", lines = 1))))
 })
 
-test_that("table draws a header row plus body rows", {
+test_that("table draws a header row and body rows", {
   sk <- bones_skeleton("table", rows = 3, cols = 2)
 
   expect_equal(count_matches(as.character(sk), "bones-row"), 4L)   # 3 + header
@@ -48,7 +48,7 @@ test_that("cards and values repeat n times", {
   expect_equal(count_matches(as.character(bones_skeleton("value", n = 2)), "bones-value\""), 2L)
 })
 
-test_that("counts below one are clamped rather than producing empty markup", {
+test_that("a count below one becomes one, so the markup is not empty", {
   expect_equal(count_bars(bones_skeleton("text", lines = 0)), 1L)
   expect_equal(count_bars(bones_skeleton("text", lines = -3)), 1L)
   expect_gt(count_bars(bones_skeleton("table", rows = 0, cols = 0)), 0L)
@@ -62,7 +62,7 @@ test_that("an unknown type is rejected", {
   expect_error(bones_skeleton("banana"), "arg")
 })
 
-test_that("default heights scale with content", {
+test_that("the default height increases with the content", {
   expect_equal(bones:::default_height("plot"), "400px")
   expect_equal(bones:::default_height("value"), "88px")
 

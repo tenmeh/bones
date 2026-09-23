@@ -1,4 +1,4 @@
-test_that("classes are collected from anywhere in the tree", {
+test_that("classes are collected from each level of the tree", {
   tag <- htmltools::tags$div(
     class = "outer",
     htmltools::tags$div(
@@ -21,15 +21,15 @@ test_that("each Shiny output class maps to the right shape", {
   expect_equal(bones:::infer_type(fake_output("html-widget-output")), "plot")
 })
 
-test_that("multi-class attributes are split before matching", {
-  # This is how DT and htmlwidgets actually stamp their containers.
+test_that("a class attribute with several names is divided before the match", {
+  # DT and htmlwidgets write their containers in this way.
   expect_equal(
     bones:::infer_type(fake_output("datatables html-widget html-widget-output")),
     "table"
   )
 })
 
-test_that("unknown output shapes fall back to text", {
+test_that("an unknown output gets the text shape", {
   expect_equal(bones:::infer_type(fake_output("something-else")), "text")
   expect_equal(bones:::infer_type(htmltools::tags$div()), "text")
 })
@@ -45,7 +45,7 @@ test_that("the output id is found for the data attribute", {
   expect_true(is.na(bones:::find_output_id(htmltools::tags$div())))
 })
 
-test_that("an inline pixel height is read off the output", {
+test_that("an inline height is read from the output", {
   tag <- fake_output("shiny-plot-output", style = "width:100%;height:400px")
   expect_equal(bones:::find_inline_height(tag), "400px")
 
@@ -54,8 +54,8 @@ test_that("an inline pixel height is read off the output", {
 })
 
 test_that("a percentage height is ignored", {
-  # Relative to a parent we do not control, so it says nothing about how tall
-  # the skeleton should be.
+  # It depends on the height of the parent, which the package does not know.
+  # It thus does not help to find the height of the skeleton.
   tag <- fake_output("shiny-plot-output", style = "height:100%")
   expect_true(is.na(bones:::find_inline_height(tag)))
 })
@@ -65,7 +65,7 @@ test_that("a missing height is reported as NA", {
   expect_true(is.na(bones:::find_inline_height(htmltools::tags$div())))
 })
 
-test_that("inference works on real Shiny outputs", {
+test_that("the shape is correct for real Shiny outputs", {
   skip_if_not_installed("shiny")
 
   expect_equal(bones:::infer_type(shiny::plotOutput("p")), "plot")
@@ -74,11 +74,12 @@ test_that("inference works on real Shiny outputs", {
   expect_equal(bones:::infer_type(shiny::uiOutput("u")), "text")
 })
 
-test_that("tableOutput's two classes resolve to table, not text", {
+test_that("the two classes of tableOutput() give a table, not text", {
   skip_if_not_installed("shiny")
 
-  # tableOutput() emits class="shiny-html-output shiny-table-output". Both are
-  # in the map, so this only works because the map is ordered specific-first.
+  # tableOutput() writes class="shiny-html-output shiny-table-output". Both
+  # are in the map. The result is correct only because the more specific
+  # class comes first in the map.
   classes <- bones:::collect_classes(shiny::tableOutput("t"))
   expect_match(paste(classes, collapse = " "), "shiny-html-output")
   expect_match(paste(classes, collapse = " "), "shiny-table-output")

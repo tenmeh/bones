@@ -1,6 +1,8 @@
-#' Classes Shiny puts on its output containers, mapped to a skeleton shape.
+#' The classes that Shiny puts on its output containers, and the skeleton
+#' shape for each one.
 #'
-#' Order matters: the first match wins, so more specific classes come first.
+#' The order is important. The first match wins, so the more specific
+#' classes come first.
 #' @keywords internal
 #' @noRd
 class_map <- function() {
@@ -19,11 +21,12 @@ class_map <- function() {
 
 #' Collect every class attribute in a tag tree
 #'
-#' `withBones()` is handed a UI element, not an output type, so the shape has to
-#' be read back off the HTML. Shiny's output functions all stamp a
-#' `shiny-*-output` class onto their container, which is what we look for.
+#' `withBones()` gets a UI element, not the type of an output, so it must
+#' find the shape in the HTML. Each output function of Shiny puts a
+#' `shiny-*-output` class on its container. This function collects the
+#' classes, and `infer_type()` looks for that one.
 #'
-#' @param x A tag, tag list, or anything else (ignored).
+#' @param x A tag or a tag list. Any other value gives no classes.
 #' @return A character vector of class strings, in document order.
 #' @keywords internal
 #' @noRd
@@ -41,7 +44,7 @@ collect_classes <- function(x) {
 }
 
 
-#' Infer a skeleton shape from a Shiny output element
+#' Get the skeleton shape from a Shiny output element
 #'
 #' @param tag A UI element, typically the result of `plotOutput()` and friends.
 #' @return One of "plot", "table", "text", "cards", "value".
@@ -51,7 +54,7 @@ infer_type <- function(tag) {
   classes <- collect_classes(tag)
   if (length(classes) == 0L) return("text")
 
-  # Class attributes can hold several space-separated names.
+  # One class attribute can hold several names, with spaces between them.
   classes <- unlist(strsplit(classes, "\\s+"), use.names = FALSE)
   classes <- classes[nzchar(classes)]
 
@@ -62,7 +65,7 @@ infer_type <- function(tag) {
 }
 
 
-#' Pull the output id out of a tag tree, for diagnostics and data attributes
+#' Find the id of the output in a tag tree, for the data-bones-id attribute
 #'
 #' @param tag A UI element.
 #' @return A single string, or `NA_character_` when no id is present.
@@ -84,12 +87,12 @@ find_output_id <- function(tag) {
 }
 
 
-#' Read an inline CSS height off a tag tree
+#' Find an inline CSS height in a tag tree
 #'
-#' `plotOutput()` sets `style="height:400px"`. When it does, the wrapper can
-#' inherit that height and the skeleton will match the eventual content exactly.
-#' When it doesn't, the caller has to tell us or we fall back to a per-type
-#' default.
+#' `plotOutput()` sets `style="height:400px"`. The wrapper can then use that
+#' height, and the skeleton has the same height as the content. If there is
+#' no height, the caller can give one. If not, `withBones()` uses a default
+#' for the type.
 #'
 #' @param tag A UI element.
 #' @return A CSS length as a string, or `NA_character_`.
@@ -105,8 +108,9 @@ find_inline_height <- function(tag) {
       )
       if (length(m) == 1L) {
         value <- trimws(sub("^height\\s*:\\s*", "", m))
-        # A percentage height is relative to a parent we do not control, so it
-        # tells us nothing useful about how tall the skeleton should be.
+        # A percentage height depends on the height of the parent, which
+        # this package does not know. It thus does not help to find the
+        # height of the skeleton.
         if (nzchar(value) && !grepl("%$", value)) return(value)
       }
     }

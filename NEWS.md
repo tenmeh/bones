@@ -2,14 +2,23 @@
 
 First release.
 
-* `withBones()` wraps a Shiny output in a placeholder shaped like the content,
-  inferred from the output's own class.
-* Placeholders reserve the output's height, so nothing shifts when content
-  arrives.
-* Skeletons appear on first load only; recalculation keeps the previous content
-  on screen and dims it. Set `stale = FALSE` for the older behaviour.
-* `bones_skeleton()` builds placeholder markup on its own, for use outside a
-  Shiny output.
-* `bones_defaults()` sets colours, corner radius, animation and speed for the
-  session.
-* Animation respects `prefers-reduced-motion`.
+* `withBones()` puts a placeholder around a Shiny output. The placeholder
+  has the shape of the content, and the shape comes from the class of the
+  output.
+* The placeholder keeps the height of the output until the content
+  arrives, so the page does not move. The content then sets the height, so
+  no gap stays under content that is shorter than the estimate.
+* The skeleton shows on the first load only. When the output calculates
+  again, the old content stays on the screen, dimmed. Set `stale = FALSE`
+  to show the skeleton again instead.
+* All outputs show a recalculation at the same time, also when several
+  outputs use one slow reactive and Shiny calculates them one after the
+  other.
+* `bones_skeleton()` makes a placeholder on its own, for use where there
+  is no Shiny output. It takes space in its container, and brings its
+  stylesheet, its animation and its colours.
+* `bones_defaults()` sets the colours, the corner radius, the animation and
+  the speed for the session.
+* The arguments are checked, and a bad value gives a message that names
+  the argument. `height` works as in Shiny, so a number is pixels.
+* There is no animation for users who ask their system to reduce motion.

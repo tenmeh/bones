@@ -1,8 +1,8 @@
-# Count how many placeholder bars a tag renders.
+# Count the placeholder bars in a tag.
 #
-# Bars carry `class="bones-bar"` or `class="bones-bar bones-bar-strong"`, so
-# matching the bare string "bones-bar" would double-count the modified ones.
-# Anchoring on the opening quote gives exactly one match per bar.
+# A bar has `class="bones-bar"` or `class="bones-bar bones-bar-strong"`. The
+# string "bones-bar" alone would thus count a strong bar two times. With the
+# opening quote in the pattern, each bar gives exactly one match.
 count_bars <- function(tag) {
   count_matches(as.character(tag), "class=\"bones-bar")
 }
@@ -12,8 +12,8 @@ count_matches <- function(x, pattern) {
   if (length(m) == 1L && m[1] == -1L) 0L else length(m)
 }
 
-# A minimal stand-in for a Shiny output container, so the test suite does not
-# need shiny installed to exercise type inference.
+# A small replacement for the container of a Shiny output. The tests of the
+# shape can thus run when shiny is not installed.
 fake_output <- function(class, id = "out", style = NULL) {
   htmltools::tags$div(id = id, class = class, style = style)
 }

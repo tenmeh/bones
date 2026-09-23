@@ -1,15 +1,20 @@
-#' Build a skeleton placeholder
+#' Make a skeleton placeholder
 #'
-#' Produces the grey placeholder markup on its own, without wrapping an output.
-#' [withBones()] calls this for you; it is exported for the cases where you want
-#' a placeholder somewhere Shiny outputs don't reach — inside a `renderUI()`
-#' while you fetch something, say, or to preview a shape while designing.
+#' Makes the grey placeholder on its own, with no output in it. You do not
+#' need this for a Shiny output, because [withBones()] makes the
+#' placeholder for you. Use this function where there is no Shiny output:
+#' for example, inside a `renderUI()` while you get data, or to look at a
+#' shape while you design a page.
 #'
-#' @param type One of `"text"`, `"table"`, `"plot"`, `"cards"`, `"value"`.
-#' @param rows Number of body rows, for `type = "table"`.
-#' @param cols Number of columns, for `type = "table"`.
-#' @param lines Number of lines, for `type = "text"`.
-#' @param n Number of cards or values, for `type = "cards"` and `"value"`.
+#' The skeleton uses the animation and the colours from [bones_defaults()].
+#'
+#' @param type The shape: `"text"`, `"table"`, `"plot"`, `"cards"` or
+#'   `"value"`.
+#' @param rows The number of body rows, for `type = "table"`.
+#' @param cols The number of columns, for `type = "table"`.
+#' @param lines The number of lines, for `type = "text"`.
+#' @param n The number of cards or values, for `type = "cards"` and
+#'   `"value"`.
 #' @param height A CSS height for the placeholder, or a number of pixels.
 #'   `NULL` gives a default for the type, the same one that [withBones()]
 #'   uses.
@@ -36,7 +41,8 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
   height <- as_css_length(height, "height")
 
   # On its own, a skeleton takes space like any other element, so it needs
-  # a height. The plot shape draws its columns as a percentage of it.
+  # a height. The plot shape sets the height of its columns as a percentage
+  # of this height.
   height <- height %||% default_height(type, rows = rows, lines = lines, n = n)
 
   # With no wrapper, the skeleton itself must carry what a wrapper carries:
@@ -56,7 +62,7 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
 
 #' The skeleton markup, with no validation and no dependency
 #'
-#' withBones() uses this directly. Inside a wrapper the skeleton fills the
+#' withBones() uses this directly. Inside a wrapper, the skeleton fills the
 #' wrapper, so it gets no height of its own.
 #'
 #' @inheritParams bones_skeleton
@@ -79,9 +85,9 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
   htmltools::tags$div(
     class = paste(c("bones-skeleton", paste0("bones-skeleton-", type), class),
                   collapse = " "),
-    # Decorative. Shiny already sets aria-busy on the output while it
-    # recalculates, so screen readers are told what is happening without us
-    # duplicating it here.
+    # Only for the eye. Shiny sets aria-busy on the output while it
+    # calculates, so a screen reader already tells the user. A second
+    # message from the placeholder would only repeat it.
     `aria-hidden` = "true",
     style = style_attr(c(
       if (!is.null(height)) sprintf("height: %s;", height),
@@ -109,7 +115,7 @@ bar <- function(width = "100%", height = NULL, class = NULL) {
 }
 
 
-#' Lines of text, with a short last line so it reads as a paragraph
+#' Lines of text. The last line is short, so the lines look like a paragraph.
 #' @keywords internal
 #' @noRd
 skel_text <- function(lines) {
@@ -124,7 +130,7 @@ skel_text <- function(lines) {
 }
 
 
-#' A header row plus body rows, each split into columns
+#' A header row and body rows, each divided into columns
 #' @keywords internal
 #' @noRd
 skel_table <- function(rows, cols) {
@@ -135,7 +141,7 @@ skel_table <- function(rows, cols) {
     htmltools::tags$div(
       class = "bones-row",
       lapply(seq_len(cols), function(j) {
-        # Vary column widths a little so it reads as data rather than a grid.
+        # Columns of slightly different widths look like data, not a grid.
         w <- c("100%", "80%", "92%", "70%")[((j - 1L) %% 4L) + 1L]
         bar(width = w, class = class)
       })
@@ -149,7 +155,7 @@ skel_table <- function(rows, cols) {
 }
 
 
-#' Bars of varying height sitting on an axis, so it reads as a chart
+#' Columns of different heights on an axis, so the shape looks like a chart
 #' @keywords internal
 #' @noRd
 skel_plot <- function() {
@@ -169,7 +175,7 @@ skel_plot <- function() {
 }
 
 
-#' Repeated card shapes
+#' Card shapes, side by side
 #' @keywords internal
 #' @noRd
 skel_cards <- function(n) {
@@ -206,7 +212,10 @@ skel_value <- function(n) {
 }
 
 
-#' Default height for a type when we can't read one off the output
+#' The default height for a type, when the output does not set one
+#'
+#' Counts below one become one, as in the shape functions. The height thus
+#' fits the shape that is drawn, and is never negative.
 #' @keywords internal
 #' @noRd
 default_height <- function(type, rows = 6L, lines = 3L, n = 3L) {

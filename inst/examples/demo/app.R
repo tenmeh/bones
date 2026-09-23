@@ -3,14 +3,14 @@
 # Run with:
 #   shiny::runApp(system.file("examples/demo", package = "bones"))
 #
-# What to look for:
-#   * on load, each panel shows a placeholder shaped like what is coming --
-#     a chart shape for the plot, rows and columns for the table
-#   * nothing on the page moves when the real content lands
-#   * press "Refresh" and watch the difference: the content you are already
-#     reading stays on screen and dims, rather than reverting to grey blocks
-#   * the bottom panel has stale = FALSE, so it does go back to a skeleton --
-#     compare the two and see which one you would rather look at
+# What to look at:
+#   * When the page loads, each panel shows a placeholder in the shape of
+#     its content: a chart for the plot, and rows and columns for the table.
+#   * The page does not move when the content arrives.
+#   * Press "Refresh". The content that you are reading stays on the screen
+#     and dims. It does not go back to grey blocks.
+#   * The last panel has stale = FALSE, so it goes back to a skeleton.
+#     Compare the two, and decide which one you prefer.
 
 library(shiny)
 library(bones)
@@ -29,16 +29,16 @@ ui <- fluidPage(
 
   actionButton("refresh", "Refresh", class = "btn-primary"),
 
-  div(class = "panel-title", "Plot — shape inferred from plotOutput()"),
+  div(class = "panel-title", "Plot - the shape comes from plotOutput()"),
   withBones(plotOutput("chart", height = "280px")),
 
-  div(class = "panel-title", "Table — eight rows, four columns"),
+  div(class = "panel-title", "Table - eight rows, four columns"),
   withBones(tableOutput("table"), rows = 8, cols = 4),
 
-  div(class = "panel-title", "Value boxes — uiOutput needs an explicit type"),
+  div(class = "panel-title", "Value boxes - uiOutput() needs a type"),
   withBones(uiOutput("boxes"), type = "value", n = 3, height = "90px"),
 
-  div(class = "panel-title", "Text with stale = FALSE — returns to a skeleton"),
+  div(class = "panel-title", "Text with stale = FALSE - goes back to a skeleton"),
   withBones(textOutput("summary"), lines = 3, stale = FALSE)
 )
 

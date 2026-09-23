@@ -1,6 +1,6 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
-#' Drop NA so htmltools omits the attribute entirely
+#' Give NULL for NA, so that htmltools does not write the attribute
 #' @keywords internal
 #' @noRd
 na_to_null <- function(x) {

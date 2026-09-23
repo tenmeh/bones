@@ -1,8 +1,12 @@
 # bones
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 **Content-shaped loading placeholders for Shiny outputs.**
 
-Spinners tell users to wait. Bones tell them what's coming.
+A spinner tells the user to wait. A skeleton tells the user what is coming.
 
 ```r
 library(shiny)
@@ -14,16 +18,16 @@ ui <- fluidPage(
 )
 ```
 
-That's it. The shape is inferred from the output you wrap.
+That is all. The shape comes from the output that you wrap.
 
 ## Installation
 
 ```r
 # install.packages("remotes")
-remotes::install_github("tanmaychanda/bones")
+remotes::install_github("tenmeh/bones")
 ```
 
-Then run the demo, which is built to show the difference:
+Then run the demo. It shows the difference:
 
 ```r
 shiny::runApp(system.file("examples/demo", package = "bones"))
@@ -31,20 +35,21 @@ shiny::runApp(system.file("examples/demo", package = "bones"))
 
 ## The idea
 
-A spinner communicates one bit: *something is happening*. A skeleton
-communicates the shape of what's about to appear, so the page stops feeling
-empty and the user's eye can settle where the content will be.
+A spinner gives one piece of information: *something happens*. A skeleton
+also shows the shape of the content that comes next. The page does not look
+empty, and the eye of the user can go to the place where the content will
+be.
 
-`bones` infers that shape from the output you hand it:
+`bones` gets that shape from the output that you give it:
 
 | Output | Placeholder |
 |---|---|
 | `plotOutput()`, `imageOutput()` | columns on an axis |
 | `tableOutput()`, `DT::DTOutput()` | a header row and body rows |
-| `textOutput()`, `verbatimTextOutput()` | lines of text, last one short |
-| `uiOutput()` | lines — pass `type` for anything else |
+| `textOutput()`, `verbatimTextOutput()` | lines of text, with a short last line |
+| `uiOutput()` | lines of text. Use `type` for a different shape. |
 
-Override any of it:
+You can change each of these:
 
 ```r
 withBones(uiOutput("cards"),  type = "cards", n = 4)
@@ -52,41 +57,50 @@ withBones(uiOutput("kpis"),   type = "value", n = 3, height = "90px")
 withBones(plotOutput("map"),  height = "600px", animation = "pulse")
 ```
 
-## Two things it does that a spinner can't
+## Two things that a spinner cannot do
 
-### It keeps content you're already reading
+### It keeps the content that the user reads
 
-On **first** load you get a skeleton. On **re**calculation you don't — the
-previous content stays on screen and dims instead.
+On the **first** load, the user sees a skeleton. When the output calculates
+**again**, the user does not. The old content stays on the screen, dimmed.
 
-This is deliberate. Replacing a chart someone is mid-way through reading with
-grey rectangles takes information away; the old numbers were at least *a*
-answer, and a moment later they'll be replaced by a better one. Reverting to a
-skeleton is strictly worse than leaving the stale content up.
+This is on purpose. The user is possibly in the middle of a chart. Grey
+rectangles in its place would remove information. The old numbers are an
+answer, and a better answer replaces them a moment later. A skeleton would
+be worse than the old content.
 
-Opt out per output if you disagree:
+All outputs show the recalculation at the same time. This is true when
+several outputs use one slow reactive, and Shiny calculates them one after
+the other.
+
+Turn it off for one output if you prefer a skeleton:
 
 ```r
 withBones(plotOutput("chart"), stale = FALSE)
 ```
 
-### It reserves the layout
+### It keeps the space of the content
 
-The placeholder occupies the output's real height, so nothing on the page jumps
-when content lands. Where the output declares a height — `plotOutput()` defaults
-to `400px` — that height is used. Otherwise it's derived from `rows`, `lines` or
-`n`, or you can set `height` yourself.
+Until the content arrives, the placeholder keeps the height of the output.
+The page thus does not move when the content arrives. If the output sets a
+height, the placeholder uses it: `plotOutput()` sets `400px` by default. If
+not, the height comes from `rows`, `lines` or `n`, or you can set `height`
+yourself.
 
-## Implementation note
+When the content arrives, the content sets the height. If the estimate was
+too tall, the space closes. No gap stays under the content.
 
-The content is hidden with `visibility: hidden`, not `display: none`, and the
-skeleton is absolutely positioned on top of it.
+## A note about the implementation
 
-This matters more than it looks. A `display: none` element reports a width of
-zero, and `renderPlot()` sizes the image it generates from the element's
-measured width — so hiding the output that way produces a plot rendered at the
-wrong size, which then gets cached and looks broken until something forces a
-redraw. Keeping the box and hiding only the paint avoids the whole class of bug.
+The content is hidden with `visibility: hidden`, not with `display: none`.
+The skeleton is on top of the content, with absolute position.
+
+This is more important than it looks. An element with `display: none` has
+a width of zero. `renderPlot()` makes its image at the width of the
+element. An output hidden in that way thus gets a plot at the wrong size.
+Shiny keeps that image, and it looks broken until something causes a new
+render. When the output keeps its box and only the paint is hidden, this
+problem cannot occur.
 
 ## Theming
 
@@ -96,41 +110,48 @@ bones_defaults(
   color     = "#e9ecef",
   highlight = "#f8f9fa",
   radius    = "0.5rem",
-  speed     = 1.4          # seconds per cycle
+  speed     = 1.4          # seconds for each cycle
 )
 ```
 
-Defaults are greys built from `rgba(128, 128, 128, …)`, so they work on light
-and dark themes without configuration. Animation is disabled automatically for
-users who have asked their system to reduce motion — a placeholder that throbs
-is exactly what that setting is about.
+The default colours are greys made from `rgba(128, 128, 128, ...)`. They
+thus work on light themes and on dark themes with no change. Users who ask
+their system to reduce motion get no animation. A placeholder that moves is
+exactly what that setting is for.
 
-## Standalone placeholders
+## Placeholders on their own
 
-For the times you need a placeholder somewhere a Shiny output isn't:
+When you need a placeholder where there is no Shiny output:
 
 ```r
 bones_skeleton("table", rows = 5, cols = 3)
 bones_skeleton("text", lines = 4)
 ```
 
-Pair it with `bones_dependency()` so the stylesheet comes along.
+The placeholder brings its stylesheet, and it uses the animation and the
+colours from `bones_defaults()`.
 
 ## Accessibility
 
-The placeholder is `aria-hidden="true"`. Shiny already sets `aria-busy` on an
-output while it recalculates and treats outputs as live regions, so announcing
-the placeholder too would just be duplicate noise for screen reader users.
+The placeholder has `aria-hidden="true"`. Shiny already sets `aria-busy` on
+an output while it calculates, and treats outputs as live regions. A message
+from the placeholder as well would only repeat that for users of a screen
+reader.
 
-## Building from source
+## Development
 
-`man/` is generated, not checked in:
+`man/` is made by roxygen2 and is in the repository, so an install from
+GitHub has the help pages. After a change to the roxygen comments:
 
 ```r
 devtools::document()
 devtools::test()
 devtools::check()
 ```
+
+The browser tests in `tests/testthat/test-app-smoke.R` need a headless
+Chrome. They skip on CRAN, and when no browser can start. Set
+`NOT_CRAN=true` to run them.
 
 ## License
 

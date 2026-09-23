@@ -1,8 +1,8 @@
 #' The bones HTML dependency
 #'
-#' [withBones()] attaches this automatically. It is exported for the case where
-#' you build placeholder markup yourself with [bones_skeleton()] and need the
-#' stylesheet to come along with it.
+#' [withBones()] and [bones_skeleton()] attach this for you. It is exported
+#' for HTML that you make yourself with the `bones-*` classes, which needs
+#' the stylesheet and the script.
 #'
 #' @return An [htmltools::htmlDependency()].
 #' @examples

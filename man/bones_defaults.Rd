@@ -2,7 +2,7 @@
 % Please edit documentation in R/with-bones.R
 \name{bones_defaults}
 \alias{bones_defaults}
-\title{Set package-wide placeholder defaults}
+\title{Set the placeholder defaults for the session}
 \usage{
 bones_defaults(
   animation = NULL,
@@ -14,31 +14,32 @@ bones_defaults(
 )
 }
 \arguments{
-\item{animation}{\code{"wave"} (a sweep of light across the placeholder),
-\code{"pulse"} (a gentle fade), or \code{"none"}. \code{"none"} is also applied
-automatically for users who have asked their system to reduce motion.}
+\item{animation}{\code{"wave"} (a band of light moves across the
+placeholder), \code{"pulse"} (the placeholder fades out and in), or
+\code{"none"}. Users who ask their system to reduce motion always get
+\code{"none"}.}
 
-\item{color}{Base placeholder colour, any CSS colour.}
+\item{color}{The colour of the placeholder, as a CSS colour.}
 
-\item{highlight}{Colour of the sweep, used by the \code{"wave"} animation.}
+\item{highlight}{The colour of the band of light in the \code{"wave"}
+animation, and of the header row of a table.}
 
-\item{radius}{CSS corner radius for placeholder bars.}
+\item{radius}{The CSS corner radius of the placeholder bars.}
 
-\item{speed}{Duration of one animation cycle, in seconds.}
+\item{speed}{The time of one animation cycle, in seconds.}
 
-\item{stale}{Default for whether recalculation keeps and dims the previous
-content (\code{TRUE}) or returns to the skeleton (\code{FALSE}).}
+\item{stale}{The default for the \code{stale} argument of \code{\link[=withBones]{withBones()}}.}
 }
 \value{
-The previous values, invisibly, in the form \code{\link[=options]{options()}} expects.
-Restore them with \code{options(old)} — note that this genuinely unsets
-anything that had no value before, which passing them back through
-\code{bones_defaults()} would not, since \code{NULL} there means "leave alone".
+The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.
+Give them to \code{options()} to restore them. Do not give them to
+\code{bones_defaults()}: \code{NULL} there means "do not change", so an option
+that had no value before would keep the new value.
 }
 \description{
-Sets the defaults used by \code{\link[=withBones]{withBones()}} for the rest of the session. Each
-argument left as \code{NULL} is unchanged. Individual calls to \code{\link[=withBones]{withBones()}} still
-win over anything set here.
+Sets the defaults that \code{\link[=withBones]{withBones()}} uses for the rest of the session.
+An argument that is \code{NULL} does not change its default. An argument that
+you give to \code{\link[=withBones]{withBones()}} is stronger than a default from here.
 }
 \examples{
 old <- bones_defaults(animation = "pulse", radius = "0.5rem")

@@ -1,4 +1,4 @@
-/* bones — content-shaped loading placeholders for Shiny outputs */
+/* bones - content-shaped loading placeholders for Shiny outputs */
 
 /* The defaults are on :root, not on .bones-wrap. A skeleton from
    bones_skeleton() has no wrapper, and would get no colour. They cannot be
@@ -22,10 +22,10 @@
   min-height: var(--bones-reserve, 0);
 }
 
-/* The skeleton sits over the content rather than replacing it, so the output
-   element keeps its real dimensions from the start. Hiding it with
-   `display: none` would report a width of zero to Shiny and plots would render
-   at the wrong size. */
+/* The skeleton is on top of the content. It does not replace the content,
+   so the output element has its real size from the start. With
+   `display: none`, Shiny would read a width of zero, and a plot would get
+   the wrong size. */
 .bones-skeleton {
   display: flex;
   flex-direction: column;
@@ -54,14 +54,15 @@
   visibility: visible;
 }
 
-/* Recalculating with previous content retained. */
+/* The output calculates again, and the old content stays on the screen. */
 .bones-wrap.bones-stale > .bones-content {
   opacity: 0.45;
   transition: opacity 120ms ease;
 }
 
-/* Shiny dims recalculating outputs itself. Inside a wrapper that would stack
-   with the rule above and the content would nearly vanish, so defer to ours. */
+/* Shiny also dims an output while it calculates. Inside a wrapper, both
+   rules would apply together, and the content would almost disappear. This
+   rule thus turns off the dimming of Shiny, and the rule above applies. */
 .bones-wrap .shiny-bound-output.recalculating {
   opacity: 1;
 }
@@ -98,8 +99,8 @@
   gap: 0;
 }
 
-/* flex-grow rather than height:100%, so the area and the axis below it share
-   the skeleton's height instead of overflowing it */
+/* flex-grow, not height: 100%. The area and the axis under it thus share
+   the height of the skeleton, and do not go outside it. */
 .bones-plot-area {
   display: flex;
   align-items: flex-end;
@@ -187,8 +188,8 @@
   50%      { opacity: 0.55; }
 }
 
-/* A placeholder that throbs is exactly the kind of thing reduced-motion is
-   asking us not to do. Fall back to a flat block. */
+/* A user who asks the system to reduce motion does not want a placeholder
+   that moves. Show a still placeholder instead. */
 @media (prefers-reduced-motion: reduce) {
   .bones-anim-wave .bones-bar,
   .bones-anim-wave .bones-axis,

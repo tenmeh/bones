@@ -1,4 +1,4 @@
-test_that("the wrapper carries the shape it inferred", {
+test_that("the wrapper has the shape that it found", {
   w <- withBones(fake_output("shiny-plot-output", id = "chart"))
   html <- as.character(w)
 
@@ -9,12 +9,12 @@ test_that("the wrapper carries the shape it inferred", {
   expect_match(html, "bones-content")
 })
 
-test_that("the wrapped output survives intact", {
+test_that("the output in the wrapper does not change", {
   w <- withBones(fake_output("shiny-table-output", id = "results"))
   expect_match(as.character(w), 'id="results"')
 })
 
-test_that("an explicit type overrides inference", {
+test_that("a type argument is stronger than the found shape", {
   w <- withBones(fake_output("shiny-html-output"), type = "cards", n = 2)
   html <- as.character(w)
 
@@ -22,18 +22,18 @@ test_that("an explicit type overrides inference", {
   expect_equal(count_matches(html, "bones-card\""), 2L)
 })
 
-test_that("the output's own height is reserved", {
+test_that("the height of the output is kept", {
   w <- withBones(fake_output("shiny-plot-output", style = "height:320px"))
   expect_match(as.character(w), "--bones-reserve: 320px")
 })
 
-test_that("an explicit height wins over the output's", {
+test_that("a height argument is stronger than the height of the output", {
   w <- withBones(fake_output("shiny-plot-output", style = "height:320px"),
                  height = "100px")
   expect_match(as.character(w), "--bones-reserve: 100px")
 })
 
-test_that("a height is derived when the output declares none", {
+test_that("a height is calculated when the output has none", {
   w <- withBones(fake_output("shiny-table-output"), rows = 4)
   # A header row plus four body rows, at 34px each.
   expect_match(as.character(w), "--bones-reserve: 170px", fixed = TRUE)
@@ -55,7 +55,7 @@ test_that("the reserve is a custom property, not a min-height", {
   )
 })
 
-test_that("stale-while-revalidate is on by default and can be turned off", {
+test_that("stale content is on by default, and can be turned off", {
   expect_match(as.character(withBones(fake_output("shiny-plot-output"))),
                'data-bones-stale="true"')
   expect_match(as.character(withBones(fake_output("shiny-plot-output"), stale = FALSE)),
@@ -72,8 +72,8 @@ test_that("the animation class is applied", {
 })
 
 test_that("content is hidden with visibility, never display", {
-  # `display: none` reports a width of zero to Shiny and plots then render at
-  # the wrong size. The stylesheet must use visibility instead.
+  # With `display: none`, Shiny reads a width of zero, and a plot gets the
+  # wrong size. The stylesheet must use visibility.
   css <- readLines(
     system.file("www", "bones.css", package = "bones"),
     warn = FALSE
@@ -84,7 +84,7 @@ test_that("content is hidden with visibility, never display", {
   expect_false(grepl("\\.bones-content\\s*\\{[^}]*display:\\s*none", css))
 })
 
-test_that("an id-less output does not emit a stray attribute", {
+test_that("an output with no id gives no data-bones-id attribute", {
   w <- withBones(htmltools::tags$div(class = "shiny-plot-output"))
   expect_false(grepl("data-bones-id", as.character(w)))
 })
@@ -98,12 +98,12 @@ test_that("a bad type or animation is rejected", {
   expect_error(withBones(fake_output("shiny-plot-output"), animation = "disco"), "arg")
 })
 
-test_that("the dependency travels with the wrapper", {
+test_that("the wrapper brings the dependency", {
   deps <- htmltools::findDependencies(withBones(fake_output("shiny-plot-output")))
   expect_true(any(vapply(deps, function(d) d$name == "bones", logical(1))))
 })
 
-test_that("real Shiny outputs get sensible shapes", {
+test_that("real Shiny outputs get the correct shapes", {
   skip_if_not_installed("shiny")
 
   expect_match(as.character(withBones(shiny::plotOutput("p"))),

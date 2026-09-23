@@ -1,14 +1,17 @@
-/* bones — content-shaped loading placeholders for Shiny outputs
+/* bones - content-shaped loading placeholders for Shiny outputs
  *
- * The whole behaviour is four states on the wrapper element:
+ * This script sets one of four states on each wrapper element, with classes:
  *
- *   (none)         first load, skeleton visible, content hidden but boxed
- *   bones-loaded   content has arrived, skeleton gone
- *   bones-stale    content is on screen but being recalculated (dimmed)
- *   bones-loading  recalculating with stale disabled, skeleton back
+ *   (no class)     First load. The skeleton shows. The content is hidden,
+ *                  but it has its box.
+ *   bones-loaded   The content has arrived. The skeleton is hidden.
+ *   bones-stale    With bones-loaded. The content shows, dimmed, while the
+ *                  output calculates again.
+ *   bones-loading  The output calculates again and the stale option is off.
+ *                  The skeleton shows again.
  *
- * Shiny's output lifecycle events are jQuery events, so they are listened to
- * with jQuery rather than addEventListener — jQuery.trigger() does not invoke
+ * The events of Shiny for an output are jQuery events, so this script listens
+ * with jQuery and not with addEventListener. jQuery.trigger() does not call
  * native listeners for custom event types.
  */
 (function () {
@@ -46,8 +49,8 @@
     if (!wrap) return;
 
     if (wrap.classList.contains("bones-loaded") && keepsStale(wrap)) {
-      // Content the user is already reading stays put and dims. Swapping it
-      // for grey blocks would remove information rather than add any.
+      // The user is possibly reading this content, so it stays and dims.
+      // Grey blocks in its place would remove information and add none.
       wrap.classList.add("bones-stale");
       return;
     }

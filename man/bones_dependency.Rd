@@ -10,9 +10,9 @@ bones_dependency()
 An \code{\link[htmltools:htmlDependency]{htmltools::htmlDependency()}}.
 }
 \description{
-\code{\link[=withBones]{withBones()}} attaches this automatically. It is exported for the case where
-you build placeholder markup yourself with \code{\link[=bones_skeleton]{bones_skeleton()}} and need the
-stylesheet to come along with it.
+\code{\link[=withBones]{withBones()}} and \code{\link[=bones_skeleton]{bones_skeleton()}} attach this for you. It is exported
+for HTML that you make yourself with the \verb{bones-*} classes, which needs
+the stylesheet and the script.
 }
 \examples{
 bones_dependency()

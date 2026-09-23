@@ -2,7 +2,7 @@
 % Please edit documentation in R/skeleton.R
 \name{bones_skeleton}
 \alias{bones_skeleton}
-\title{Build a skeleton placeholder}
+\title{Make a skeleton placeholder}
 \usage{
 bones_skeleton(
   type = c("text", "table", "plot", "cards", "value"),
@@ -14,15 +14,17 @@ bones_skeleton(
 )
 }
 \arguments{
-\item{type}{One of \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"}, \code{"value"}.}
+\item{type}{The shape: \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"} or
+\code{"value"}.}
 
-\item{rows}{Number of body rows, for \code{type = "table"}.}
+\item{rows}{The number of body rows, for \code{type = "table"}.}
 
-\item{cols}{Number of columns, for \code{type = "table"}.}
+\item{cols}{The number of columns, for \code{type = "table"}.}
 
-\item{lines}{Number of lines, for \code{type = "text"}.}
+\item{lines}{The number of lines, for \code{type = "text"}.}
 
-\item{n}{Number of cards or values, for \code{type = "cards"} and \code{"value"}.}
+\item{n}{The number of cards or values, for \code{type = "cards"} and
+\code{"value"}.}
 
 \item{height}{A CSS height for the placeholder, or a number of pixels.
 \code{NULL} gives a default for the type, the same one that \code{\link[=withBones]{withBones()}}
@@ -32,10 +34,14 @@ uses.}
 An \link[htmltools:tag]{htmltools::tag}, with the stylesheet attached.
 }
 \description{
-Produces the grey placeholder markup on its own, without wrapping an output.
-\code{\link[=withBones]{withBones()}} calls this for you; it is exported for the cases where you want
-a placeholder somewhere Shiny outputs don't reach — inside a \code{renderUI()}
-while you fetch something, say, or to preview a shape while designing.
+Makes the grey placeholder on its own, with no output in it. You do not
+need this for a Shiny output, because \code{\link[=withBones]{withBones()}} makes the
+placeholder for you. Use this function where there is no Shiny output:
+for example, inside a \code{renderUI()} while you get data, or to look at a
+shape while you design a page.
+}
+\details{
+The skeleton uses the animation and the colours from \code{\link[=bones_defaults]{bones_defaults()}}.
 }
 \examples{
 bones_skeleton("text", lines = 4)

@@ -19,46 +19,53 @@ withBones(
 \arguments{
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
-\item{type}{Skeleton shape: one of \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"},
-\code{"value"}. \code{NULL} (the default) infers it from \code{ui}.}
+\item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
+\code{"cards"} or \code{"value"}. \code{NULL} (the default) gets the shape from \code{ui}.}
 
-\item{rows, cols}{Table dimensions, when \code{type} is \code{"table"}.}
+\item{rows, cols}{The number of body rows and columns, when \code{type} is
+\code{"table"}.}
 
-\item{lines}{Number of lines, when \code{type} is \code{"text"}.}
+\item{lines}{The number of lines, when \code{type} is \code{"text"}.}
 
-\item{n}{Number of cards or values, when \code{type} is \code{"cards"} or \code{"value"}.}
+\item{n}{The number of cards or values, when \code{type} is \code{"cards"} or
+\code{"value"}.}
 
 \item{height}{A CSS height for the placeholder, or a number of pixels, as
-in Shiny. \code{NULL} reads the output's own height, falling back to a
-per-type default.}
+in Shiny. \code{NULL} uses the height of the output. If the output has no
+height, \code{NULL} uses a default for the type.}
 
-\item{animation}{\code{"wave"}, \code{"pulse"} or \code{"none"}. Defaults to the value set
-by \code{\link[=bones_defaults]{bones_defaults()}}.}
+\item{animation}{\code{"wave"}, \code{"pulse"} or \code{"none"}. \code{NULL} uses the value
+from \code{\link[=bones_defaults]{bones_defaults()}}.}
 
-\item{stale}{Whether to keep and dim previous content on recalculation
-(\code{TRUE}, the default) or show the skeleton again (\code{FALSE}).}
+\item{stale}{\code{TRUE} keeps the old content on the screen, dimmed, while
+the output calculates again. \code{FALSE} shows the skeleton again. \code{NULL}
+uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you did not
+set it.}
 }
 \value{
-\code{ui}, wrapped in a placeholder container.
+\code{ui}, in a placeholder container.
 }
 \description{
-Shows a grey placeholder shaped like the content while the output loads for
-the first time. On subsequent recalculations the previous content stays on
-screen and is dimmed instead, because replacing something the user is already
-reading with grey boxes takes information away rather than adding it.
+Shows a grey placeholder in the shape of the content while the output
+loads for the first time. When the output calculates again, the old
+content stays on the screen and is dimmed. The user is possibly reading
+that content, and grey boxes in its place would remove information and
+add none.
 }
 \section{Shape}{
-The shape is inferred from the output you pass in — \code{plotOutput()} gets a
-chart shape, \code{tableOutput()} gets rows and columns, \code{textOutput()} gets
-lines. Pass \code{type} explicitly to override, which you will need to do for
-\code{uiOutput()} since there is no way to know in advance what will appear there.
+The shape comes from the output that you give: \code{plotOutput()} gets the
+shape of a chart, \code{tableOutput()} gets rows and columns, and
+\code{textOutput()} gets lines of text. Use \code{type} to set a different shape.
+You must do this for \code{uiOutput()}, because its content is not known
+before it arrives.
 }
 
 \section{Layout}{
-The wrapper reserves the output's height so that nothing on the page moves
-when real content arrives. Where the output declares its own height, as
-\code{plotOutput()} does, that height is used. Otherwise the height is derived
-from \code{rows} / \code{lines} / \code{n}, or you can set it directly with \code{height}.
+The wrapper keeps the space of the output until the content arrives, so
+the page does not move. If the output sets its own height, as
+\code{plotOutput()} does, the wrapper uses that height. If not, the height
+comes from \code{rows}, \code{lines} or \code{n}, or you can set it with \code{height}. When
+the content arrives, the content sets the height.
 }
 
 \examples{

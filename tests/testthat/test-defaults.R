@@ -1,4 +1,4 @@
-test_that("defaults are set and restored cleanly", {
+test_that("defaults are set, and options() restores them", {
   old <- bones_defaults(animation = "pulse", radius = "1rem")
   on.exit(options(old), add = TRUE)
 
@@ -10,7 +10,7 @@ test_that("defaults are set and restored cleanly", {
   expect_null(getOption("bones.radius"))
 })
 
-test_that("NULL arguments leave existing values alone", {
+test_that("a NULL argument does not change the value", {
   old <- bones_defaults(animation = "pulse", speed = 2)
   on.exit(options(old), add = TRUE)
 
@@ -19,7 +19,7 @@ test_that("NULL arguments leave existing values alone", {
   expect_equal(getOption("bones.speed"), 3)
 })
 
-test_that("withBones picks up the defaults", {
+test_that("withBones() uses the defaults", {
   old <- bones_defaults(animation = "none", stale = FALSE)
   on.exit(options(old), add = TRUE)
 
@@ -28,7 +28,7 @@ test_that("withBones picks up the defaults", {
   expect_match(html, 'data-bones-stale="false"')
 })
 
-test_that("an explicit argument still beats the default", {
+test_that("an argument to withBones() is stronger than the default", {
   old <- bones_defaults(animation = "none")
   on.exit(options(old), add = TRUE)
 
@@ -61,7 +61,7 @@ test_that("colour and shape options become inline CSS variables", {
                "--bones-color: #eee", fixed = TRUE)
 })
 
-test_that("no options means no inline variables", {
+test_that("with no options, there are no inline variables", {
   old <- options(
     bones.color = NULL, bones.highlight = NULL,
     bones.radius = NULL, bones.speed = NULL
@@ -71,7 +71,7 @@ test_that("no options means no inline variables", {
   expect_equal(length(bones:::css_vars()), 0L)
 })
 
-test_that("the dependency points at installed assets", {
+test_that("the dependency points to the installed files", {
   dep <- bones_dependency()
 
   expect_s3_class(dep, "html_dependency")
