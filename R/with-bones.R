@@ -25,8 +25,9 @@
 #' @param rows,cols Table dimensions, when `type` is `"table"`.
 #' @param lines Number of lines, when `type` is `"text"`.
 #' @param n Number of cards or values, when `type` is `"cards"` or `"value"`.
-#' @param height A CSS height for the placeholder. `NULL` reads the output's own
-#'   height, falling back to a per-type default.
+#' @param height A CSS height for the placeholder, or a number of pixels, as
+#'   in Shiny. `NULL` reads the output's own height, falling back to a
+#'   per-type default.
 #' @param animation `"wave"`, `"pulse"` or `"none"`. Defaults to the value set
 #'   by [bones_defaults()].
 #' @param stale Whether to keep and dim previous content on recalculation
@@ -53,7 +54,13 @@ withBones <- function(ui,
                       animation = NULL,
                       stale = NULL) {
 
+  # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
+  check_count(rows, "rows")
+  check_count(cols, "cols")
+  check_count(lines, "lines")
+  check_count(n, "n")
+  height <- as_css_length(height, "height")
 
   if (is.null(type)) {
     type <- infer_type(ui)
@@ -64,6 +71,7 @@ withBones <- function(ui,
   animation <- animation %||% getOption("bones.animation", "wave")
   animation <- match.arg(animation, c("wave", "pulse", "none"))
   stale <- stale %||% getOption("bones.stale", TRUE)
+  check_flag(stale, "stale")
 
   if (is.null(height)) {
     height <- find_inline_height(ui)
@@ -143,8 +151,19 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(speed) && (!is.numeric(speed) || length(speed) != 1L || speed <= 0)) {
     stop("`speed` must be a single positive number of seconds.", call. = FALSE)
   }
-  if (!is.null(stale) && !is.logical(stale)) {
-    stop("`stale` must be TRUE or FALSE.", call. = FALSE)
+  if (!is.null(stale)) check_flag(stale, "stale")
+
+  # These go into an inline style attribute. A value with a semicolon
+  # would end the declaration and start another one.
+  css_values <- list(color = color, highlight = highlight, radius = radius)
+  for (name in names(css_values)) {
+    value <- css_values[[name]]
+    if (is.null(value)) next
+    if (!is.character(value) || length(value) != 1L || is.na(value) ||
+          !nzchar(value) || grepl("[;{}]", value)) {
+      stop(sprintf("`%s` must be a single CSS value, with no \";\", \"{\" or \"}\".", name),
+           call. = FALSE)
+    }
   }
 
   new <- list(

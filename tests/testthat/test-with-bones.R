@@ -113,3 +113,26 @@ test_that("real Shiny outputs get sensible shapes", {
   expect_match(as.character(withBones(shiny::textOutput("x"))),
                'data-bones-type="text"')
 })
+
+test_that("stale must be TRUE or FALSE", {
+  # "yes" once became FALSE with no message.
+  out <- fake_output("shiny-plot-output")
+  expect_error(withBones(out, stale = "yes"), "`stale` must be TRUE or FALSE")
+  expect_error(withBones(out, stale = NA), "`stale` must be TRUE or FALSE")
+  expect_error(withBones(out, stale = c(TRUE, FALSE)), "`stale` must be TRUE or FALSE")
+})
+
+test_that("counts must be single numbers", {
+  out <- fake_output("shiny-table-output")
+  expect_error(withBones(out, rows = NA), "`rows` must be a single number")
+  expect_error(withBones(out, cols = "4"), "`cols` must be a single number")
+  expect_error(withBones(out, lines = c(1, 2)), "`lines` must be a single number")
+  expect_error(withBones(out, n = NULL), "`n` must be a single number")
+})
+
+test_that("a height works as it does in Shiny", {
+  out <- fake_output("shiny-plot-output")
+  expect_match(as.character(withBones(out, height = 300)), "--bones-reserve: 300px")
+  expect_error(withBones(out, height = "banana"), "not a valid CSS unit")
+  expect_error(withBones(out, height = NA), "single CSS length")
+})

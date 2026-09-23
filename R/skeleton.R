@@ -26,7 +26,13 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
                            lines = 3L,
                            n = 3L,
                            height = NULL) {
+  # --- Validate inputs ---
   type <- match.arg(type)
+  check_count(rows, "rows")
+  check_count(cols, "cols")
+  check_count(lines, "lines")
+  check_count(n, "n")
+  height <- as_css_length(height, "height")
 
   body <- switch(
     type,

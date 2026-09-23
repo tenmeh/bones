@@ -79,3 +79,14 @@ test_that("the dependency points at installed assets", {
   expect_true(file.exists(file.path(dep$src$file, "bones.js")))
   expect_true(file.exists(file.path(dep$src$file, "bones.css")))
 })
+
+test_that("stale in the defaults must be one TRUE or FALSE", {
+  expect_error(bones_defaults(stale = NA), "TRUE or FALSE")
+  expect_error(bones_defaults(stale = c(TRUE, FALSE)), "TRUE or FALSE")
+})
+
+test_that("CSS values cannot break out of the style attribute", {
+  expect_error(bones_defaults(color = "red; display: none"), "`color` must be a single CSS value")
+  expect_error(bones_defaults(highlight = c("#fff", "#000")), "`highlight` must be a single CSS value")
+  expect_error(bones_defaults(radius = 4), "`radius` must be a single CSS value")
+})

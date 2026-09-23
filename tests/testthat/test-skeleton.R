@@ -70,3 +70,11 @@ test_that("default heights scale with content", {
   big   <- bones:::default_height("table", rows = 20)
   expect_lt(as.numeric(sub("px", "", small)), as.numeric(sub("px", "", big)))
 })
+
+test_that("bad counts and heights are rejected", {
+  expect_error(bones_skeleton("table", rows = NA), "`rows` must be a single number")
+  expect_error(bones_skeleton("text", lines = "3"), "`lines` must be a single number")
+  expect_error(bones_skeleton("cards", n = numeric(0)), "`n` must be a single number")
+  expect_error(bones_skeleton("plot", height = "banana"), "not a valid CSS unit")
+  expect_match(as.character(bones_skeleton("plot", height = 250)), "height: 250px")
+})
