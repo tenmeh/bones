@@ -41,7 +41,7 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
     load_timeout = 45000L,
     timeout      = 15000L
   )
-  app$wait_for_idle(timeout = 10000L)
+  wait_for_settled(app)
 
   # --- first load: each wrapper shows its content -------------------------
   expect_equal(
@@ -58,8 +58,7 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
   )
 
   # --- after the refresh: each wrapper shows its content again ------------
-  app$wait_for_idle(timeout = 10000L)
-  Sys.sleep(0.2)
+  wait_for_settled(app)
   expect_equal(
     wrapper_states(app),
     c(chart = "loaded", table = "loaded", boxes = "loaded", summary = "loaded")
@@ -88,7 +87,7 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
     load_timeout = 45000L,
     timeout      = 15000L
   )
-  app$wait_for_idle(timeout = 10000L)
+  wait_for_settled(app)
   expect_equal(
     wrapper_states(app),
     c(first = "loaded", second = "loaded", third = "loaded", outer = "loaded")
@@ -129,8 +128,7 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
       1
     )
 
-    app$wait_for_idle(timeout = 10000L)
-    Sys.sleep(0.2)
+    wait_for_settled(app)
     expect_equal(
       wrapper_states(app),
       c(first = "loaded", second = "loaded", third = "loaded", outer = "loaded"),

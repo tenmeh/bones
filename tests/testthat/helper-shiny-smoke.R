@@ -133,6 +133,33 @@ local_app_driver <- function(app_dir, ...) {
   app
 }
 
+#' Wait until each bones wrapper shows its content.
+#'
+#' app$wait_for_idle() is not sufficient. On a slow machine it can return
+#' before the first render ends: this occurred on the macOS runner of GitHub
+#' Actions, and the test then found each wrapper still on its skeleton. This
+#' function waits for the state itself. If a wrapper never loads, the wait
+#' times out, so a real fault still fails the test.
+#'
+#' @param app A live `shinytest2::AppDriver`.
+#' @param timeout The longest wait, in milliseconds.
+#' @return The application, invisibly.
+wait_for_settled <- function(app, timeout = 20000L) {
+  app$wait_for_js(
+    "(function () {
+       var w = document.querySelectorAll('.bones-wrap');
+       return w.length > 0 && Array.from(w).every(function (x) {
+         return x.classList.contains('bones-loaded') &&
+           !x.classList.contains('bones-stale') &&
+           !x.classList.contains('bones-loading');
+       });
+     })()",
+    timeout = timeout
+  )
+  app$wait_for_idle(timeout = timeout)
+  invisible(app)
+}
+
 #' The state classes of each bones wrapper, by output id.
 #'
 #' @param app A live `shinytest2::AppDriver`.
