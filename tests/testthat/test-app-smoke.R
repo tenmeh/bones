@@ -165,3 +165,55 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
                                    !is.na(logs$level) & logs$level == "error"]
   expect_length(console_errors, 0L)
 })
+
+test_that("each chart shape draws visible marks inside its skeleton", {
+  testthat::skip_on_cran()
+
+  # The HTML tests count the marks. Only a browser shows that the marks have
+  # a size, sit inside the skeleton, and have a colour: a mark with no
+  # height, or outside the box, or transparent, cannot be seen.
+  app <- local_app_driver(
+    test_path("apps", "charts"),
+    name         = "bones-charts-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  app$wait_for_idle(timeout = 10000L)
+
+  marks <- app$get_js("
+    Array.from(document.querySelectorAll('.bones-skeleton-chart')).map(function (sk) {
+      var box = sk.getBoundingClientRect();
+      var els = sk.querySelectorAll('.bones-bar, .bones-svg-line, .bones-svg-fill');
+      var bad = [];
+      els.forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        var cs = getComputedStyle(el);
+        var paint = el.tagName.toLowerCase() === 'polyline' ? cs.stroke :
+                    el.tagName.toLowerCase() === 'polygon' ? cs.fill : cs.backgroundColor;
+        var inside = r.left >= box.left - 1 && r.right <= box.right + 1 &&
+                     r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+        var sized = r.width > 0 && r.height > 0;
+        var painted = paint && paint !== 'none' && paint !== 'transparent' &&
+                      paint !== 'rgba(0, 0, 0, 0)';
+        if (!inside || !sized || !painted) bad.push(el.className.baseVal || el.className);
+      });
+      var type = Array.from(sk.classList).find(function (c) {
+        return /^bones-skeleton-/.test(c) && c !== 'bones-skeleton-chart';
+      });
+      return {type: type, height: box.height, marks: els.length, bad: bad};
+    })
+  ")
+
+  # Eight shapes, each on its own and inside a wrapper.
+  expect_length(marks, 16L)
+  for (m in marks) {
+    expect_gt(m$height, 100, label = paste(m$type, "height"))
+    expect_gt(m$marks, 0L, label = paste(m$type, "marks"))
+    expect_true(
+      length(unlist(m$bad)) == 0L,
+      info = paste0(m$type, ": marks that cannot be seen: ", paste(unlist(m$bad), collapse = ", "))
+    )
+  }
+
+  expect_no_shiny_errors(app)
+})

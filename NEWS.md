@@ -17,6 +17,9 @@ First release.
 * `bones_skeleton()` makes a placeholder on its own, for use where there
   is no Shiny output. It takes space in its container, and brings its
   stylesheet, its animation and its colours.
+* A chart can have the shape of its kind: `type = "bar"`, `"line"`,
+  `"area"`, `"scatter"`, `"histogram"`, `"pie"` or `"heatmap"`. A
+  `plotOutput()` with no `type` gets the bar shape, as before.
 * `bones_defaults()` sets the colours, the corner radius, the animation and
   the speed for the session.
 * The arguments are checked, and a bad value gives a message that names

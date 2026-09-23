@@ -44,7 +44,7 @@ be.
 
 | Output | Placeholder |
 |---|---|
-| `plotOutput()`, `imageOutput()` | columns on an axis |
+| `plotOutput()`, `imageOutput()` | columns on an axis. Use `type` for another kind of chart. |
 | `tableOutput()`, `DT::DTOutput()` | a header row and body rows |
 | `textOutput()`, `verbatimTextOutput()` | lines of text, with a short last line |
 | `uiOutput()` | lines of text. Use `type` for a different shape. |
@@ -56,6 +56,24 @@ withBones(uiOutput("cards"),  type = "cards", n = 4)
 withBones(uiOutput("kpis"),   type = "value", n = 3, height = "90px")
 withBones(plotOutput("map"),  height = "600px", animation = "pulse")
 ```
+
+### Chart shapes
+
+A chart can have the shape of its kind:
+
+```r
+withBones(plotOutput("sales"),  type = "bar")
+withBones(plotOutput("trend"),  type = "line")
+withBones(plotOutput("growth"), type = "area")
+withBones(plotOutput("fit"),    type = "scatter")
+withBones(plotOutput("ages"),   type = "histogram")
+withBones(plotOutput("share"),  type = "pie")
+withBones(plotOutput("corr"),   type = "heatmap")
+```
+
+`bones` cannot find the kind for you. `plotOutput()` only says that a plot
+will be there. `renderPlot()` decides the kind later, on the server. With no
+`type`, a plot gets the bar shape.
 
 ## Two things that a spinner cannot do
 

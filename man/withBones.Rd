@@ -20,7 +20,9 @@ withBones(
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
 \item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
-\code{"cards"} or \code{"value"}. \code{NULL} (the default) gets the shape from \code{ui}.}
+\code{"cards"}, \code{"value"}, or a chart shape (\code{"bar"}, \code{"line"},
+\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}). \code{NULL}
+(the default) gets the shape from \code{ui}.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
 \code{"table"}.}
@@ -58,6 +60,11 @@ shape of a chart, \code{tableOutput()} gets rows and columns, and
 \code{textOutput()} gets lines of text. Use \code{type} to set a different shape.
 You must do this for \code{uiOutput()}, because its content is not known
 before it arrives.
+
+A \code{plotOutput()} gets the shape of a bar chart. If the chart is of
+another kind, give that kind: \code{"line"}, \code{"scatter"}, \code{"area"},
+\code{"histogram"}, \code{"pie"} or \code{"heatmap"}. The output cannot tell, because
+\code{renderPlot()} decides the kind later, on the server.
 }
 
 \section{Layout}{
@@ -75,5 +82,6 @@ if (requireNamespace("shiny", quietly = TRUE)) {
   withBones(plotOutput("chart"))
   withBones(tableOutput("results"), rows = 8, cols = 5)
   withBones(uiOutput("cards"), type = "cards", n = 4)
+  withBones(plotOutput("trend"), type = "line")
 }
 }
