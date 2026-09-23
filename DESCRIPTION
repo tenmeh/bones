@@ -1,0 +1,30 @@
+Package: bones
+Type: Package
+Title: Content-Shaped Loading Placeholders for 'shiny' Outputs
+Version: 0.1.0
+Authors@R: person(
+    given = "Tanmay",
+    family = "Chanda",
+    email = "jadevenom2430@gmail.com",
+    role = c("aut", "cre"))
+Description: Replaces loading spinners with skeleton placeholders that match
+    the shape of the content being loaded, so users can see what is coming
+    rather than only that something is happening. Placeholders are inferred
+    automatically from the type of 'shiny' output being wrapped, reserve the
+    output's layout so that nothing shifts when content arrives, and are shown
+    only on first load: when an output is recalculated, the previous content is
+    kept on screen and dimmed instead of being replaced.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    htmltools,
+    utils
+Suggests:
+    shiny (>= 1.7.0),
+    testthat (>= 3.0.0)
+URL: https://github.com/tanmaychanda/bones
+BugReports: https://github.com/tanmaychanda/bones/issues
+Config/testthat/edition: 3
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
