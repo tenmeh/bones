@@ -102,16 +102,25 @@ find_inline_height <- function(tag) {
   if (inherits(tag, "shiny.tag")) {
     style <- tag$attribs$style
     if (!is.null(style)) {
+      # Only the "height" property. The start of a declaration comes first,
+      # so "min-height", "max-height" and "line-height" do not match.
       m <- regmatches(
         as.character(style)[1],
-        regexpr("height\\s*:\\s*[^;]+", as.character(style)[1])
+        regexpr("(^|;)\\s*height\\s*:\\s*[^;]+", as.character(style)[1])
       )
       if (length(m) == 1L) {
-        value <- trimws(sub("^height\\s*:\\s*", "", m))
+        value <- trimws(sub("^;?\\s*height\\s*:\\s*", "", m))
         # A percentage height depends on the height of the parent, which
         # this package does not know. It thus does not help to find the
         # height of the skeleton.
-        if (nzchar(value) && !grepl("%$", value)) return(value)
+        #
+        # A value with no digit is a keyword, such as "auto" from
+        # DT::DTOutput(). As a reserve, "auto" keeps no space, and the
+        # skeleton is then 0px tall. A value such as "calc(100vh - 80px)"
+        # has digits, so it is still used.
+        if (nzchar(value) && !grepl("%$", value) && grepl("[0-9]", value)) {
+          return(value)
+        }
       }
     }
     return(find_inline_height(tag$children))
