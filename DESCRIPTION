@@ -22,7 +22,9 @@ Imports:
     utils
 Suggests:
     shiny (>= 1.7.0),
-    testthat (>= 3.0.0)
+    shinytest2,
+    testthat (>= 3.0.0),
+    withr
 URL: https://github.com/tanmaychanda/bones
 BugReports: https://github.com/tanmaychanda/bones/issues
 Config/testthat/edition: 3

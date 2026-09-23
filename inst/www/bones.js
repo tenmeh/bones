@@ -17,9 +17,19 @@
   if (!window.jQuery) return;
   var $ = window.jQuery;
 
+  function outputOf(wrap) {
+    var content = wrap.querySelector(".bones-content");
+    if (!content) return null;
+    return content.querySelector(".shiny-bound-output") || content.firstElementChild;
+  }
+
+  /* The wrapper that `el` is the output of, or null. The Shiny events bubble,
+   * so an output inside a wrapped uiOutput() also reaches the wrapper of the
+   * uiOutput(). Only the output of the wrapper itself may change its state. */
   function wrapOf(el) {
     var $wrap = $(el).closest(".bones-wrap");
-    return $wrap.length ? $wrap[0] : null;
+    if (!$wrap.length) return null;
+    return outputOf($wrap[0]) === el ? $wrap[0] : null;
   }
 
   function keepsStale(wrap) {
@@ -31,7 +41,7 @@
     wrap.classList.remove("bones-loading", "bones-stale");
   }
 
-  function onRecalculating(e) {
+  function onInvalidated(e) {
     var wrap = wrapOf(e.target);
     if (!wrap) return;
 
@@ -51,27 +61,52 @@
     if (wrap) markLoaded(wrap);
   }
 
-  $(document).on("shiny:recalculating", onRecalculating);
-  $(document).on("shiny:value shiny:recalculated shiny:error", onSettled);
+  /* Listen for "shiny:outputinvalidated", not "shiny:recalculating".
+   *
+   * Shiny sends "outputinvalidated" for each output at the same time, as soon
+   * as the output is out of date. It sends "recalculating" only when the
+   * render function of that output starts, and it starts them one at a time.
+   * When several outputs use one slow reactive, the first render does all the
+   * slow work. The other outputs then get "recalculating" only at the end, a
+   * few milliseconds before their value. A wrapper that waited for it thus
+   * showed nothing for the whole wait.
+   *
+   * The end of the recalculation is "shiny:value" or "shiny:error". A silent
+   * req() also sends "shiny:error". "shiny:recalculated" is not used: it
+   * comes before the value, and would show the old content for a moment when
+   * the stale option is off. */
+  $(document).on("shiny:outputinvalidated", onInvalidated);
+  $(document).on("shiny:value shiny:error", onSettled);
 
-  /* An output may render before this script has attached its listeners — on a
-   * fast initial load, or when a `renderUI()` inserts one. Those wrappers would
-   * sit on a skeleton for ever. Once Shiny goes idle, reveal any wrapper whose
-   * output already has content. */
+  /* A safety net for two cases. The events above do not cover them.
+   *
+   * 1. An output can render before this script attaches its listeners. This
+   *    occurs on a fast first load, or when a renderUI() inserts an output.
+   *    Its wrapper would then show a skeleton for ever. Show the wrapper if
+   *    its output has content.
+   * 2. A recalculation can end with no "shiny:value" or "shiny:error". The
+   *    wrapper would then stay stale or on a skeleton. When Shiny is idle and
+   *    the output is no longer recalculating, the recalculation has ended.
+   *
+   * A wrapper in its first load with an empty output stays on its skeleton.
+   * Its output can be in a hidden tab, where Shiny does not render it yet. */
   function sweep() {
-    var wraps = document.querySelectorAll(".bones-wrap:not(.bones-loaded)");
+    var wraps = document.querySelectorAll(".bones-wrap");
     for (var i = 0; i < wraps.length; i++) {
-      var content = wraps[i].querySelector(".bones-content");
-      if (!content) continue;
+      var wrap = wraps[i];
+      var output = outputOf(wrap);
+      if (!output || output.classList.contains("recalculating")) continue;
 
-      var output = content.querySelector(".shiny-bound-output") || content.firstElementChild;
-      if (!output) continue;
-
+      var wasRecalculating =
+        wrap.classList.contains("bones-stale") ||
+        wrap.classList.contains("bones-loading");
       var filled =
         output.children.length > 0 ||
         (output.textContent || "").trim().length > 0;
 
-      if (filled) markLoaded(wraps[i]);
+      if (wasRecalculating || (filled && !wrap.classList.contains("bones-loaded"))) {
+        markLoaded(wrap);
+      }
     }
   }
 
