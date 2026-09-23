@@ -1,4 +1,4 @@
-# bones
+# bones <img src="man/figures/logo.png" align="right" height="139" alt="bones logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml)
