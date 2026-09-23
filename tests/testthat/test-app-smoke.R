@@ -94,13 +94,29 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
     c(first = "loaded", second = "loaded", third = "loaded", outer = "loaded")
   )
 
+  wrapper_height <- function(id) {
+    app$get_js(sprintf(
+      "document.querySelector('[data-bones-id=%s]').getBoundingClientRect().height",
+      id
+    ))
+  }
+
   for (mode in c("silent", "error", "value")) {
+    third_before <- wrapper_height("third")
+
     app$set_inputs(mode = mode, wait_ = FALSE)
     Sys.sleep(0.3)
     expect_equal(
       wrapper_states(app),
       c(first = "stale", second = "stale", third = "loading", outer = "loaded"),
       info = paste("while the mode changes to", mode)
+    )
+
+    # The skeleton comes back for stale = FALSE, but the reserve does not.
+    # The old content keeps its box, so the page must not move.
+    expect_equal(
+      wrapper_height("third"), third_before,
+      info = paste("height of the stale = FALSE wrapper while the mode changes to", mode)
     )
 
     app$wait_for_idle(timeout = 10000L)

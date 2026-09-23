@@ -16,9 +16,16 @@
   position: relative;
 }
 
-/* Keep the space of the content until the content arrives. Then let the
-   content set the height. withBones() puts the estimate in --bones-reserve. */
-.bones-wrap:not(.bones-loaded) {
+/* Keep the space of the content until the content arrives for the first
+   time. Then let the content set the height. withBones() puts the estimate
+   in --bones-reserve.
+
+   The test is bones-has-loaded, not bones-loaded. With stale = FALSE, a
+   recalculation removes bones-loaded. The old content still has its box,
+   hidden, so it keeps the space. A reserve at that time would make a
+   wrapper with short content grow, and then shrink when the value arrives:
+   the page would move two times on each recalculation. */
+.bones-wrap:not(.bones-has-loaded) {
   min-height: var(--bones-reserve, 0);
 }
 

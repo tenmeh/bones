@@ -51,7 +51,9 @@ test_that("the reserve is a custom property, not a min-height", {
   )
   expect_match(
     css,
-    "\\.bones-wrap:not\\(\\.bones-loaded\\)\\s*\\{[^}]*min-height:\\s*var\\(--bones-reserve"
+    # bones-has-loaded, not bones-loaded: a stale = FALSE recalculation
+    # removes bones-loaded, and the reserve must not come back then.
+    "\\.bones-wrap:not\\(\\.bones-has-loaded\\)\\s*\\{[^}]*min-height:\\s*var\\(--bones-reserve"
   )
 })
 
