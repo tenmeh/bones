@@ -90,3 +90,9 @@ test_that("CSS values cannot break out of the style attribute", {
   expect_error(bones_defaults(highlight = c("#fff", "#000")), "`highlight` must be a single CSS value")
   expect_error(bones_defaults(radius = 4), "`radius` must be a single CSS value")
 })
+
+test_that("speed = NA is rejected with the usual message", {
+  # NA <= 0 is NA, so the check once failed with "missing value where
+  # TRUE/FALSE needed".
+  expect_error(bones_defaults(speed = NA_real_), "positive")
+})

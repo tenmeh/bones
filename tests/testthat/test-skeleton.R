@@ -98,3 +98,10 @@ test_that("only the skeleton inside a wrapper is absolutely positioned", {
   expect_match(css, "\\.bones-wrap > \\.bones-skeleton\\s*\\{[^}]*position:\\s*absolute")
   expect_false(grepl("(^|\\n)\\.bones-skeleton\\s*\\{[^}]*position:\\s*absolute", css))
 })
+
+test_that("default heights are never negative, and fit the shape drawn", {
+  # The shapes make a count below one into one. The height must do the same.
+  expect_equal(bones:::default_height("text", lines = -3), "24px")
+  expect_equal(bones:::default_height("table", rows = 0), "68px")
+  expect_match(as.character(bones_skeleton("text", lines = -3)), "height: 24px")
+})

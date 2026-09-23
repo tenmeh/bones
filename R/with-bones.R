@@ -151,7 +151,8 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(animation)) {
     animation <- match.arg(animation, c("wave", "pulse", "none"))
   }
-  if (!is.null(speed) && (!is.numeric(speed) || length(speed) != 1L || speed <= 0)) {
+  if (!is.null(speed) &&
+        (!is.numeric(speed) || length(speed) != 1L || is.na(speed) || speed <= 0)) {
     stop("`speed` must be a single positive number of seconds.", call. = FALSE)
   }
   if (!is.null(stale)) check_flag(stale, "stale")

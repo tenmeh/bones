@@ -204,8 +204,8 @@ default_height <- function(type, rows = 6L, lines = 3L, n = 3L) {
     # the larger value: the reserve goes when the content arrives, so a
     # reserve that is too tall closes, but one that is too short pushes the
     # page down.
-    table = sprintf("%.0fpx", (as.integer(rows) + 1) * 34),
-    text  = sprintf("%.0fpx", as.integer(lines) * 24),
+    table = sprintf("%.0fpx", (max(as.integer(rows), 1L) + 1) * 34),
+    text  = sprintf("%.0fpx", max(as.integer(lines), 1L) * 24),
     cards = sprintf("%.0fpx", 110),
     value = "88px",
     "120px"
