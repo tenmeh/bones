@@ -67,10 +67,15 @@
   transition: opacity 120ms ease;
 }
 
-/* Shiny also dims an output while it calculates. Inside a wrapper, both
-   rules would apply together, and the content would almost disappear. This
-   rule thus turns off the dimming of Shiny, and the rule above applies. */
-.bones-wrap .shiny-bound-output.recalculating {
+/* Shiny also dims an output while it calculates. Inside a stale wrapper,
+   both rules would apply together, and the content would almost disappear.
+   This rule thus turns off the dimming of Shiny, and the rule above applies.
+
+   Only inside a stale wrapper. An output inside a wrapped uiOutput() does
+   not change the state of that wrapper, so the wrapper is not stale while
+   that output calculates. The dimming of Shiny is then the only sign that
+   the output updates, and it must stay. */
+.bones-wrap.bones-stale .shiny-bound-output.recalculating {
   opacity: 1;
 }
 

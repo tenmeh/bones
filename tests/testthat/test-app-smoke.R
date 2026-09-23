@@ -119,6 +119,16 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
       info = paste("height of the stale = FALSE wrapper while the mode changes to", mode)
     )
 
+    # The output inside the wrapped uiOutput() does not change the state of
+    # that wrapper. Shiny must thus still dim it, or the user sees no sign
+    # that it updates. Shiny starts its fade after 500ms, so look at 0.8s.
+    # The slow reactive of the application takes 1.2s.
+    Sys.sleep(0.5)
+    expect_lt(
+      as.numeric(app$get_js("getComputedStyle(document.getElementById('inner')).opacity")),
+      1
+    )
+
     app$wait_for_idle(timeout = 10000L)
     Sys.sleep(0.2)
     expect_equal(

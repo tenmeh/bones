@@ -86,6 +86,17 @@ test_that("content is hidden with visibility, never display", {
   expect_false(grepl("\\.bones-content\\s*\\{[^}]*display:\\s*none", css))
 })
 
+test_that("the dimming of Shiny is turned off only inside a stale wrapper", {
+  # An output inside a wrapped uiOutput() does not make that wrapper stale.
+  # Its own dimming is then the only sign that it updates.
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, "\\.bones-wrap\\.bones-stale \\.shiny-bound-output\\.recalculating")
+  expect_false(grepl("\\.bones-wrap \\.shiny-bound-output\\.recalculating", css))
+})
+
 test_that("an output with no id gives no data-bones-id attribute", {
   w <- withBones(htmltools::tags$div(class = "shiny-plot-output"))
   expect_false(grepl("data-bones-id", as.character(w)))

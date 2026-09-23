@@ -29,7 +29,8 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   source_value <- reactive({
-    Sys.sleep(0.8)
+    # Long enough for the fade of Shiny, which starts after 500ms.
+    Sys.sleep(1.2)
     input$mode
   })
 
