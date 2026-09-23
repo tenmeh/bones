@@ -33,7 +33,7 @@ class_map <- function() {
 collect_classes <- function(x) {
   if (inherits(x, "shiny.tag")) {
     return(c(
-      as.character(x$attribs$class %||% character(0)),
+      attr_values(x, "class"),
       collect_classes(x$children)
     ))
   }
@@ -41,6 +41,24 @@ collect_classes <- function(x) {
     return(unlist(lapply(x, collect_classes), use.names = FALSE))
   }
   character(0)
+}
+
+
+#' Every value of one attribute of a tag
+#'
+#' A tag can hold the same attribute more than one time. gt_output() does
+#' this: it has class "shiny-html-output" and a second class "gt_shiny".
+#' `tag$attribs$class` gives only the first one.
+#'
+#' @param tag A tag.
+#' @param name The name of the attribute.
+#' @return A character vector. It is empty when the tag has no such
+#'   attribute.
+#' @keywords internal
+#' @noRd
+attr_values <- function(tag, name) {
+  values <- tag$attribs[names(tag$attribs) == name]
+  as.character(unlist(values, use.names = FALSE))
 }
 
 
@@ -100,16 +118,14 @@ find_output_id <- function(tag) {
 #' @noRd
 find_inline_height <- function(tag) {
   if (inherits(tag, "shiny.tag")) {
-    style <- tag$attribs$style
-    if (!is.null(style)) {
+    style <- paste(attr_values(tag, "style"), collapse = ";")
+    if (nzchar(style)) {
       # Only the "height" property. The start of a declaration comes first,
-      # so "min-height", "max-height" and "line-height" do not match.
-      m <- regmatches(
-        as.character(style)[1],
-        regexpr("(^|;)\\s*height\\s*:\\s*[^;]+", as.character(style)[1])
-      )
-      if (length(m) == 1L) {
-        value <- trimws(sub("^;?\\s*height\\s*:\\s*", "", m))
+      # so "min-height", "max-height" and "line-height" do not match. When
+      # there are several, the last one wins, as in CSS.
+      m <- regmatches(style, gregexpr("(^|;)\\s*height\\s*:\\s*[^;]+", style))[[1]]
+      if (length(m) >= 1L) {
+        value <- trimws(sub("^;?\\s*height\\s*:\\s*", "", m[length(m)]))
         # A percentage height depends on the height of the parent, which
         # this package does not know. It thus does not help to find the
         # height of the skeleton.
