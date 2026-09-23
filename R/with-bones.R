@@ -44,7 +44,9 @@
 #'   withBones(uiOutput("cards"), type = "cards", n = 4)
 #' }
 #' @export
-withBones <- function(ui,
+# The name is camelCase, not snake_case, on purpose. It follows the wrappers
+# of Shiny, such as withProgress() and withMathJax().
+withBones <- function(ui, # nolint: object_name_linter.
                       type = NULL,
                       rows = 6L,
                       cols = 4L,

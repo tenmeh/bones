@@ -1,21 +1,22 @@
 Package: bones
 Type: Package
-Title: Content-Shaped Loading Placeholders for 'shiny' Outputs
+Title: Content-Shaped Loading Placeholders for 'Shiny' Outputs
 Version: 0.1.0
 Authors@R: person(
     given = "Tanmay",
     family = "Chanda",
-    email = "jadevenom2430@gmail.com",
-    role = c("aut", "cre"))
-Description: Replaces loading spinners with skeleton placeholders that match
-    the shape of the content being loaded, so users can see what is coming
-    rather than only that something is happening. Placeholders are inferred
-    automatically from the type of 'shiny' output being wrapped, reserve the
-    output's layout so that nothing shifts when content arrives, and are shown
-    only on first load: when an output is recalculated, the previous content is
-    kept on screen and dimmed instead of being replaced.
+    email = "tanmaychanda96@gmail.com",
+    role = c("aut", "cre", "cph"))
+Description: Shows a grey placeholder in the shape of the content while a
+    'Shiny' output loads, in place of a spinner. The user can thus see what
+    is coming, and not only that something happens. The shape comes from
+    the type of the output. The placeholder keeps the space of the content,
+    so the page does not move when the content arrives. When an output
+    calculates again, the old content stays on the screen, dimmed, and a
+    placeholder does not replace it.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 Depends: R (>= 4.1.0)
 Imports:
     htmltools,
@@ -25,8 +26,8 @@ Suggests:
     shinytest2,
     testthat (>= 3.0.0),
     withr
-URL: https://github.com/tanmaychanda/bones
-BugReports: https://github.com/tanmaychanda/bones/issues
+URL: https://github.com/tenmeh/bones
+BugReports: https://github.com/tenmeh/bones/issues
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0

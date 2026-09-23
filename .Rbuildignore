@@ -4,3 +4,7 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^cran-comments\.md$
+^\.lintr$
+^\.claude$
+^\.Rcheck$
+^.*\.tar\.gz$
