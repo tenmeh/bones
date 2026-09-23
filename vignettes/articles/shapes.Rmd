@@ -1,0 +1,61 @@
+---
+title: "Shapes"
+output: rmarkdown::html_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", echo = FALSE)
+library(bones)
+
+# Each skeleton on this page is a real bones_skeleton(), not a picture. It
+# moves with the "wave" animation, as it does in an app.
+gallery <- function(types, height = 200, ...) {
+  htmltools::div(
+    style = paste(
+      "display: grid; gap: 1.25rem; margin: 1rem 0 2rem;",
+      "grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));"
+    ),
+    lapply(types, function(type) {
+      htmltools::div(
+        htmltools::tags$code(sprintf('type = "%s"', type)),
+        htmltools::div(
+          style = "margin-top: 0.5rem;",
+          bones_skeleton(type, height = height, ...)
+        )
+      )
+    })
+  )
+}
+```
+
+Each skeleton below is drawn by `bones_skeleton()` on this page. In an app,
+`withBones()` draws the same shape around an output.
+
+## Text, cards and values
+
+`textOutput()` and `uiOutput()` get the text shape. Use `"cards"` and
+`"value"` for a `uiOutput()` that holds cards or value boxes.
+
+```{r}
+gallery(c("text", "cards", "value"), height = 140)
+```
+
+## Charts
+
+A `plotOutput()` gets the bar shape. It cannot say what kind of chart it
+will hold, because `renderPlot()` decides that later, on the server. So give
+the kind with `type`: `withBones(plotOutput("p"), type = "scatter")`.
+
+```{r}
+gallery(c("plot", "bar", "line", "area", "scatter", "histogram", "pie", "heatmap"))
+```
+
+## Tables
+
+A `tableOutput()` gets the plain table shape. A table from a table package
+gets a shape that copies that package, and `bones` finds the package from
+the output, with no `type`. Set `rows` to the number of rows on a page.
+
+```{r}
+gallery(c("table", "dt", "reactable", "gt", "rhandsontable"), height = NULL, rows = 5, cols = 4)
+```
