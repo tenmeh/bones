@@ -133,3 +133,12 @@ test_that("the default colours are on :root, not on the wrapper", {
   expect_match(css, ":root\\s*\\{[^}]*--bones-color:")
   expect_false(grepl("\\.bones-wrap\\s*\\{[^}]*--bones-color:", css))
 })
+
+test_that("an infinite count gives the argument message", {
+  # Inf once passed the check, and then failed inside seq_len() with
+  # "argument must be coercible to non-negative integer".
+  expect_error(bones_skeleton("table", rows = Inf), "`rows` must be a single number")
+  expect_error(bones_skeleton("text", lines = -Inf), "`lines` must be a single number")
+  expect_error(withBones(fake_output("shiny-table-output"), cols = Inf),
+               "`cols` must be a single number")
+})

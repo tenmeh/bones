@@ -60,6 +60,39 @@ test_that("a percentage height is ignored", {
   expect_true(is.na(bones:::find_inline_height(tag)))
 })
 
+test_that("a keyword height such as auto is ignored", {
+  # DT::DTOutput() writes height:auto. As a reserve, auto keeps no space,
+  # so the skeleton was 0px tall and could not be seen.
+  for (value in c("auto", "fit-content", "inherit", "var(--h)")) {
+    tag <- fake_output("html-widget-output", style = paste0("width:100%;height:", value, ";"))
+    expect_true(is.na(bones:::find_inline_height(tag)), info = value)
+  }
+
+  # A calculation with a length in it is still a height.
+  tag <- fake_output("shiny-plot-output", style = "height: calc(100vh - 80px)")
+  expect_equal(bones:::find_inline_height(tag), "calc(100vh - 80px)")
+})
+
+test_that("min-height, max-height and line-height are not read as the height", {
+  for (prop in c("min-height", "max-height", "line-height")) {
+    tag <- fake_output("shiny-html-output", style = paste0(prop, ": 300px;"))
+    expect_true(is.na(bones:::find_inline_height(tag)), info = prop)
+  }
+
+  # The real height after one of them is still found.
+  tag <- fake_output("shiny-plot-output", style = "line-height: 1.5; height: 250px")
+  expect_equal(bones:::find_inline_height(tag), "250px")
+})
+
+test_that("a DT output reserves the default table height", {
+  skip_if_not_installed("DT")
+
+  html <- as.character(withBones(DT::DTOutput("dt")))
+  expect_match(html, 'data-bones-type="table"', fixed = TRUE)
+  # A header row and six body rows, at 34px each.
+  expect_match(html, "--bones-reserve: 238px", fixed = TRUE)
+})
+
 test_that("a missing height is reported as NA", {
   expect_true(is.na(bones:::find_inline_height(fake_output("shiny-table-output"))))
   expect_true(is.na(bones:::find_inline_height(htmltools::tags$div())))

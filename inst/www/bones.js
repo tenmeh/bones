@@ -10,6 +10,11 @@
  *   bones-loading  The output calculates again and the stale option is off.
  *                  The skeleton shows again.
  *
+ * One more class records the history, not the state:
+ *
+ *   bones-has-loaded  The content arrived at least once. It is never removed.
+ *                     bones.css keeps the reserved height only until then.
+ *
  * The events of Shiny for an output are jQuery events, so this script listens
  * with jQuery and not with addEventListener. jQuery.trigger() does not call
  * native listeners for custom event types.
@@ -40,7 +45,7 @@
   }
 
   function markLoaded(wrap) {
-    wrap.classList.add("bones-loaded");
+    wrap.classList.add("bones-loaded", "bones-has-loaded");
     wrap.classList.remove("bones-loading", "bones-stale");
   }
 

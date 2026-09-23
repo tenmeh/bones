@@ -16,9 +16,16 @@
   position: relative;
 }
 
-/* Keep the space of the content until the content arrives. Then let the
-   content set the height. withBones() puts the estimate in --bones-reserve. */
-.bones-wrap:not(.bones-loaded) {
+/* Keep the space of the content until the content arrives for the first
+   time. Then let the content set the height. withBones() puts the estimate
+   in --bones-reserve.
+
+   The test is bones-has-loaded, not bones-loaded. With stale = FALSE, a
+   recalculation removes bones-loaded. The old content still has its box,
+   hidden, so it keeps the space. A reserve at that time would make a
+   wrapper with short content grow, and then shrink when the value arrives:
+   the page would move two times on each recalculation. */
+.bones-wrap:not(.bones-has-loaded) {
   min-height: var(--bones-reserve, 0);
 }
 
@@ -60,10 +67,15 @@
   transition: opacity 120ms ease;
 }
 
-/* Shiny also dims an output while it calculates. Inside a wrapper, both
-   rules would apply together, and the content would almost disappear. This
-   rule thus turns off the dimming of Shiny, and the rule above applies. */
-.bones-wrap .shiny-bound-output.recalculating {
+/* Shiny also dims an output while it calculates. Inside a stale wrapper,
+   both rules would apply together, and the content would almost disappear.
+   This rule thus turns off the dimming of Shiny, and the rule above applies.
+
+   Only inside a stale wrapper. An output inside a wrapped uiOutput() does
+   not change the state of that wrapper, so the wrapper is not stale while
+   that output calculates. The dimming of Shiny is then the only sign that
+   the output updates, and it must stay. */
+.bones-wrap.bones-stale .shiny-bound-output.recalculating {
   opacity: 1;
 }
 

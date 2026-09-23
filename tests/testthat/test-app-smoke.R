@@ -41,7 +41,7 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
     load_timeout = 45000L,
     timeout      = 15000L
   )
-  app$wait_for_idle(timeout = 10000L)
+  wait_for_settled(app)
 
   # --- first load: each wrapper shows its content -------------------------
   expect_equal(
@@ -58,8 +58,7 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
   )
 
   # --- after the refresh: each wrapper shows its content again ------------
-  app$wait_for_idle(timeout = 10000L)
-  Sys.sleep(0.2)
+  wait_for_settled(app)
   expect_equal(
     wrapper_states(app),
     c(chart = "loaded", table = "loaded", boxes = "loaded", summary = "loaded")
@@ -88,13 +87,22 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
     load_timeout = 45000L,
     timeout      = 15000L
   )
-  app$wait_for_idle(timeout = 10000L)
+  wait_for_settled(app)
   expect_equal(
     wrapper_states(app),
     c(first = "loaded", second = "loaded", third = "loaded", outer = "loaded")
   )
 
+  wrapper_height <- function(id) {
+    app$get_js(sprintf(
+      "document.querySelector('[data-bones-id=%s]').getBoundingClientRect().height",
+      id
+    ))
+  }
+
   for (mode in c("silent", "error", "value")) {
+    third_before <- wrapper_height("third")
+
     app$set_inputs(mode = mode, wait_ = FALSE)
     Sys.sleep(0.3)
     expect_equal(
@@ -103,8 +111,24 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
       info = paste("while the mode changes to", mode)
     )
 
-    app$wait_for_idle(timeout = 10000L)
-    Sys.sleep(0.2)
+    # The skeleton comes back for stale = FALSE, but the reserve does not.
+    # The old content keeps its box, so the page must not move.
+    expect_equal(
+      wrapper_height("third"), third_before,
+      info = paste("height of the stale = FALSE wrapper while the mode changes to", mode)
+    )
+
+    # The output inside the wrapped uiOutput() does not change the state of
+    # that wrapper. Shiny must thus still dim it, or the user sees no sign
+    # that it updates. Shiny starts its fade after 500ms, so look at 0.8s.
+    # The slow reactive of the application takes 1.2s.
+    Sys.sleep(0.5)
+    expect_lt(
+      as.numeric(app$get_js("getComputedStyle(document.getElementById('inner')).opacity")),
+      1
+    )
+
+    wait_for_settled(app)
     expect_equal(
       wrapper_states(app),
       c(first = "loaded", second = "loaded", third = "loaded", outer = "loaded"),

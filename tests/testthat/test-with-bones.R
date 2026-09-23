@@ -51,7 +51,9 @@ test_that("the reserve is a custom property, not a min-height", {
   )
   expect_match(
     css,
-    "\\.bones-wrap:not\\(\\.bones-loaded\\)\\s*\\{[^}]*min-height:\\s*var\\(--bones-reserve"
+    # bones-has-loaded, not bones-loaded: a stale = FALSE recalculation
+    # removes bones-loaded, and the reserve must not come back then.
+    "\\.bones-wrap:not\\(\\.bones-has-loaded\\)\\s*\\{[^}]*min-height:\\s*var\\(--bones-reserve"
   )
 })
 
@@ -82,6 +84,17 @@ test_that("content is hidden with visibility, never display", {
 
   expect_match(css, "\\.bones-content\\s*\\{[^}]*visibility:\\s*hidden")
   expect_false(grepl("\\.bones-content\\s*\\{[^}]*display:\\s*none", css))
+})
+
+test_that("the dimming of Shiny is turned off only inside a stale wrapper", {
+  # An output inside a wrapped uiOutput() does not make that wrapper stale.
+  # Its own dimming is then the only sign that it updates.
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, "\\.bones-wrap\\.bones-stale \\.shiny-bound-output\\.recalculating")
+  expect_false(grepl("\\.bones-wrap \\.shiny-bound-output\\.recalculating", css))
 })
 
 test_that("an output with no id gives no data-bones-id attribute", {

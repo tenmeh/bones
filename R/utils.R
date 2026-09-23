@@ -19,7 +19,7 @@ style_attr <- function(declarations) {
   paste(declarations, collapse = " ")
 }
 
-#' Stop unless `x` is a single number that is not NA
+#' Stop unless `x` is a single finite number
 #'
 #' Counts below one are not an error. The shape functions make them one, so
 #' a count that comes from data with no rows still gives a placeholder.
@@ -30,7 +30,9 @@ style_attr <- function(declarations) {
 #' @keywords internal
 #' @noRd
 check_count <- function(x, name) {
-  if (!is.numeric(x) || length(x) != 1L || is.na(x)) {
+  # is.finite() is FALSE for NA and for Inf. Inf would become NA in
+  # as.integer(), and then fail inside seq_len() with an unclear message.
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x)) {
     stop(sprintf("`%s` must be a single number.", name), call. = FALSE)
   }
   invisible(x)
