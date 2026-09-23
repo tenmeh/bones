@@ -39,9 +39,16 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
   # a height. The plot shape draws its columns as a percentage of it.
   height <- height %||% default_height(type, rows = rows, lines = lines, n = n)
 
+  # With no wrapper, the skeleton itself must carry what a wrapper carries:
+  # the animation class and the colours from bones_defaults().
+  animation <- match.arg(getOption("bones.animation", "wave"),
+                         c("wave", "pulse", "none"))
+
   htmltools::attachDependencies(
     skeleton_tag(type, rows = rows, cols = cols, lines = lines, n = n,
-                 height = height),
+                 height = height,
+                 class = paste0("bones-anim-", animation),
+                 style = css_vars()),
     bones_dependency()
   )
 }
@@ -53,10 +60,13 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
 #' wrapper, so it gets no height of its own.
 #'
 #' @inheritParams bones_skeleton
+#' @param class More classes for the skeleton element.
+#' @param style More CSS declarations for the skeleton element.
 #' @return An htmltools tag.
 #' @keywords internal
 #' @noRd
-skeleton_tag <- function(type, rows, cols, lines, n, height = NULL) {
+skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
+                         class = NULL, style = character(0)) {
   body <- switch(
     type,
     text  = skel_text(lines),
@@ -67,12 +77,16 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL) {
   )
 
   htmltools::tags$div(
-    class = paste0("bones-skeleton bones-skeleton-", type),
+    class = paste(c("bones-skeleton", paste0("bones-skeleton-", type), class),
+                  collapse = " "),
     # Decorative. Shiny already sets aria-busy on the output while it
     # recalculates, so screen readers are told what is happening without us
     # duplicating it here.
     `aria-hidden` = "true",
-    style = if (!is.null(height)) sprintf("height: %s;", height),
+    style = style_attr(c(
+      if (!is.null(height)) sprintf("height: %s;", height),
+      style
+    )),
     body
   )
 }

@@ -1,11 +1,18 @@
 /* bones — content-shaped loading placeholders for Shiny outputs */
 
-.bones-wrap {
+/* The defaults are on :root, not on .bones-wrap. A skeleton from
+   bones_skeleton() has no wrapper, and would get no colour. They cannot be
+   on .bones-skeleton either: a declaration on the skeleton itself would be
+   stronger than the values that it gets from the style attribute of its
+   wrapper, which is where bones_defaults() puts them. */
+:root {
   --bones-color: rgba(128, 128, 128, 0.18);
   --bones-highlight: rgba(128, 128, 128, 0.34);
   --bones-radius: 0.28rem;
   --bones-speed: 1.4s;
+}
 
+.bones-wrap {
   position: relative;
 }
 
@@ -168,7 +175,10 @@
   100% { background-position: 0 50%; }
 }
 
-.bones-anim-pulse .bones-skeleton {
+/* The second selector is for a skeleton from bones_skeleton(), which has
+   the animation class on itself, not on a wrapper. */
+.bones-anim-pulse .bones-skeleton,
+.bones-skeleton.bones-anim-pulse {
   animation: bones-pulse var(--bones-speed) ease-in-out infinite;
 }
 
@@ -182,7 +192,8 @@
 @media (prefers-reduced-motion: reduce) {
   .bones-anim-wave .bones-bar,
   .bones-anim-wave .bones-axis,
-  .bones-anim-pulse .bones-skeleton {
+  .bones-anim-pulse .bones-skeleton,
+  .bones-skeleton.bones-anim-pulse {
     animation: none;
     background-image: none;
   }

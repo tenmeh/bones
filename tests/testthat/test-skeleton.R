@@ -105,3 +105,31 @@ test_that("default heights are never negative, and fit the shape drawn", {
   expect_equal(bones:::default_height("table", rows = 0), "68px")
   expect_match(as.character(bones_skeleton("text", lines = -3)), "height: 24px")
 })
+
+test_that("a standalone skeleton carries the animation and the colours", {
+  # With no wrapper, nothing else would give them to it.
+  old <- bones_defaults(animation = "pulse", color = "#eee")
+  on.exit(options(old), add = TRUE)
+
+  html <- as.character(bones_skeleton("text"))
+  expect_match(html, "bones-anim-pulse", fixed = TRUE)
+  expect_match(html, "--bones-color: #eee;", fixed = TRUE)
+})
+
+test_that("the skeleton inside a wrapper gets no style of its own", {
+  # It gets the colours from its wrapper. Its own would be stronger.
+  old <- bones_defaults(color = "#eee")
+  on.exit(options(old), add = TRUE)
+
+  html <- as.character(withBones(fake_output("shiny-plot-output")))
+  expect_false(grepl('class="bones-skeleton[^"]*"[^>]*style=', html))
+})
+
+test_that("the default colours are on :root, not on the wrapper", {
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, ":root\\s*\\{[^}]*--bones-color:")
+  expect_false(grepl("\\.bones-wrap\\s*\\{[^}]*--bones-color:", css))
+})

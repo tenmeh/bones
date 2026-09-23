@@ -122,13 +122,17 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
       return {
         box: box.getBoundingClientRect().height,
         skeleton: sk.getBoundingClientRect().height,
-        position: getComputedStyle(sk).position
+        position: getComputedStyle(sk).position,
+        bar: getComputedStyle(sk.querySelector('.bones-bar')).backgroundColor
       };
     })()
   ")
   expect_equal(box$position, "static")
   expect_equal(box$skeleton, 72)
   expect_gte(box$box, box$skeleton)
+  # The colours are custom properties. With no wrapper around it, the
+  # skeleton must still get them, or its bars are transparent.
+  expect_false(box$bar %in% c("rgba(0, 0, 0, 0)", "transparent"))
 
   # The error above is on purpose, so the stderr holds it. The browser
   # console must still be clean: that shows bones.js did not fail.

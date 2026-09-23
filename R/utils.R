@@ -7,6 +7,18 @@ na_to_null <- function(x) {
   if (length(x) == 0L || is.na(x[1])) NULL else x[1]
 }
 
+#' Join CSS declarations into one style attribute
+#'
+#' @param declarations A character vector, such as `"height: 10px;"`.
+#' @return A string, or `NULL` when there are no declarations, so that
+#'   htmltools does not write an empty `style` attribute.
+#' @keywords internal
+#' @noRd
+style_attr <- function(declarations) {
+  if (length(declarations) == 0L) return(NULL)
+  paste(declarations, collapse = " ")
+}
+
 #' Stop unless `x` is a single number that is not NA
 #'
 #' Counts below one are not an error. The shape functions make them one, so
