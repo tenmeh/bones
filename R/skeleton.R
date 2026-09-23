@@ -16,10 +16,18 @@
 #' hold, because `renderPlot()` decides that later, on the server. So you
 #' name the kind yourself.
 #'
+#' # Table shapes
+#'
+#' A table from a table package has a shape that copies that package:
+#' `"dt"`, `"reactable"`, `"gt"` and `"rhandsontable"`. [withBones()] finds
+#' it from the output by itself.
+#'
 #' @param type The shape: `"text"`, `"table"`, `"plot"`, `"cards"`,
-#'   `"value"`, or one of the chart shapes above.
-#' @param rows The number of body rows, for `type = "table"`.
-#' @param cols The number of columns, for `type = "table"`.
+#'   `"value"`, or one of the chart or table shapes above.
+#' @param rows The number of body rows, for `type = "table"` and the table
+#'   package shapes.
+#' @param cols The number of columns, for `type = "table"` and the table
+#'   package shapes.
 #' @param lines The number of lines, for `type = "text"`.
 #' @param n The number of cards or values, for `type = "cards"` and
 #'   `"value"`.
@@ -34,6 +42,7 @@
 #' bones_skeleton("table", rows = 8, cols = 5)
 #' bones_skeleton("plot", height = "300px")
 #' bones_skeleton("scatter", height = "300px")
+#' bones_skeleton("dt", rows = 10, cols = 5)
 #' @export
 bones_skeleton <- function(type = "text",
                            rows = 6L,
@@ -86,6 +95,10 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
     type,
     text      = skel_text(lines),
     table     = skel_table(rows, cols),
+    dt            = skel_dt(rows, cols),
+    reactable     = skel_reactable(rows, cols),
+    gt            = skel_gt(rows, cols),
+    rhandsontable = skel_rhandsontable(rows, cols),
     plot      = skel_bar(),
     bar       = skel_bar(),
     histogram = skel_histogram(),
@@ -154,23 +167,167 @@ skel_text <- function(lines) {
 #' @keywords internal
 #' @noRd
 skel_table <- function(rows, cols) {
+  table_rows(rows, cols)
+}
+
+#' A header row and body rows of bars
+#'
+#' The plain table, DT and reactable use this. `row_class` adds classes to
+#' each row, so each package can style its rows.
+#' @keywords internal
+#' @noRd
+table_rows <- function(rows, cols, row_class = NULL, head_class = NULL) {
   rows <- max(as.integer(rows), 1L)
   cols <- max(as.integer(cols), 1L)
 
-  row_of_bars <- function(class = NULL) {
+  row_of_bars <- function(bar_class = NULL, extra = NULL) {
     htmltools::tags$div(
-      class = "bones-row",
+      class = paste(c("bones-row", row_class, extra), collapse = " "),
       lapply(seq_len(cols), function(j) {
         # Columns of slightly different widths look like data, not a grid.
         w <- c("100%", "80%", "92%", "70%")[((j - 1L) %% 4L) + 1L]
-        bar(width = w, class = class)
+        bar(width = w, class = bar_class)
       })
     )
   }
 
   htmltools::tagList(
-    row_of_bars(class = "bones-bar-strong"),
+    row_of_bars(bar_class = "bones-bar-strong", extra = head_class),
     lapply(seq_len(rows), function(i) row_of_bars())
+  )
+}
+
+
+# --- table package shapes -------------------------------------------------
+#
+# Each shape copies the parts of its package that a user sees first: the
+# controls of DT, the thin lines of reactable, the title of gt, and the grid
+# of rhandsontable. The table itself follows `rows` and `cols`.
+
+#' DT: "Show entries" and a search box above, the info and the pages below
+#' @keywords internal
+#' @noRd
+skel_dt <- function(rows, cols) {
+  htmltools::tags$div(
+    class = "bones-dt",
+    htmltools::tags$div(
+      class = "bones-dt-top",
+      htmltools::tags$div(
+        class = "bones-dt-length",
+        bar(width = "2.5rem"),
+        htmltools::tags$div(class = "bones-bar bones-dt-select"),
+        bar(width = "3rem")
+      ),
+      htmltools::tags$div(
+        class = "bones-dt-search",
+        bar(width = "3rem"),
+        htmltools::tags$div(class = "bones-dt-input")
+      )
+    ),
+    htmltools::tags$div(
+      class = "bones-dt-table",
+      table_rows(rows, cols, row_class = "bones-dt-row", head_class = "bones-dt-head")
+    ),
+    htmltools::tags$div(
+      class = "bones-dt-bottom",
+      bar(width = "30%"),
+      htmltools::tags$div(
+        class = "bones-dt-pages",
+        lapply(1:4, function(i) htmltools::tags$div(class = "bones-bar bones-dt-page"))
+      )
+    )
+  )
+}
+
+#' reactable: rows with thin lines, and pages when there are more than ten
+#' @keywords internal
+#' @noRd
+skel_reactable <- function(rows, cols) {
+  rows <- max(as.integer(rows), 1L)
+  htmltools::tags$div(
+    class = "bones-rt",
+    table_rows(rows, cols, row_class = "bones-rt-row", head_class = "bones-rt-head"),
+    # reactable shows 10 rows on a page by default, and pages only for more.
+    if (rows > 10L) {
+      htmltools::tags$div(
+        class = "bones-rt-pages",
+        bar(width = "6rem"),
+        htmltools::tags$div(class = "bones-bar bones-rt-button"),
+        htmltools::tags$div(class = "bones-bar bones-rt-button")
+      )
+    }
+  )
+}
+
+#' gt: a title, a spanner, a stub column, and a source note
+#' @keywords internal
+#' @noRd
+skel_gt <- function(rows, cols) {
+  rows <- max(as.integer(rows), 1L)
+  cols <- max(as.integer(cols), 1L)
+
+  gt_row <- function(stub_width, cell_class = NULL, row_class = NULL) {
+    htmltools::tags$div(
+      class = paste(c("bones-gt-row", row_class), collapse = " "),
+      htmltools::tags$div(class = "bones-gt-stub", bar(width = stub_width, class = cell_class)),
+      lapply(seq_len(cols), function(j) {
+        # The numbers of a gt table are on the right of each cell.
+        htmltools::tags$div(class = "bones-gt-cell", bar(width = "55%", class = cell_class))
+      })
+    )
+  }
+  stub_widths <- c("70%", "55%", "80%", "62%", "48%", "75%")
+
+  htmltools::tags$div(
+    class = "bones-gt",
+    htmltools::tags$div(
+      class = "bones-gt-title",
+      bar(width = "45%", class = "bones-bar-strong"),
+      bar(width = "28%")
+    ),
+    htmltools::tags$div(
+      class = "bones-gt-spanner-row",
+      htmltools::tags$div(class = "bones-gt-corner"),
+      htmltools::tags$div(
+        class = "bones-gt-spanner",
+        # The spanner covers all the data columns, which a static rule cannot
+        # know, so the width is set here.
+        style = sprintf("flex: %d 1 0;", cols),
+        bar(width = "40%", class = "bones-bar-strong")
+      )
+    ),
+    gt_row("50%", cell_class = "bones-bar-strong", row_class = "bones-gt-labels"),
+    lapply(seq_len(rows), function(i) gt_row(stub_widths[((i - 1L) %% 6L) + 1L])),
+    htmltools::tags$div(class = "bones-gt-note", bar(width = "35%"))
+  )
+}
+
+#' rhandsontable: a spreadsheet grid, with lettered columns and numbered rows
+#' @keywords internal
+#' @noRd
+skel_rhandsontable <- function(rows, cols) {
+  rows <- max(as.integer(rows), 1L)
+  cols <- max(as.integer(cols), 1L)
+  widths <- c("75%", "50%", "85%", "60%")
+
+  htmltools::tags$div(
+    class = "bones-hot",
+    style = sprintf("grid-template-columns: 2.5rem repeat(%d, 1fr);", cols),
+    htmltools::tags$div(class = "bones-hot-corner"),
+    lapply(seq_len(cols), function(j) {
+      htmltools::tags$div(class = "bones-hot-colhead", bar(width = "1rem"))
+    }),
+    lapply(seq_len(rows), function(i) {
+      htmltools::tagList(
+        htmltools::tags$div(class = "bones-hot-rowhead", bar(width = "0.8rem")),
+        lapply(seq_len(cols), function(j) {
+          htmltools::tags$div(
+            class = "bones-hot-cell",
+            bar(width = widths[((i + j) %% 4L) + 1L])
+          )
+        })
+      )
+    })
   )
 }
 
@@ -188,11 +345,18 @@ chart_types <- function() {
   c("bar", "line", "scatter", "area", "histogram", "pie", "heatmap")
 }
 
+#' The names of the table shapes for table packages, other than "table"
+#' @keywords internal
+#' @noRd
+table_types <- function() {
+  c("dt", "reactable", "gt", "rhandsontable")
+}
+
 #' The names of all the skeleton shapes, in the order of the documentation
 #' @keywords internal
 #' @noRd
 skeleton_types <- function() {
-  c("text", "table", "plot", "cards", "value", chart_types())
+  c("text", "table", "plot", "cards", "value", chart_types(), table_types())
 }
 
 #' A plot area with the given marks in it, and an axis under it
@@ -398,6 +562,19 @@ default_height <- function(type, rows = 6L, lines = 3L, n = 3L) {
     plot  = "400px",
     # The same height as plotOutput(), for each chart shape.
     bar = , line = , scatter = , area = , histogram = , pie = , heatmap = "400px",
+    # The table packages, measured in a browser with Bootstrap 5, which is
+    # the larger of Bootstrap 3 and 5. A reserve that is too tall closes
+    # when the content arrives; one that is too short pushes the page down.
+    #   DT: 53px of controls above, 40px rows with the header, 63px below.
+    dt = sprintf("%.0fpx", 53 + (max(as.integer(rows), 1L) + 1) * 40 + 63),
+    #   reactable: 38px rows with the header, and a small margin.
+    reactable = sprintf("%.0fpx", (max(as.integer(rows), 1L) + 1) * 38 + 8),
+    #   gt, with a title, a spanner and a source note: 180px, and 38.5px
+    #   for each row. With no spanner it is 33px shorter, and the reserve
+    #   closes by that much.
+    gt = sprintf("%.0fpx", 180 + max(as.integer(rows), 1L) * 38.5),
+    #   rhandsontable: a 26px header, 24px rows, and a small margin.
+    rhandsontable = sprintf("%.0fpx", 32 + max(as.integer(rows), 1L) * 24),
     # A header row plus the body rows. A row of tableOutput() is 34px tall
     # with Bootstrap 5 (bslib) and 31px with Bootstrap 3 (fluidPage). Use
     # the larger value: the reserve goes when the content arrives, so a

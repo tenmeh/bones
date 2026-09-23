@@ -46,7 +46,7 @@ test_that("a class attribute with several names is divided before the match", {
   # DT and htmlwidgets write their containers in this way.
   expect_equal(
     bones:::infer_type(fake_output("datatables html-widget html-widget-output")),
-    "table"
+    "dt"
   )
 })
 
@@ -105,13 +105,14 @@ test_that("min-height, max-height and line-height are not read as the height", {
   expect_equal(bones:::find_inline_height(tag), "250px")
 })
 
-test_that("a DT output reserves the default table height", {
+test_that("a DT output does not reserve height:auto", {
   skip_if_not_installed("DT")
 
+  # DTOutput() writes height:auto. As a reserve that keeps no space, so the
+  # default height of the DT shape is used instead.
   html <- as.character(withBones(DT::DTOutput("dt")))
-  expect_match(html, 'data-bones-type="table"', fixed = TRUE)
-  # A header row and six body rows, at 34px each.
-  expect_match(html, "--bones-reserve: 238px", fixed = TRUE)
+  expect_false(grepl("--bones-reserve: auto", html, fixed = TRUE))
+  expect_match(html, "--bones-reserve: \\d+px")
 })
 
 test_that("a missing height is reported as NA", {

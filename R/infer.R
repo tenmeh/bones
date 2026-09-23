@@ -10,8 +10,13 @@ class_map <- function() {
     c(class = "shiny-plot-output",    type = "plot"),
     c(class = "shiny-image-output",   type = "plot"),
     c(class = "shiny-table-output",   type = "table"),
-    c(class = "datatables",           type = "table"),
-    c(class = "reactable",            type = "table"),
+    # Each table package puts its own class on the container. These come
+    # before the general classes below: an rhandsontable is also an
+    # htmlwidget, and a gt output is also an HTML output.
+    c(class = "datatables",           type = "dt"),
+    c(class = "reactable",            type = "reactable"),
+    c(class = "rhandsontable",        type = "rhandsontable"),
+    c(class = "gt_shiny",             type = "gt"),
     c(class = "shiny-text-output",    type = "text"),
     c(class = "html-widget-output",   type = "plot"),
     c(class = "shiny-html-output",    type = "text")
@@ -65,7 +70,7 @@ attr_values <- function(tag, name) {
 #' Get the skeleton shape from a Shiny output element
 #'
 #' @param tag A UI element, typically the result of `plotOutput()` and friends.
-#' @return One of "plot", "table", "text", "cards", "value".
+#' @return One of the names in `skeleton_types()`.
 #' @keywords internal
 #' @noRd
 infer_type <- function(tag) {

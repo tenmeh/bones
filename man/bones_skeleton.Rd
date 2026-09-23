@@ -15,11 +15,13 @@ bones_skeleton(
 }
 \arguments{
 \item{type}{The shape: \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"},
-\code{"value"}, or one of the chart shapes above.}
+\code{"value"}, or one of the chart or table shapes above.}
 
-\item{rows}{The number of body rows, for \code{type = "table"}.}
+\item{rows}{The number of body rows, for \code{type = "table"} and the table
+package shapes.}
 
-\item{cols}{The number of columns, for \code{type = "table"}.}
+\item{cols}{The number of columns, for \code{type = "table"} and the table
+package shapes.}
 
 \item{lines}{The number of lines, for \code{type = "text"}.}
 
@@ -51,9 +53,16 @@ hold, because \code{renderPlot()} decides that later, on the server. So you
 name the kind yourself.
 }
 
+\section{Table shapes}{
+A table from a table package has a shape that copies that package:
+\code{"dt"}, \code{"reactable"}, \code{"gt"} and \code{"rhandsontable"}. \code{\link[=withBones]{withBones()}} finds
+it from the output by itself.
+}
+
 \examples{
 bones_skeleton("text", lines = 4)
 bones_skeleton("table", rows = 8, cols = 5)
 bones_skeleton("plot", height = "300px")
 bones_skeleton("scatter", height = "300px")
+bones_skeleton("dt", rows = 10, cols = 5)
 }

@@ -166,6 +166,62 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
   expect_length(console_errors, 0L)
 })
 
+test_that("each table package gets its own shape, and its table fits the reserve", {
+  testthat::skip_on_cran()
+  for (pkg in c("DT", "reactable", "gt", "rhandsontable")) skip_if_not_installed(pkg)
+
+  app <- local_app_driver(
+    test_path("apps", "tables"),
+    name         = "bones-tables-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+
+  # --- while the tables load: the right shape, with visible marks ----------
+  app$wait_for_js("document.querySelectorAll('.bones-wrap .bones-skeleton').length === 4",
+                  timeout = 30000)
+  first <- app$get_js("
+    ['dt', 'reactable', 'gt', 'rhandsontable'].map(function (k) {
+      var w = document.querySelector('#box-' + k + ' .bones-wrap');
+      var sk = w.querySelector(':scope > .bones-skeleton');
+      var box = sk.getBoundingClientRect();
+      var bars = Array.from(sk.querySelectorAll('.bones-bar'));
+      var hidden = bars.filter(function (b) {
+        var r = b.getBoundingClientRect();
+        return r.width === 0 || r.height === 0 || r.bottom > box.bottom + 1;
+      });
+      return {kind: k, type: w.getAttribute('data-bones-type'),
+              loaded: w.classList.contains('bones-loaded'),
+              reserve: w.getBoundingClientRect().height,
+              bars: bars.length, hidden: hidden.length};
+    })
+  ")
+  for (f in first) {
+    expect_equal(f$type, f$kind)
+    expect_false(isTRUE(f$loaded), label = paste(f$kind, "loaded too early"))
+    expect_gt(f$bars, 10L, label = paste(f$kind, "bars"))
+    expect_equal(f$hidden, 0L, label = paste(f$kind, "bars that cannot be seen"))
+  }
+
+  # --- when the tables arrive: each fits in the space that was kept --------
+  wait_for_settled(app, timeout = 30000L)
+  Sys.sleep(0.5)
+  final <- app$get_js("
+    ['dt', 'reactable', 'gt', 'rhandsontable'].map(function (k) {
+      return document.querySelector('#box-' + k + ' .bones-wrap').getBoundingClientRect().height;
+    })
+  ")
+  for (i in seq_along(first)) {
+    # A table taller than its reserve pushes the page down when it arrives.
+    # One that is shorter only closes the space, so a small margin is fine.
+    expect_lte(final[[i]], first[[i]]$reserve + 1, label = paste(first[[i]]$kind, "height"))
+    expect_gte(final[[i]], first[[i]]$reserve - 40, label = paste(first[[i]]$kind, "height"))
+  }
+
+  expect_no_shiny_errors(app)
+})
+
 test_that("each chart shape draws visible marks inside its skeleton", {
   testthat::skip_on_cran()
 

@@ -19,6 +19,13 @@
 #' `"histogram"`, `"pie"` or `"heatmap"`. The output cannot tell, because
 #' `renderPlot()` decides the kind later, on the server.
 #'
+#' A table from a table package gets the shape of that package, found from
+#' its output: `DT::DTOutput()` gets `"dt"`, `reactable::reactableOutput()`
+#' gets `"reactable"`, `gt::gt_output()` gets `"gt"`, and
+#' `rhandsontable::rHandsontableOutput()` gets `"rhandsontable"`. Each shape
+#' copies the parts of its package, such as the search box of DT. Set `rows`
+#' to the number of rows on a page: DT and reactable show 10 by default.
+#'
 #' # Layout
 #'
 #' The wrapper keeps the space of the output until the content arrives, so
@@ -29,11 +36,12 @@
 #'
 #' @param ui A Shiny output, such as `plotOutput("chart")`.
 #' @param type The shape of the skeleton: `"text"`, `"table"`, `"plot"`,
-#'   `"cards"`, `"value"`, or a chart shape (`"bar"`, `"line"`,
-#'   `"scatter"`, `"area"`, `"histogram"`, `"pie"`, `"heatmap"`). `NULL`
-#'   (the default) gets the shape from `ui`.
+#'   `"cards"`, `"value"`, a chart shape (`"bar"`, `"line"`, `"scatter"`,
+#'   `"area"`, `"histogram"`, `"pie"`, `"heatmap"`), or a table package
+#'   shape (`"dt"`, `"reactable"`, `"gt"`, `"rhandsontable"`). `NULL` (the
+#'   default) gets the shape from `ui`.
 #' @param rows,cols The number of body rows and columns, when `type` is
-#'   `"table"`.
+#'   `"table"` or a table package shape.
 #' @param lines The number of lines, when `type` is `"text"`.
 #' @param n The number of cards or values, when `type` is `"cards"` or
 #'   `"value"`.

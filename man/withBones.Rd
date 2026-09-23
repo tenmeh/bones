@@ -20,12 +20,13 @@ withBones(
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
 \item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
-\code{"cards"}, \code{"value"}, or a chart shape (\code{"bar"}, \code{"line"},
-\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}). \code{NULL}
-(the default) gets the shape from \code{ui}.}
+\code{"cards"}, \code{"value"}, a chart shape (\code{"bar"}, \code{"line"}, \code{"scatter"},
+\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}), or a table package
+shape (\code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the
+default) gets the shape from \code{ui}.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
-\code{"table"}.}
+\code{"table"} or a table package shape.}
 
 \item{lines}{The number of lines, when \code{type} is \code{"text"}.}
 
@@ -65,6 +66,13 @@ A \code{plotOutput()} gets the shape of a bar chart. If the chart is of
 another kind, give that kind: \code{"line"}, \code{"scatter"}, \code{"area"},
 \code{"histogram"}, \code{"pie"} or \code{"heatmap"}. The output cannot tell, because
 \code{renderPlot()} decides the kind later, on the server.
+
+A table from a table package gets the shape of that package, found from
+its output: \code{DT::DTOutput()} gets \code{"dt"}, \code{reactable::reactableOutput()}
+gets \code{"reactable"}, \code{gt::gt_output()} gets \code{"gt"}, and
+\code{rhandsontable::rHandsontableOutput()} gets \code{"rhandsontable"}. Each shape
+copies the parts of its package, such as the search box of DT. Set \code{rows}
+to the number of rows on a page: DT and reactable show 10 by default.
 }
 
 \section{Layout}{

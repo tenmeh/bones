@@ -10,6 +10,7 @@
   --bones-highlight: rgba(128, 128, 128, 0.34);
   --bones-radius: 0.28rem;
   --bones-speed: 1.4s;
+  --bones-stripe: rgba(128, 128, 128, 0.07);
 }
 
 .bones-wrap {
@@ -46,6 +47,7 @@
 .bones-wrap > .bones-skeleton {
   position: absolute;
   inset: 0;
+  overflow: hidden;  /* a tall shape must not cover the content below */
   pointer-events: none;
 }
 
@@ -135,6 +137,177 @@
   margin-top: 0.4rem;
   border-radius: 1px;
   background-color: var(--bones-highlight);
+}
+
+/* --- DT ------------------------------------------------------------------ */
+
+.bones-dt,
+.bones-dt-table,
+.bones-rt,
+.bones-gt {
+  display: flex;
+  flex-direction: column;
+}
+
+.bones-dt {
+  gap: 0.5rem;
+}
+
+.bones-dt-top,
+.bones-dt-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.bones-dt-length,
+.bones-dt-search,
+.bones-dt-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bones-dt-select {
+  width: 3rem;
+  height: 1.6rem;
+}
+
+.bones-dt-input {
+  width: 9rem;
+  height: 1.6rem;
+  border: 1px solid var(--bones-highlight);
+  border-radius: var(--bones-radius);
+}
+
+.bones-dt-page {
+  width: 1.8rem;
+  height: 1.6rem;
+}
+
+/* DT rows are 40px tall and striped. */
+.bones-dt-row {
+  padding: 0.9rem 0.5rem;
+}
+
+/* DT shades the 2nd, 4th and 6th body rows. The header is child 1, so
+   these are the odd children after it. */
+.bones-dt-row:nth-child(odd):not(.bones-dt-head) {
+  background-color: var(--bones-stripe);
+}
+
+.bones-dt-head {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+/* --- reactable ----------------------------------------------------------- */
+
+/* reactable rows are 38px tall, with a thin line under each one. */
+.bones-rt-row {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-rt-head {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-rt-pages {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+}
+
+.bones-rt-button {
+  width: 1.8rem;
+  height: 1.6rem;
+}
+
+/* --- gt ------------------------------------------------------------------ */
+
+.bones-gt-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0 0.9rem;
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-gt-spanner-row,
+.bones-gt-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0 0.3rem;
+}
+
+.bones-gt-spanner-row {
+  padding-top: 0.6rem;
+}
+
+/* The stub is the column of row labels, on the left. It is wider. */
+.bones-gt-stub,
+.bones-gt-corner {
+  flex: 1.6 1 0;
+}
+
+.bones-gt-cell {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bones-gt-spanner {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--bones-highlight);
+}
+
+/* gt rows are about 38px tall. */
+.bones-gt-row {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-gt-labels {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-gt-note {
+  padding: 0.6rem 0.3rem;
+  border-top: 1px solid var(--bones-highlight);
+}
+
+/* --- rhandsontable ------------------------------------------------------- */
+
+/* A grid of 24px rows. skel_rhandsontable() in R sets the columns. */
+.bones-hot {
+  display: grid;
+  grid-auto-rows: 24px;
+  align-content: start;
+  border-top: 1px solid var(--bones-color);
+  border-left: 1px solid var(--bones-color);
+}
+
+.bones-hot > div {
+  display: flex;
+  align-items: center;
+  padding: 0 0.35rem;
+  border-right: 1px solid var(--bones-color);
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-hot-corner,
+.bones-hot-colhead,
+.bones-hot-rowhead {
+  justify-content: center;
+  background-color: var(--bones-stripe);
 }
 
 /* --- histogram ----------------------------------------------------------- */
