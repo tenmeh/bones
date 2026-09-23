@@ -80,7 +80,8 @@ withBones <- function(ui,
     }
   }
 
-  skeleton <- bones_skeleton(
+  # No height: inside the wrapper the skeleton fills the wrapper.
+  skeleton <- skeleton_tag(
     type = type, rows = rows, cols = cols, lines = lines, n = n
   )
 

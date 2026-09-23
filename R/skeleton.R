@@ -10,10 +10,11 @@
 #' @param cols Number of columns, for `type = "table"`.
 #' @param lines Number of lines, for `type = "text"`.
 #' @param n Number of cards or values, for `type = "cards"` and `"value"`.
-#' @param height A CSS height for the placeholder. Defaults to something
-#'   sensible per type.
+#' @param height A CSS height for the placeholder, or a number of pixels.
+#'   `NULL` gives a default for the type, the same one that [withBones()]
+#'   uses.
 #'
-#' @return An [htmltools::tag].
+#' @return An [htmltools::tag], with the stylesheet attached.
 #'
 #' @examples
 #' bones_skeleton("text", lines = 4)
@@ -34,6 +35,28 @@ bones_skeleton <- function(type = c("text", "table", "plot", "cards", "value"),
   check_count(n, "n")
   height <- as_css_length(height, "height")
 
+  # On its own, a skeleton takes space like any other element, so it needs
+  # a height. The plot shape draws its columns as a percentage of it.
+  height <- height %||% default_height(type, rows = rows, lines = lines, n = n)
+
+  htmltools::attachDependencies(
+    skeleton_tag(type, rows = rows, cols = cols, lines = lines, n = n,
+                 height = height),
+    bones_dependency()
+  )
+}
+
+
+#' The skeleton markup, with no validation and no dependency
+#'
+#' withBones() uses this directly. Inside a wrapper the skeleton fills the
+#' wrapper, so it gets no height of its own.
+#'
+#' @inheritParams bones_skeleton
+#' @return An htmltools tag.
+#' @keywords internal
+#' @noRd
+skeleton_tag <- function(type, rows, cols, lines, n, height = NULL) {
   body <- switch(
     type,
     text  = skel_text(lines),

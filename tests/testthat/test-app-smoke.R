@@ -112,6 +112,24 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
     )
   }
 
+  # --- a standalone skeleton takes space in its own container -----------
+  # It must not cover its container, or the page, as the skeleton inside a
+  # wrapper does.
+  box <- app$get_js("
+    (function () {
+      var box = document.getElementById('standalone-box');
+      var sk = box.querySelector('.bones-skeleton');
+      return {
+        box: box.getBoundingClientRect().height,
+        skeleton: sk.getBoundingClientRect().height,
+        position: getComputedStyle(sk).position
+      };
+    })()
+  ")
+  expect_equal(box$position, "static")
+  expect_equal(box$skeleton, 72)
+  expect_gte(box$box, box$skeleton)
+
   # The error above is on purpose, so the stderr holds it. The browser
   # console must still be clean: that shows bones.js did not fail.
   logs <- as.data.frame(app$get_logs())

@@ -20,13 +20,18 @@
    `display: none` would report a width of zero to Shiny and plots would render
    at the wrong size. */
 .bones-skeleton {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   gap: 0.5rem;
   padding: 0.15rem 0;
+}
+
+/* Only inside a wrapper. A skeleton from bones_skeleton() on its own must
+   take space in its container like any other element. */
+.bones-wrap > .bones-skeleton {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 

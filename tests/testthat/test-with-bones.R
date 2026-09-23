@@ -136,3 +136,9 @@ test_that("a height works as it does in Shiny", {
   expect_error(withBones(out, height = "banana"), "not a valid CSS unit")
   expect_error(withBones(out, height = NA), "single CSS length")
 })
+
+test_that("the skeleton inside a wrapper has no height of its own", {
+  # It fills the wrapper. A fixed height would not follow the wrapper.
+  html <- as.character(withBones(fake_output("shiny-plot-output")))
+  expect_false(grepl('class="bones-skeleton[^"]*"[^>]*style="height', html))
+})

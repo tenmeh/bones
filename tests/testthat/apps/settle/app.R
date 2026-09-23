@@ -16,7 +16,15 @@ ui <- fluidPage(
   withBones(textOutput("third"), stale = FALSE),
   # The uiOutput() does not change. Only the output inside it does. Its
   # wrapper must thus stay as it is.
-  withBones(uiOutput("outer"), type = "text")
+  withBones(uiOutput("outer"), type = "text"),
+  # A skeleton on its own, as bones_skeleton() documents. The box is a
+  # positioned element, as a card often is.
+  div(
+    id = "standalone-box",
+    style = "position: relative;",
+    bones_dependency(),
+    bones_skeleton("text", lines = 3)
+  )
 )
 
 server <- function(input, output, session) {

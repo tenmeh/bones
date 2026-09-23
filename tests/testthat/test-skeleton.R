@@ -78,3 +78,23 @@ test_that("bad counts and heights are rejected", {
   expect_error(bones_skeleton("plot", height = "banana"), "not a valid CSS unit")
   expect_match(as.character(bones_skeleton("plot", height = 250)), "height: 250px")
 })
+
+test_that("a standalone skeleton gets the default height for its type", {
+  # On its own it takes space like any other element, so it needs a height.
+  expect_match(as.character(bones_skeleton("text", lines = 3)), "height: 72px")
+  expect_match(as.character(bones_skeleton("plot")), "height: 400px")
+})
+
+test_that("a standalone skeleton brings its stylesheet", {
+  deps <- htmltools::findDependencies(bones_skeleton("text"))
+  expect_true(any(vapply(deps, function(d) d$name == "bones", logical(1))))
+})
+
+test_that("only the skeleton inside a wrapper is absolutely positioned", {
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, "\\.bones-wrap > \\.bones-skeleton\\s*\\{[^}]*position:\\s*absolute")
+  expect_false(grepl("(^|\\n)\\.bones-skeleton\\s*\\{[^}]*position:\\s*absolute", css))
+})
