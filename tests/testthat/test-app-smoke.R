@@ -65,6 +65,17 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
     c(chart = "loaded", table = "loaded", boxes = "loaded", summary = "loaded")
   )
 
+  # --- the reserved height goes after the content arrives -----------------
+  # A text output of two lines must not keep the space of three.
+  summary_gap <- app$get_js("
+    (function () {
+      var w = document.querySelector('[data-bones-id=summary]');
+      var c = w.querySelector('.bones-content');
+      return w.getBoundingClientRect().height - c.getBoundingClientRect().height;
+    })()
+  ")
+  expect_lt(summary_gap, 1)
+
   expect_no_shiny_errors(app)
 })
 

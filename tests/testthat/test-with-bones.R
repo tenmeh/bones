@@ -24,18 +24,35 @@ test_that("an explicit type overrides inference", {
 
 test_that("the output's own height is reserved", {
   w <- withBones(fake_output("shiny-plot-output", style = "height:320px"))
-  expect_match(as.character(w), "min-height: 320px")
+  expect_match(as.character(w), "--bones-reserve: 320px")
 })
 
 test_that("an explicit height wins over the output's", {
   w <- withBones(fake_output("shiny-plot-output", style = "height:320px"),
                  height = "100px")
-  expect_match(as.character(w), "min-height: 100px")
+  expect_match(as.character(w), "--bones-reserve: 100px")
 })
 
 test_that("a height is derived when the output declares none", {
   w <- withBones(fake_output("shiny-table-output"), rows = 4)
-  expect_match(as.character(w), "min-height: \\d+px")
+  # A header row plus four body rows, at 34px each.
+  expect_match(as.character(w), "--bones-reserve: 170px", fixed = TRUE)
+})
+
+test_that("the reserve is a custom property, not a min-height", {
+  # A min-height in the style attribute would stay after the content
+  # arrives, and leave a gap under content shorter than the estimate.
+  html <- as.character(withBones(fake_output("shiny-plot-output")))
+  expect_false(grepl("min-height", html, fixed = TRUE))
+
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(
+    css,
+    "\\.bones-wrap:not\\(\\.bones-loaded\\)\\s*\\{[^}]*min-height:\\s*var\\(--bones-reserve"
+  )
 })
 
 test_that("stale-while-revalidate is on by default and can be turned off", {

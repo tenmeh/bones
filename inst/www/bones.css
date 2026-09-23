@@ -9,6 +9,12 @@
   position: relative;
 }
 
+/* Keep the space of the content until the content arrives. Then let the
+   content set the height. withBones() puts the estimate in --bones-reserve. */
+.bones-wrap:not(.bones-loaded) {
+  min-height: var(--bones-reserve, 0);
+}
+
 /* The skeleton sits over the content rather than replacing it, so the output
    element keeps its real dimensions from the start. Hiding it with
    `display: none` would report a width of zero to Shiny and plots would render

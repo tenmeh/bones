@@ -84,8 +84,11 @@ withBones <- function(ui,
       # htmltools renders an NA attribute as a bare boolean one, so drop it
       # rather than emitting a meaningless `data-bones-id`.
       `data-bones-id` = na_to_null(find_output_id(ui)),
+      # A custom property, not a min-height. bones.css applies it only
+      # until the content arrives. A min-height that stayed would leave a
+      # gap under content that is shorter than the estimate.
       style = paste(c(
-        sprintf("min-height: %s;", height),
+        sprintf("--bones-reserve: %s;", height),
         css_vars()
       ), collapse = " "),
       skeleton,
