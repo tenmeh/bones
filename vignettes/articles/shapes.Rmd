@@ -61,6 +61,16 @@ gets the network, and so on. Give `type = "map"` to a map that draws into a
 gallery(c("map", "network", "timeline", "wordcloud"))
 ```
 
+## plotly
+
+A `plotly::plotlyOutput()` can hold any kind of chart, so its first
+skeleton has the bar shape. When its first value arrives, `bones` reads the
+kind of the chart from the plot spec, and the next loads show that shape:
+bar, line, area, scatter, histogram, pie, heatmap or map. `bones` stores the
+kind in the browser too, so on the next visit the first skeleton has the
+right shape. Set `remember = FALSE` to store nothing, or give `type` to
+choose the shape yourself.
+
 ## Tables
 
 A `tableOutput()` gets the plain table shape. A table from a table package

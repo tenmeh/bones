@@ -67,7 +67,8 @@ estimate, so the page does not move when the content arrives. Only a
 height from an estimate is stored: a height from \code{height}, or from the
 output itself, is exact already. The height is kept per page and per
 output id, and it is used only when the output has almost the same
-width as when it was measured. \code{NULL} uses the value from
+width as when it was measured. For a plotly output, \code{remember} also
+stores the kind of the chart (see "Shape"). \code{NULL} uses the value from
 \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you did not set it.}
 }
 \value{
@@ -104,9 +105,19 @@ in the same way. A map (leaflet, tmap, mapview, mapdeck and others) gets
 \code{"map"}. A network or a diagram (visNetwork, DiagrammeR, networkD3,
 collapsibleTree) gets \code{"network"}. timevis gets \code{"timeline"}, wordcloud2
 gets \code{"wordcloud"}, and dygraphs gets \code{"line"}. A widget that can draw any
-chart, such as plotly, echarts4r, highcharter or ggiraph, gets the bar
-shape: give its kind with \code{type}. ggmap and a ggplot2 map draw into a
+chart, such as echarts4r, highcharter or ggiraph, gets the bar shape:
+give its kind with \code{type}. plotly finds its kind by itself (see below). ggmap and a ggplot2 map draw into a
 \code{plotOutput()}, so give them \code{type = "map"}.
+
+A plotly output with no \code{type} finds its kind by itself, but only when
+its first value arrives in the browser: the plot spec names the kind of
+each trace. The first skeleton thus has the bar shape. The next loads,
+with \code{stale = FALSE}, show the shape of the kind: \code{"bar"}, \code{"line"},
+\code{"area"}, \code{"scatter"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"} or \code{"map"}. With
+\code{remember}, the kind is also stored in the browser, so on the next visit
+the first skeleton has that shape too. The first trace with a shape
+decides. A chart of a kind with no shape, such as a box plot, keeps the
+bar shape. A \code{type} that you give always wins.
 }
 
 \section{Layout}{

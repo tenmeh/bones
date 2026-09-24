@@ -52,3 +52,8 @@ First release.
 * The demo is a tour, with a tab for charts, tables, text and cards, and
   maps and networks. The sidebar sets the load time, `stale`, the animation
   and the dark mode, so you can see each option at work.
+* A plotly output finds the kind of its chart by itself. When the first
+  value arrives, bones reads the kind of the traces, and the next loads
+  show that shape. With `remember`, the kind is stored in the browser, so
+  the first skeleton of the next visit has the right shape too. A `type`
+  that you give always wins.

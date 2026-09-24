@@ -31,9 +31,19 @@
 #' `"map"`. A network or a diagram (visNetwork, DiagrammeR, networkD3,
 #' collapsibleTree) gets `"network"`. timevis gets `"timeline"`, wordcloud2
 #' gets `"wordcloud"`, and dygraphs gets `"line"`. A widget that can draw any
-#' chart, such as plotly, echarts4r, highcharter or ggiraph, gets the bar
-#' shape: give its kind with `type`. ggmap and a ggplot2 map draw into a
+#' chart, such as echarts4r, highcharter or ggiraph, gets the bar shape:
+#' give its kind with `type`. plotly finds its kind by itself (see below). ggmap and a ggplot2 map draw into a
 #' `plotOutput()`, so give them `type = "map"`.
+#'
+#' A plotly output with no `type` finds its kind by itself, but only when
+#' its first value arrives in the browser: the plot spec names the kind of
+#' each trace. The first skeleton thus has the bar shape. The next loads,
+#' with `stale = FALSE`, show the shape of the kind: `"bar"`, `"line"`,
+#' `"area"`, `"scatter"`, `"histogram"`, `"pie"`, `"heatmap"` or `"map"`. With
+#' `remember`, the kind is also stored in the browser, so on the next visit
+#' the first skeleton has that shape too. The first trace with a shape
+#' decides. A chart of a kind with no shape, such as a box plot, keeps the
+#' bar shape. A `type` that you give always wins.
 #'
 #' # Layout
 #'
@@ -80,7 +90,8 @@
 #'   height from an estimate is stored: a height from `height`, or from the
 #'   output itself, is exact already. The height is kept per page and per
 #'   output id, and it is used only when the output has almost the same
-#'   width as when it was measured. `NULL` uses the value from
+#'   width as when it was measured. For a plotly output, `remember` also
+#'   stores the kind of the chart (see "Shape"). `NULL` uses the value from
 #'   [bones_defaults()], which is `TRUE` if you did not set it.
 #'
 #' @return `ui`, in a placeholder container.
@@ -118,8 +129,12 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_count(n, "n")
   height <- as_css_length(height, "height")
 
+  # A type that you give always wins. Only an inferred shape of a plotly
+  # output is replaced by the kind that bones.js reads from the value.
+  detect <- NA_character_
   if (is.null(type)) {
     type <- infer_type(ui)
+    detect <- detect_widget(ui)
   } else {
     type <- match.arg(type, skeleton_types())
   }
@@ -160,6 +175,10 @@ withBones <- function(ui, # nolint: object_name_linter.
       `data-bones-min-time` = format(min_time, scientific = FALSE),
       # Read by bones.js: store the real height, and use it next time.
       `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
+      # Read by bones.js: find the chart kind from the value, and with
+      # remember, store it for the next visit.
+      `data-bones-detect` = na_to_null(detect),
+      `data-bones-remember-kind` = if (!is.na(detect) && isTRUE(remember)) "true",
       # htmltools writes an NA attribute as an attribute with no value. Give
       # NULL instead, so that no `data-bones-id` attribute is written.
       `data-bones-id` = na_to_null(find_output_id(ui)),
@@ -172,6 +191,7 @@ withBones <- function(ui, # nolint: object_name_linter.
         css_vars()
       ), collapse = " "),
       skeleton,
+      if (!is.na(detect)) kind_templates(),
       # The content has its box from the start, but it is hidden. With
       # `display: none`, Shiny would read a width of zero, and
       # plotOutput() would make its image at the wrong size. That image

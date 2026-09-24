@@ -53,6 +53,41 @@ test_that("a widget that can draw any chart keeps the bar shape", {
   expect_match(html, 'data-bones-type="line"', fixed = TRUE)
 })
 
+test_that("a plotly output is marked to find its kind in the browser", {
+  html <- as.character(withBones(widget_output("plotly")))
+  expect_match(html, 'data-bones-type="plot"', fixed = TRUE)
+  expect_match(html, 'data-bones-detect="plotly"', fixed = TRUE)
+  expect_match(html, 'data-bones-remember-kind="true"', fixed = TRUE)
+
+  # The template holds one skeleton of each shape that can be found.
+  expect_match(html, '<template class="bones-kinds">', fixed = TRUE)
+  for (type in bones:::detected_types()) {
+    expect_match(html, sprintf('data-bones-kind="%s"', type), fixed = TRUE, info = type)
+  }
+})
+
+test_that("a type that you give, or remember = FALSE, turns detection off or down", {
+  given <- as.character(withBones(widget_output("plotly"), type = "line"))
+  expect_no_match(given, "data-bones-detect", fixed = TRUE)
+  expect_no_match(given, "bones-kinds", fixed = TRUE)
+
+  # Found in the session, but not stored for the next visit.
+  forget <- as.character(withBones(widget_output("plotly"), remember = FALSE))
+  expect_match(forget, 'data-bones-detect="plotly"', fixed = TRUE)
+  expect_no_match(forget, "data-bones-remember-kind", fixed = TRUE)
+
+  # Other widgets are not detected.
+  expect_no_match(as.character(withBones(widget_output("echarts4r"))), "data-bones-detect", fixed = TRUE)
+})
+
+test_that("the page holds the template of the shapes only once", {
+  page <- htmltools::renderTags(htmltools::tagList(
+    withBones(widget_output("plotly", id = "a")),
+    withBones(widget_output("plotly", id = "b"))
+  ))$html
+  expect_equal(count_matches(page, "<template"), 1L)
+})
+
 test_that("the height of the widget is kept", {
   html <- as.character(withBones(widget_output("leaflet", style = "width:100%;height:520px;")))
   expect_match(html, "--bones-reserve: 520px", fixed = TRUE)

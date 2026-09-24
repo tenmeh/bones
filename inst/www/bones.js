@@ -53,6 +53,12 @@
     wrap.classList.add("bones-loaded", "bones-has-loaded");
     wrap.classList.remove("bones-loading", "bones-stale");
 
+    // The skeleton is hidden now, so a change of its shape is not seen.
+    if (wrap._bonesKind) {
+      setKind(wrap, wrap._bonesKind);
+      wrap._bonesKind = null;
+    }
+
     // The content is on the screen now. Measure it a moment later, when a
     // widget has finished drawing.
     if (wrap._bonesSaveHeight) {
@@ -137,17 +143,149 @@
     for (var i = 0; i < inner.length; i++) restoreHeight(inner[i]);
   }
 
+  /* --- The kind of a chart, from its value -----------------------------------
+   *
+   * A plotly output can hold any kind of chart, so withBones() gives it the
+   * bar shape. The value of the output holds the plot spec, and each trace
+   * in it names its kind. When the value arrives, this script reads the kind
+   * and puts the skeleton of that kind in place of the bar shape. The next
+   * load with stale = FALSE then shows the right shape.
+   *
+   * With remember, the kind is also stored in localStorage, with a key in
+   * the form of the height key. On the next visit the first skeleton has the
+   * right shape too. The skeletons come from a template that withBones()
+   * writes once on the page, so their markup is made only in R. */
+  var KIND_PREFIX = "bones:kind:";
+
+  function kindKey(wrap) {
+    var id = wrap.getAttribute("data-bones-id");
+    return id ? KIND_PREFIX + window.location.pathname + ":" + id : null;
+  }
+
+  /* The kind of one plotly trace, or null if no shape fits it. */
+  function plotlyTraceKind(trace) {
+    var type = trace.type || "scatter";
+    switch (type) {
+      case "bar": case "waterfall": case "funnel":
+        return "bar";
+      case "histogram":
+        return "histogram";
+      case "pie": case "sunburst":
+        return "pie";
+      case "heatmap": case "heatmapgl": case "contour":
+      case "histogram2d": case "histogram2dcontour":
+        return "heatmap";
+      case "scattergeo": case "choropleth": case "scattermapbox":
+      case "choroplethmapbox": case "densitymapbox": case "scattermap":
+      case "choroplethmap": case "densitymap":
+        return "map";
+      case "scatter": case "scattergl":
+        // Any fill is an area. ggplotly() draws geom_area() and geom_ribbon()
+        // as a closed shape with fill "toself". A ggplot2 map drawn with
+        // ggplotly() is also "toself", so it gets the area shape: give
+        // type = "map" for it.
+        if (trace.fill && trace.fill !== "none") return "area";
+        var mode = trace.mode || "lines";
+        return mode.indexOf("lines") >= 0 ? "line" : "scatter";
+      default:
+        return null;
+    }
+  }
+
+  /* The kind of the first trace that has a shape. The first trace is
+   * usually the main one: in a ggplotly chart of points with a smooth
+   * line, the points come first. */
+  function plotlyKind(value) {
+    var data = value && value.x && value.x.data;
+    if (!Array.isArray(data)) return null;
+    for (var i = 0; i < data.length; i++) {
+      var kind = data[i] && plotlyTraceKind(data[i]);
+      if (kind) return kind;
+    }
+    return null;
+  }
+
+  function templateOf(kind) {
+    var template = document.querySelector("template.bones-kinds");
+    if (!template || !template.content) return null;
+    return template.content.querySelector('[data-bones-kind="' + kind + '"]');
+  }
+
+  /* Put the skeleton of `kind` in place of the skeleton of `wrap`. */
+  function setKind(wrap, kind) {
+    if (wrap.getAttribute("data-bones-type") === kind) return;
+    var shape = templateOf(kind);
+    var old = wrap.querySelector(":scope > .bones-skeleton");
+    if (!shape || !old) return;
+    var skeleton = shape.cloneNode(true);
+    skeleton.removeAttribute("data-bones-kind");
+    wrap.replaceChild(skeleton, old);
+    wrap.setAttribute("data-bones-type", kind);
+  }
+
+  function saveKind(wrap, kind) {
+    if (wrap.getAttribute("data-bones-remember-kind") !== "true") return;
+    var key = kindKey(wrap);
+    if (!key) return;
+    try {
+      window.localStorage.setItem(key, kind);
+    } catch (e) {
+      // No storage: the next visit starts with the bar shape.
+    }
+  }
+
+  function restoreKind(wrap) {
+    if (wrap._bonesKindRestored || wrap.classList.contains("bones-has-loaded") ||
+        wrap.getAttribute("data-bones-remember-kind") !== "true") return;
+    var key = kindKey(wrap);
+    if (!key) return;
+    var kind = null;
+    try {
+      kind = window.localStorage.getItem(key);
+    } catch (e) {
+      return;
+    }
+    // The template can come later in the page than this wrapper, while the
+    // page loads. Try again then.
+    if (kind && !templateOf(kind)) return;
+    wrap._bonesKindRestored = true;
+    if (kind) setKind(wrap, kind);
+  }
+
+  /* Read the kind from the value of a detecting wrapper. The new shape is
+   * put in place when the load ends (see markLoaded), because the skeleton
+   * can still show until min_time has passed. */
+  function readKind(wrap, value) {
+    if (wrap.getAttribute("data-bones-detect") !== "plotly") return;
+    var kind = plotlyKind(value);
+    if (!kind) return;
+    wrap._bonesKind = kind;
+    saveKind(wrap, kind);
+  }
+
   // Restore as each wrapper enters the page: while the page loads, and when
   // a renderUI() inserts one. The records come before the browser paints,
   // so the wrapper has the stored height from its first frame. Only the
   // added nodes are examined, so a busy app does little extra work.
-  restoreIn(document.documentElement);
+  function restoreAll(node) {
+    restoreIn(node);
+    if (node.nodeType !== 1) return;
+    if (node.matches(".bones-wrap[data-bones-detect]")) restoreKind(node);
+    var inner = node.querySelectorAll(".bones-wrap[data-bones-detect]");
+    for (var i = 0; i < inner.length; i++) restoreKind(inner[i]);
+  }
+
+  restoreAll(document.documentElement);
   new MutationObserver(function (records) {
     for (var r = 0; r < records.length; r++) {
       var added = records[r].addedNodes;
-      for (var a = 0; a < added.length; a++) restoreIn(added[a]);
+      for (var a = 0; a < added.length; a++) restoreAll(added[a]);
     }
   }).observe(document.documentElement, {childList: true, subtree: true});
+  // When the page has loaded, each wrapper and the template are complete.
+  document.addEventListener("DOMContentLoaded", function () {
+    restoreAll(document.documentElement);
+  });
 
   /* --- No flicker ------------------------------------------------------------
    *
@@ -233,7 +371,10 @@
     if (!wrap) return;
     // Only a real value has a height worth storing. An error, or a silent
     // req(), leaves the output empty or shows a message.
-    if (e.type === "shiny:value") wrap._bonesSaveHeight = true;
+    if (e.type === "shiny:value") {
+      wrap._bonesSaveHeight = true;
+      readKind(wrap, e.value);
+    }
     settle(wrap);
   }
 
