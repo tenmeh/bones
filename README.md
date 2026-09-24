@@ -94,7 +94,7 @@ Set `rows` to the number of rows on a page. DT and reactable show 10 by
 default. The space kept for each package was measured in a browser, so the
 page does not move when the table arrives.
 
-## Two things that a spinner cannot do
+## What a spinner cannot do
 
 ### It keeps the content that the user reads
 
@@ -116,6 +116,19 @@ Turn it off for one output if you prefer a skeleton:
 withBones(plotOutput("chart"), stale = FALSE)
 ```
 
+### It does not flicker
+
+A skeleton that shows for a moment is worse than no skeleton. So the
+skeleton, and the dimming of old content, wait for 300 ms. A load that ends
+sooner shows nothing. When a skeleton has appeared, it stays for at least
+500 ms, so a load that ends a moment after the delay does not flash it for
+one frame. The space of the content is kept from the start.
+
+```r
+withBones(plotOutput("chart"), delay = 150, min_time = 400)
+bones_defaults(delay = 0)   # show the skeleton at once, for every output
+```
+
 ### It keeps the space of the content
 
 Until the content arrives, the placeholder keeps the height of the output.
@@ -126,6 +139,12 @@ yourself.
 
 When the content arrives, the content sets the height. If the estimate was
 too tall, the space closes. No gap stays under the content.
+
+An estimate can be wrong. So when the content arrives, the browser stores
+its real height, and on the next visit the placeholder keeps that height in
+place of the estimate. From the second visit, the page does not move at
+all. Only an estimated height is stored, per page and per output, and it is
+used only at almost the same width. Turn it off with `remember = FALSE`.
 
 ## A note about the implementation
 
@@ -151,10 +170,17 @@ bones_defaults(
 )
 ```
 
-The default colours are greys made from `rgba(128, 128, 128, ...)`. They
-thus work on light themes and on dark themes with no change. Users who ask
-their system to reduce motion get no animation. A placeholder that moves is
-exactly what that setting is for.
+The default colours come from the theme of the page. They are the text
+colour of the bslib theme, made faint, so a skeleton takes the tint of a
+branded theme and turns light in a dark theme, with no configuration. The
+corners follow the rounding of the theme too. Each part of the page follows
+its own theme, so a skeleton in a dark card is light even on a light page.
+With no Bootstrap 5 theme, as with `fluidPage()`, or in an old browser, the
+colours are neutral greys that work on light and on dark pages. A colour
+from `bones_defaults()` is stronger than the theme.
+
+Users who ask their system to reduce motion get no animation. A placeholder
+that moves is exactly what that setting is for.
 
 ## Placeholders on their own
 

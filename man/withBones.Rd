@@ -13,7 +13,10 @@ withBones(
   n = 3L,
   height = NULL,
   animation = NULL,
-  stale = NULL
+  stale = NULL,
+  delay = NULL,
+  min_time = NULL,
+  remember = NULL
 )
 }
 \arguments{
@@ -44,6 +47,27 @@ from \code{\link[=bones_defaults]{bones_defaults()}}.}
 the output calculates again. \code{FALSE} shows the skeleton again. \code{NULL}
 uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you did not
 set it.}
+
+\item{delay}{The time in milliseconds before the skeleton, or the
+dimming, appears. A load that ends sooner shows nothing, so a fast
+output does not flicker. The space of the content is kept from the
+start. \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is 300 if
+you did not set it.}
+
+\item{min_time}{The shortest time in milliseconds that the skeleton, or
+the dimming, stays on the screen once it has appeared. A load that ends
+a moment after \code{delay} thus does not flash a skeleton for one frame.
+\code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is 500 if you did
+not set it.}
+
+\item{remember}{\code{TRUE} stores the real height of the content in the
+browser, and keeps that height on the next visit in place of the
+estimate, so the page does not move when the content arrives. Only a
+height from an estimate is stored: a height from \code{height}, or from the
+output itself, is exact already. The height is kept per page and per
+output id, and it is used only when the output has almost the same
+width as when it was measured. \code{NULL} uses the value from
+\code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you did not set it.}
 }
 \value{
 \code{ui}, in a placeholder container.

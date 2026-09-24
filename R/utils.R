@@ -58,6 +58,21 @@ as_css_length <- function(x, name) {
   htmltools::validateCssUnit(x)
 }
 
+#' Stop unless `x` is a single time in milliseconds
+#'
+#' @param x The value to check.
+#' @param name The name of the argument, for the message.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+check_ms <- function(x, name) {
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x) || x < 0) {
+    stop(sprintf("`%s` must be a single number of milliseconds, 0 or more.", name),
+         call. = FALSE)
+  }
+  invisible(x)
+}
+
 #' Stop unless `x` is TRUE or FALSE
 #'
 #' @param x The value to check.

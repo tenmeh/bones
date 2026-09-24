@@ -24,8 +24,22 @@ First release.
   that package, with no `type`: for example the search box and the pages
   of DT, or the title and the spanner of gt. The space kept for each one
   was measured in a browser.
+* The real height of the content is remembered. When the content arrives,
+  the browser stores its height, and on the next visit the placeholder
+  keeps that height in place of the estimate, so the page does not move.
+  Only an estimated height is stored, per page and per output id, and it is
+  used only at almost the same width. Turn it off with `remember = FALSE`.
+* A fast load does not flicker. The skeleton, and the dimming of old
+  content, appear only after `delay` (300 ms), so a load that ends sooner
+  shows nothing. Once visible, they stay for at least `min_time` (500 ms).
+  Both are arguments of `withBones()` and `bones_defaults()`.
+* The colours come from the theme of the page: the text colour of the
+  bslib theme, made faint. A skeleton thus takes the tint of a branded
+  theme, and turns light in a dark theme or a dark part of a page, with no
+  configuration. The corners follow the rounding of the theme. With no
+  Bootstrap 5 theme, the colours are neutral greys.
 * `bones_defaults()` sets the colours, the corner radius, the animation and
-  the speed for the session.
+  the speed for the session. A colour set there is stronger than the theme.
 * The arguments are checked, and a bad value gives a message that names
   the argument. `height` works as in Shiny, so a number is pixels.
 * There is no animation for users who ask their system to reduce motion.
