@@ -129,6 +129,23 @@ infer_type <- function(tag) {
 }
 
 
+#' The widget whose chart kind bones.js reads from its value
+#'
+#' A plotly output can hold any kind of chart, so its UI gives the bar
+#' shape. But the value that arrives in the browser holds the plot spec,
+#' and each trace in it names its kind. bones.js reads that kind, and uses
+#' its shape for the next loads.
+#'
+#' @param tag A UI element.
+#' @return `"plotly"`, or `NA_character_` for any other output.
+#' @keywords internal
+#' @noRd
+detect_widget <- function(tag) {
+  classes <- unlist(strsplit(collect_classes(tag), "\\s+"), use.names = FALSE)
+  if ("plotly" %in% classes && "html-widget-output" %in% classes) "plotly" else NA_character_
+}
+
+
 #' Find the id of the output in a tag tree, for the data-bones-id attribute
 #'
 #' @param tag A UI element.

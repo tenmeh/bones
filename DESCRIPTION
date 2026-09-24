@@ -24,6 +24,7 @@ Imports:
 Suggests:
     DT,
     gt,
+    plotly,
     reactable,
     rhandsontable,
     shiny (>= 1.7.0),

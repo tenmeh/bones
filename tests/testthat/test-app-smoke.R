@@ -426,6 +426,81 @@ test_that("the real height is remembered for the next visit", {
   expect_no_shiny_errors(app)
 })
 
+test_that("a plotly chart gets the shape of its kind, and keeps it next visit", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("plotly")
+
+  app <- local_app_driver(
+    test_path("apps", "plotly"),
+    name         = "bones-plotly-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  ids <- c("line", "scatter", "pie", "area", "heatmap", "fixed", "forget")
+
+  # Reload the page. The old page is marked, so the test does not read it
+  # while the new one loads.
+  reload <- function() {
+    app$run_js("window.bonesOldPage = true; location.reload();")
+    app$wait_for_js("!window.bonesOldPage && document.querySelectorAll('.bones-wrap').length === 7",
+                    timeout = 30000)
+  }
+
+  # The shape of each wrapper.
+  shapes <- function() {
+    unlist(app$get_js(sprintf("
+      %s.map(function (k) {
+        var w = document.querySelector('#box-' + k + ' .bones-wrap');
+        var sk = w.querySelector(':scope > .bones-skeleton');
+        var type = w.getAttribute('data-bones-type');
+        // The skeleton must match the type, or the swap went wrong.
+        return sk.classList.contains('bones-skeleton-' + type) ? type : 'mismatch';
+      })
+    ", paste0("['", paste(ids, collapse = "', '"), "']"))))
+  }
+  loaded <- "document.querySelectorAll('.bones-wrap.bones-loaded:not(.bones-loading)').length === 7"
+
+  # --- first visit: nothing stored, so each plotly output is a bar shape --
+  # The page that the driver opened stores kinds when its charts arrive.
+  # Wait for them, so none arrives after the clear.
+  app$wait_for_js(loaded, timeout = 30000)
+  app$run_js("try { localStorage.clear(); } catch (e) {}")
+  reload()
+  expect_equal(shapes(), c("plot", "plot", "plot", "plot", "plot", "scatter", "plot"))
+
+  # --- the values arrive: each detecting wrapper takes the kind of its chart
+  app$wait_for_js(loaded, timeout = 30000)
+  Sys.sleep(0.6)
+  found <- c("line", "scatter", "pie", "area", "heatmap", "scatter", "line")
+  expect_equal(shapes(), found)
+
+  # A new load shows the new shape, and the shape is visible.
+  app$run_js("document.getElementById('refresh').click();")
+  Sys.sleep(0.8)
+  visible <- app$get_js("
+    (function () {
+      var sk = document.querySelector('#box-pie .bones-wrap > .bones-skeleton-pie');
+      return getComputedStyle(sk).display !== 'none' &&
+        getComputedStyle(sk).visibility === 'visible' &&
+        sk.querySelectorAll('.bones-svg-fill, .bones-bar, circle, path').length > 0;
+    })()
+  ")
+  expect_true(visible)
+  app$wait_for_js(loaded, timeout = 30000)
+
+  # Only the five that detect and remember are stored.
+  stored <- app$get_js("Object.keys(localStorage).filter(function (k) { return k.indexOf('bones:kind:') === 0; })")
+  expect_length(unlist(stored), 5L)
+
+  # --- second visit: the first skeleton already has the stored kind -------
+  reload()
+  expect_equal(shapes(), c("line", "scatter", "pie", "area", "heatmap", "scatter", "plot"))
+
+  app$wait_for_js(loaded, timeout = 30000)
+  expect_no_shiny_errors(app)
+})
+
 test_that("the skeleton colours follow the theme of the page", {
   testthat::skip_on_cran()
   skip_if_not_installed("bslib")

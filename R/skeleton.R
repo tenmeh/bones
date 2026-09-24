@@ -366,6 +366,36 @@ skeleton_types <- function() {
   c("text", "table", "plot", "cards", "value", chart_types(), table_types())
 }
 
+#' The chart shapes that bones.js can find from the value of a widget
+#' @keywords internal
+#' @noRd
+detected_types <- function() {
+  c("bar", "line", "area", "scatter", "histogram", "pie", "heatmap", "map")
+}
+
+#' The markup of each detected chart shape, once per page
+#'
+#' When bones.js finds the kind of a chart from its value, it puts the
+#' skeleton of that kind in place of the old one. It copies that skeleton
+#' from this template, so the markup of each shape is made only here, in R.
+#' The template is a singleton: a page with many plotly outputs holds it
+#' only once. A template is not shown and its content is not live.
+#'
+#' @return An htmltools singleton.
+#' @keywords internal
+#' @noRd
+kind_templates <- function() {
+  shapes <- lapply(detected_types(), function(type) {
+    htmltools::tagAppendAttributes(
+      skeleton_tag(type, rows = 6L, cols = 4L, lines = 3L, n = 3L),
+      `data-bones-kind` = type
+    )
+  })
+  htmltools::singleton(
+    htmltools::tags$template(class = "bones-kinds", shapes)
+  )
+}
+
 #' A plot area with the given marks in it, and an axis under it
 #' @keywords internal
 #' @noRd
