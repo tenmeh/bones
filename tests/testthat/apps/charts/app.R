@@ -7,7 +7,8 @@
 library(shiny)
 library(bones)
 
-types <- c("plot", "bar", "histogram", "line", "area", "scatter", "pie", "heatmap")
+types <- c("plot", "bar", "histogram", "line", "area", "scatter", "pie", "heatmap",
+           "map", "network", "timeline", "wordcloud")
 
 ui <- fluidPage(
   tags$style(".gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }"),

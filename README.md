@@ -79,6 +79,23 @@ withBones(plotOutput("corr"),   type = "heatmap")
 will be there. `renderPlot()` decides the kind later, on the server. With no
 `type`, a plot gets the bar shape.
 
+### Maps, networks and other widgets
+
+A visualisation widget also says what it is, so `bones` gives it its shape
+with no `type`:
+
+| Widget | Placeholder |
+|---|---|
+| leaflet, tmap, mapview, mapdeck, mapgl, googleway, threejs globe | `"map"`: tiles, roads, pins and the zoom buttons |
+| visNetwork, DiagrammeR, networkD3, collapsibleTree | `"network"`: nodes and edges |
+| timevis | `"timeline"`: items on rows over an axis |
+| wordcloud2 | `"wordcloud"`: words of different sizes |
+| dygraphs | `"line"` |
+| plotly, echarts4r, highcharter, ggiraph, apexcharter | the bar shape: these draw any chart, so give `type` |
+
+ggmap and other ggplot2 maps draw into a `plotOutput()`, so give them
+`type = "map"`.
+
 ### Table shapes
 
 A table package is different: its output says which package it is. So

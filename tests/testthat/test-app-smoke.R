@@ -239,13 +239,15 @@ test_that("each chart shape draws visible marks inside its skeleton", {
   marks <- app$get_js("
     Array.from(document.querySelectorAll('.bones-skeleton-chart')).map(function (sk) {
       var box = sk.getBoundingClientRect();
-      var els = sk.querySelectorAll('.bones-bar, .bones-svg-line, .bones-svg-fill');
+      var els = sk.querySelectorAll('.bones-bar, .bones-svg-line, .bones-svg-fill, ' +
+                                    '.bones-svg-road, .bones-svg-edge, .bones-svg-node');
       var bad = [];
       els.forEach(function (el) {
         var r = el.getBoundingClientRect();
         var cs = getComputedStyle(el);
-        var paint = el.tagName.toLowerCase() === 'polyline' ? cs.stroke :
-                    el.tagName.toLowerCase() === 'polygon' ? cs.fill : cs.backgroundColor;
+        var tag = el.tagName.toLowerCase();
+        var paint = (tag === 'polyline' || tag === 'line') ? cs.stroke :
+                    (tag === 'polygon' || tag === 'circle') ? cs.fill : cs.backgroundColor;
         var inside = r.left >= box.left - 1 && r.right <= box.right + 1 &&
                      r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
         var sized = r.width > 0 && r.height > 0;
@@ -260,8 +262,8 @@ test_that("each chart shape draws visible marks inside its skeleton", {
     })
   ")
 
-  # Eight shapes, each on its own and inside a wrapper.
-  expect_length(marks, 16L)
+  # Twelve shapes, each on its own and inside a wrapper.
+  expect_length(marks, 24L)
   for (m in marks) {
     expect_gt(m$height, 100, label = paste(m$type, "height"))
     expect_gt(m$marks, 0L, label = paste(m$type, "marks"))

@@ -24,9 +24,10 @@ withBones(
 
 \item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
 \code{"cards"}, \code{"value"}, a chart shape (\code{"bar"}, \code{"line"}, \code{"scatter"},
-\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}), or a table package
-shape (\code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the
-default) gets the shape from \code{ui}.}
+\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"},
+\code{"timeline"}, \code{"wordcloud"}), or a table package shape (\code{"dt"},
+\code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the default) gets the
+shape from \code{ui}.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
 \code{"table"} or a table package shape.}
@@ -97,6 +98,15 @@ gets \code{"reactable"}, \code{gt::gt_output()} gets \code{"gt"}, and
 \code{rhandsontable::rHandsontableOutput()} gets \code{"rhandsontable"}. Each shape
 copies the parts of its package, such as the search box of DT. Set \code{rows}
 to the number of rows on a page: DT and reactable show 10 by default.
+
+A visualisation widget gets the shape of its kind, found from its output
+in the same way. A map (leaflet, tmap, mapview, mapdeck and others) gets
+\code{"map"}. A network or a diagram (visNetwork, DiagrammeR, networkD3,
+collapsibleTree) gets \code{"network"}. timevis gets \code{"timeline"}, wordcloud2
+gets \code{"wordcloud"}, and dygraphs gets \code{"line"}. A widget that can draw any
+chart, such as plotly, echarts4r, highcharter or ggiraph, gets the bar
+shape: give its kind with \code{type}. ggmap and a ggplot2 map draw into a
+\code{plotOutput()}, so give them \code{type = "map"}.
 }
 
 \section{Layout}{

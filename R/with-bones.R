@@ -26,6 +26,15 @@
 #' copies the parts of its package, such as the search box of DT. Set `rows`
 #' to the number of rows on a page: DT and reactable show 10 by default.
 #'
+#' A visualisation widget gets the shape of its kind, found from its output
+#' in the same way. A map (leaflet, tmap, mapview, mapdeck and others) gets
+#' `"map"`. A network or a diagram (visNetwork, DiagrammeR, networkD3,
+#' collapsibleTree) gets `"network"`. timevis gets `"timeline"`, wordcloud2
+#' gets `"wordcloud"`, and dygraphs gets `"line"`. A widget that can draw any
+#' chart, such as plotly, echarts4r, highcharter or ggiraph, gets the bar
+#' shape: give its kind with `type`. ggmap and a ggplot2 map draw into a
+#' `plotOutput()`, so give them `type = "map"`.
+#'
 #' # Layout
 #'
 #' The wrapper keeps the space of the output until the content arrives, so
@@ -37,9 +46,10 @@
 #' @param ui A Shiny output, such as `plotOutput("chart")`.
 #' @param type The shape of the skeleton: `"text"`, `"table"`, `"plot"`,
 #'   `"cards"`, `"value"`, a chart shape (`"bar"`, `"line"`, `"scatter"`,
-#'   `"area"`, `"histogram"`, `"pie"`, `"heatmap"`), or a table package
-#'   shape (`"dt"`, `"reactable"`, `"gt"`, `"rhandsontable"`). `NULL` (the
-#'   default) gets the shape from `ui`.
+#'   `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`, `"network"`,
+#'   `"timeline"`, `"wordcloud"`), or a table package shape (`"dt"`,
+#'   `"reactable"`, `"gt"`, `"rhandsontable"`). `NULL` (the default) gets the
+#'   shape from `ui`.
 #' @param rows,cols The number of body rows and columns, when `type` is
 #'   `"table"` or a table package shape.
 #' @param lines The number of lines, when `type` is `"text"`.
