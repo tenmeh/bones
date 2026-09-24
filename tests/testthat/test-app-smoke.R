@@ -273,3 +273,59 @@ test_that("each chart shape draws visible marks inside its skeleton", {
 
   expect_no_shiny_errors(app)
 })
+
+test_that("the skeleton colours follow the theme of the page", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("bslib")
+
+  app <- local_app_driver(
+    test_path("apps", "theme"),
+    name         = "bones-theme-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  app$wait_for_idle(timeout = 10000L)
+
+  # The colour of the first bar in each box, as red, green, blue (0 to 255)
+  # and alpha. getComputedStyle() gives color-mix() as "color(srgb ...)".
+  colours <- app$get_js("
+    ['navy', 'dark', 'red', 'alone'].map(function (k) {
+      var bar = document.querySelector('#box-' + k + ' .bones-bar');
+      var c = getComputedStyle(bar).backgroundColor;
+      var n = (c.match(/[0-9.]+/g) || []).map(Number);
+      var srgb = c.indexOf('color(srgb') === 0;
+      return {
+        box: k, raw: c,
+        r: srgb ? n[0] * 255 : n[0], g: srgb ? n[1] * 255 : n[1], b: srgb ? n[2] * 255 : n[2],
+        a: n.length > 3 ? n[3] : 1
+      };
+    })
+  ")
+  names(colours) <- vapply(colours, `[[`, "", "box")
+
+  # The text colour of the page. bslib makes it from fg = "#1d3557", mixed a
+  # little with the background, so it is not exactly #1d3557.
+  text <- unlist(app$get_js("
+    getComputedStyle(document.body).color.match(/[0-9.]+/g).slice(0, 3).map(Number)
+  "))
+
+  # The bars take a tint of that navy text colour, not a neutral grey.
+  navy <- colours$navy
+  expect_equal(c(navy$r, navy$g, navy$b), text, tolerance = 0.02, info = navy$raw)
+  expect_false(isTRUE(all.equal(navy$r, navy$b)), label = "a navy tint, not grey")
+  expect_equal(navy$a, 0.1, tolerance = 0.01, info = navy$raw)
+
+  # In the dark part, the text colour of Bootstrap is light, so the bars
+  # are light too.
+  dark <- colours$dark
+  expect_gt(min(dark$r, dark$g, dark$b), 180, label = dark$raw)
+
+  # bones_defaults() is stronger than the theme.
+  expect_equal(c(colours$red$r, colours$red$g, colours$red$b), c(255, 0, 0), info = colours$red$raw)
+
+  # A skeleton with no wrapper gets the theme too.
+  alone <- colours$alone
+  expect_equal(c(alone$r, alone$g, alone$b), text, tolerance = 0.02, info = alone$raw)
+
+  expect_no_shiny_errors(app)
+})

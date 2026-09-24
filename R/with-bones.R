@@ -148,10 +148,14 @@ withBones <- function(ui, # nolint: object_name_linter.
 #'   placeholder), `"pulse"` (the placeholder fades out and in), or
 #'   `"none"`. Users who ask their system to reduce motion always get
 #'   `"none"`.
-#' @param color The colour of the placeholder, as a CSS colour.
+#' @param color The colour of the placeholder, as a CSS colour. By default
+#'   it comes from the theme of the page: the text colour of the bslib
+#'   theme, made faint. A colour given here is stronger than the theme.
 #' @param highlight The colour of the band of light in the `"wave"`
-#'   animation, and of the header row of a table.
-#' @param radius The CSS corner radius of the placeholder bars.
+#'   animation, and of the header row of a table. By default it comes from
+#'   the theme, as `color` does.
+#' @param radius The CSS corner radius of the placeholder bars. By default
+#'   it follows the rounding of the theme.
 #' @param speed The time of one animation cycle, in seconds.
 #' @param stale The default for the `stale` argument of [withBones()].
 #'

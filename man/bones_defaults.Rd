@@ -19,12 +19,16 @@ placeholder), \code{"pulse"} (the placeholder fades out and in), or
 \code{"none"}. Users who ask their system to reduce motion always get
 \code{"none"}.}
 
-\item{color}{The colour of the placeholder, as a CSS colour.}
+\item{color}{The colour of the placeholder, as a CSS colour. By default
+it comes from the theme of the page: the text colour of the bslib
+theme, made faint. A colour given here is stronger than the theme.}
 
 \item{highlight}{The colour of the band of light in the \code{"wave"}
-animation, and of the header row of a table.}
+animation, and of the header row of a table. By default it comes from
+the theme, as \code{color} does.}
 
-\item{radius}{The CSS corner radius of the placeholder bars.}
+\item{radius}{The CSS corner radius of the placeholder bars. By default
+it follows the rounding of the theme.}
 
 \item{speed}{The time of one animation cycle, in seconds.}
 

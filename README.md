@@ -151,10 +151,17 @@ bones_defaults(
 )
 ```
 
-The default colours are greys made from `rgba(128, 128, 128, ...)`. They
-thus work on light themes and on dark themes with no change. Users who ask
-their system to reduce motion get no animation. A placeholder that moves is
-exactly what that setting is for.
+The default colours come from the theme of the page. They are the text
+colour of the bslib theme, made faint, so a skeleton takes the tint of a
+branded theme and turns light in a dark theme, with no configuration. The
+corners follow the rounding of the theme too. Each part of the page follows
+its own theme, so a skeleton in a dark card is light even on a light page.
+With no Bootstrap 5 theme, as with `fluidPage()`, or in an old browser, the
+colours are neutral greys that work on light and on dark pages. A colour
+from `bones_defaults()` is stronger than the theme.
+
+Users who ask their system to reduce motion get no animation. A placeholder
+that moves is exactly what that setting is for.
 
 ## Placeholders on their own
 

@@ -1,16 +1,49 @@
 /* bones - content-shaped loading placeholders for Shiny outputs */
 
-/* The defaults are on :root, not on .bones-wrap. A skeleton from
-   bones_skeleton() has no wrapper, and would get no colour. They cannot be
-   on .bones-skeleton either: a declaration on the skeleton itself would be
-   stronger than the values that it gets from the style attribute of its
-   wrapper, which is where bones_defaults() puts them. */
+/* --- Colours ----------------------------------------------------------------
+
+   The colours come from the theme of the page. They are the text colour of
+   Bootstrap (--bs-body-color) mixed with transparency, so a skeleton takes
+   the tint of a bslib theme, and turns light on a dark theme, with no
+   bones_defaults() call. On a page with no such variable, such as
+   fluidPage() with Bootstrap 3, the text colour falls back to a mid grey.
+
+   The colours are set on each wrapper, and on each skeleton that has no
+   wrapper. They are NOT set on :root. A value on :root is resolved one time,
+   at the root, so a dark card inside a light page would get the colours of
+   the light page. On each element, the colours follow the theme of the part
+   of the page where the element is.
+
+   They are NOT set on a skeleton inside a wrapper. A declaration on the
+   skeleton itself would be stronger than the values that it gets from the
+   style attribute of its wrapper, which is where bones_defaults() puts
+   them.
+
+   The first block is for browsers with no color-mix(): plain greys that
+   work on light and on dark themes. */
 :root {
+  --bones-speed: 1.4s;
+}
+
+.bones-wrap,
+.bones-skeleton:not(.bones-wrap > .bones-skeleton) {
   --bones-color: rgba(128, 128, 128, 0.18);
   --bones-highlight: rgba(128, 128, 128, 0.34);
-  --bones-radius: 0.28rem;
-  --bones-speed: 1.4s;
   --bones-stripe: rgba(128, 128, 128, 0.07);
+  --bones-radius: 0.28rem;
+}
+
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  .bones-wrap,
+  .bones-skeleton:not(.bones-wrap > .bones-skeleton) {
+    /* The same lightness as the greys above on a white page with dark
+       text: 10%, 19% and 4% of the text colour. */
+    --bones-color: color-mix(in srgb, var(--bs-body-color, #808080) 10%, transparent);
+    --bones-highlight: color-mix(in srgb, var(--bs-body-color, #808080) 19%, transparent);
+    --bones-stripe: color-mix(in srgb, var(--bs-body-color, #808080) 4%, transparent);
+    /* Round the bars a little less than the theme rounds its controls. */
+    --bones-radius: calc(var(--bs-border-radius, 0.375rem) * 0.75);
+  }
 }
 
 .bones-wrap {

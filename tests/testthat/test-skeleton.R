@@ -125,13 +125,32 @@ test_that("the skeleton inside a wrapper gets no style of its own", {
   expect_false(grepl('class="bones-skeleton[^"]*"[^>]*style=', html))
 })
 
-test_that("the default colours are on :root, not on the wrapper", {
+test_that("the default colours are on the wrapper and the lone skeleton, not :root", {
+  # On :root the colours are resolved one time, so a dark part of a light
+  # page would get light colours. On each element they follow the theme of
+  # that part of the page.
   css <- paste(
     readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
     collapse = "\n"
   )
-  expect_match(css, ":root\\s*\\{[^}]*--bones-color:")
-  expect_false(grepl("\\.bones-wrap\\s*\\{[^}]*--bones-color:", css))
+  expect_false(grepl(":root\\s*\\{[^}]*--bones-color:", css))
+  expect_match(
+    css,
+    "\\.bones-wrap,\\s*\\.bones-skeleton:not\\(\\.bones-wrap > \\.bones-skeleton\\)\\s*\\{[^}]*--bones-color:"
+  )
+  # Not on a skeleton inside a wrapper: that would be stronger than the
+  # colours from bones_defaults(), which are on the wrapper.
+  expect_false(grepl("(^|\\n)\\.bones-skeleton\\s*\\{[^}]*--bones-color:", css))
+})
+
+test_that("the colours come from the text colour of the theme", {
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, "color-mix(in srgb, var(--bs-body-color, #808080) 10%, transparent)", fixed = TRUE)
+  # A browser with no color-mix() keeps the plain greys.
+  expect_match(css, "@supports (color: color-mix(", fixed = TRUE)
 })
 
 test_that("an infinite count gives the argument message", {

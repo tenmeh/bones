@@ -104,8 +104,11 @@ bones_defaults(
 )
 ```
 
-The default colours are greys that work on light and on dark themes. Users
-who ask their system to reduce motion get no animation.
+The default colours come from the theme of the page: the text colour of
+the bslib theme, made faint. A skeleton thus takes the tint of a branded
+theme, and turns light in a dark theme, with no configuration. With no
+Bootstrap 5 theme, the colours are neutral greys. Users who ask their system
+to reduce motion get no animation.
 
 ## A placeholder with no output
 
