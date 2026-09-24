@@ -45,6 +45,37 @@ an axis, a `tableOutput()` gets a header row and body rows, and a
 rhandsontable gets a shape that copies that package. The
 [Shapes](shapes.html) page shows each one.
 
+## Wrap every output at once
+
+`bones_auto()` looks through a UI and puts each output in `withBones()`.
+Give it the whole page, or only a part of it:
+
+```{r}
+ui <- bones_auto(fluidPage(
+  plotOutput("chart"),
+  tableOutput("results"),
+  withBones(plotOutput("trend"), type = "line")
+))
+```
+
+Each output gets the shape of its kind. An output that is in `withBones()`
+already keeps its own wrapper, so wrap one output yourself to give it a
+`type` or other options. Arguments after the UI go to each wrapper, and
+`exclude` names outputs to leave alone:
+
+```{r}
+ui <- bones_auto(
+  fluidPage(plotOutput("chart"), plotOutput("small")),
+  stale = FALSE,
+  exclude = "small"
+)
+```
+
+An inline output, such as `textOutput("n", inline = TRUE)`, is left alone,
+because a wrapper would break its line. A `renderUI()` makes its outputs
+later, so `bones_auto()` does not see them. Call `bones_auto()` on the UI
+inside that `renderUI()` too.
+
 ## Name the shape when bones cannot find it
 
 A `plotOutput()` only says that a plot will be there. `renderPlot()`
