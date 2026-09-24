@@ -165,3 +165,111 @@ test_that("no wrapper stays stale after a value, a silent req(), or an error", {
                                    !is.na(logs$level) & logs$level == "error"]
   expect_length(console_errors, 0L)
 })
+
+test_that("each table package gets its own shape, and its table fits the reserve", {
+  testthat::skip_on_cran()
+  for (pkg in c("DT", "reactable", "gt", "rhandsontable")) skip_if_not_installed(pkg)
+
+  app <- local_app_driver(
+    test_path("apps", "tables"),
+    name         = "bones-tables-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+
+  # --- while the tables load: the right shape, with visible marks ----------
+  app$wait_for_js("document.querySelectorAll('.bones-wrap .bones-skeleton').length === 4",
+                  timeout = 30000)
+  first <- app$get_js("
+    ['dt', 'reactable', 'gt', 'rhandsontable'].map(function (k) {
+      var w = document.querySelector('#box-' + k + ' .bones-wrap');
+      var sk = w.querySelector(':scope > .bones-skeleton');
+      var box = sk.getBoundingClientRect();
+      var bars = Array.from(sk.querySelectorAll('.bones-bar'));
+      var hidden = bars.filter(function (b) {
+        var r = b.getBoundingClientRect();
+        return r.width === 0 || r.height === 0 || r.bottom > box.bottom + 1;
+      });
+      return {kind: k, type: w.getAttribute('data-bones-type'),
+              loaded: w.classList.contains('bones-loaded'),
+              reserve: w.getBoundingClientRect().height,
+              bars: bars.length, hidden: hidden.length};
+    })
+  ")
+  for (f in first) {
+    expect_equal(f$type, f$kind)
+    expect_false(isTRUE(f$loaded), label = paste(f$kind, "loaded too early"))
+    expect_gt(f$bars, 10L, label = paste(f$kind, "bars"))
+    expect_equal(f$hidden, 0L, label = paste(f$kind, "bars that cannot be seen"))
+  }
+
+  # --- when the tables arrive: each fits in the space that was kept --------
+  wait_for_settled(app, timeout = 30000L)
+  Sys.sleep(0.5)
+  final <- app$get_js("
+    ['dt', 'reactable', 'gt', 'rhandsontable'].map(function (k) {
+      return document.querySelector('#box-' + k + ' .bones-wrap').getBoundingClientRect().height;
+    })
+  ")
+  for (i in seq_along(first)) {
+    # A table taller than its reserve pushes the page down when it arrives.
+    # One that is shorter only closes the space, so a small margin is fine.
+    expect_lte(final[[i]], first[[i]]$reserve + 1, label = paste(first[[i]]$kind, "height"))
+    expect_gte(final[[i]], first[[i]]$reserve - 40, label = paste(first[[i]]$kind, "height"))
+  }
+
+  expect_no_shiny_errors(app)
+})
+
+test_that("each chart shape draws visible marks inside its skeleton", {
+  testthat::skip_on_cran()
+
+  # The HTML tests count the marks. Only a browser shows that the marks have
+  # a size, sit inside the skeleton, and have a colour: a mark with no
+  # height, or outside the box, or transparent, cannot be seen.
+  app <- local_app_driver(
+    test_path("apps", "charts"),
+    name         = "bones-charts-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  app$wait_for_idle(timeout = 10000L)
+
+  marks <- app$get_js("
+    Array.from(document.querySelectorAll('.bones-skeleton-chart')).map(function (sk) {
+      var box = sk.getBoundingClientRect();
+      var els = sk.querySelectorAll('.bones-bar, .bones-svg-line, .bones-svg-fill');
+      var bad = [];
+      els.forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        var cs = getComputedStyle(el);
+        var paint = el.tagName.toLowerCase() === 'polyline' ? cs.stroke :
+                    el.tagName.toLowerCase() === 'polygon' ? cs.fill : cs.backgroundColor;
+        var inside = r.left >= box.left - 1 && r.right <= box.right + 1 &&
+                     r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+        var sized = r.width > 0 && r.height > 0;
+        var painted = paint && paint !== 'none' && paint !== 'transparent' &&
+                      paint !== 'rgba(0, 0, 0, 0)';
+        if (!inside || !sized || !painted) bad.push(el.className.baseVal || el.className);
+      });
+      var type = Array.from(sk.classList).find(function (c) {
+        return /^bones-skeleton-/.test(c) && c !== 'bones-skeleton-chart';
+      });
+      return {type: type, height: box.height, marks: els.length, bad: bad};
+    })
+  ")
+
+  # Eight shapes, each on its own and inside a wrapper.
+  expect_length(marks, 16L)
+  for (m in marks) {
+    expect_gt(m$height, 100, label = paste(m$type, "height"))
+    expect_gt(m$marks, 0L, label = paste(m$type, "marks"))
+    expect_true(
+      length(unlist(m$bad)) == 0L,
+      info = paste0(m$type, ": marks that cannot be seen: ", paste(unlist(m$bad), collapse = ", "))
+    )
+  }
+
+  expect_no_shiny_errors(app)
+})

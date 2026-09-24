@@ -10,8 +10,13 @@ class_map <- function() {
     c(class = "shiny-plot-output",    type = "plot"),
     c(class = "shiny-image-output",   type = "plot"),
     c(class = "shiny-table-output",   type = "table"),
-    c(class = "datatables",           type = "table"),
-    c(class = "reactable",            type = "table"),
+    # Each table package puts its own class on the container. These come
+    # before the general classes below: an rhandsontable is also an
+    # htmlwidget, and a gt output is also an HTML output.
+    c(class = "datatables",           type = "dt"),
+    c(class = "reactable",            type = "reactable"),
+    c(class = "rhandsontable",        type = "rhandsontable"),
+    c(class = "gt_shiny",             type = "gt"),
     c(class = "shiny-text-output",    type = "text"),
     c(class = "html-widget-output",   type = "plot"),
     c(class = "shiny-html-output",    type = "text")
@@ -33,7 +38,7 @@ class_map <- function() {
 collect_classes <- function(x) {
   if (inherits(x, "shiny.tag")) {
     return(c(
-      as.character(x$attribs$class %||% character(0)),
+      attr_values(x, "class"),
       collect_classes(x$children)
     ))
   }
@@ -44,10 +49,28 @@ collect_classes <- function(x) {
 }
 
 
+#' Every value of one attribute of a tag
+#'
+#' A tag can hold the same attribute more than one time. gt_output() does
+#' this: it has class "shiny-html-output" and a second class "gt_shiny".
+#' `tag$attribs$class` gives only the first one.
+#'
+#' @param tag A tag.
+#' @param name The name of the attribute.
+#' @return A character vector. It is empty when the tag has no such
+#'   attribute.
+#' @keywords internal
+#' @noRd
+attr_values <- function(tag, name) {
+  values <- tag$attribs[names(tag$attribs) == name]
+  as.character(unlist(values, use.names = FALSE))
+}
+
+
 #' Get the skeleton shape from a Shiny output element
 #'
 #' @param tag A UI element, typically the result of `plotOutput()` and friends.
-#' @return One of "plot", "table", "text", "cards", "value".
+#' @return One of the names in `skeleton_types()`.
 #' @keywords internal
 #' @noRd
 infer_type <- function(tag) {
@@ -100,16 +123,14 @@ find_output_id <- function(tag) {
 #' @noRd
 find_inline_height <- function(tag) {
   if (inherits(tag, "shiny.tag")) {
-    style <- tag$attribs$style
-    if (!is.null(style)) {
+    style <- paste(attr_values(tag, "style"), collapse = ";")
+    if (nzchar(style)) {
       # Only the "height" property. The start of a declaration comes first,
-      # so "min-height", "max-height" and "line-height" do not match.
-      m <- regmatches(
-        as.character(style)[1],
-        regexpr("(^|;)\\s*height\\s*:\\s*[^;]+", as.character(style)[1])
-      )
-      if (length(m) == 1L) {
-        value <- trimws(sub("^;?\\s*height\\s*:\\s*", "", m))
+      # so "min-height", "max-height" and "line-height" do not match. When
+      # there are several, the last one wins, as in CSS.
+      m <- regmatches(style, gregexpr("(^|;)\\s*height\\s*:\\s*[^;]+", style))[[1]]
+      if (length(m) >= 1L) {
+        value <- trimws(sub("^;?\\s*height\\s*:\\s*", "", m[length(m)]))
         # A percentage height depends on the height of the parent, which
         # this package does not know. It thus does not help to find the
         # height of the skeleton.

@@ -1,4 +1,4 @@
-# bones
+# bones <img src="man/figures/logo.png" align="right" height="139" alt="bones logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml)
@@ -44,8 +44,12 @@ be.
 
 | Output | Placeholder |
 |---|---|
-| `plotOutput()`, `imageOutput()` | columns on an axis |
-| `tableOutput()`, `DT::DTOutput()` | a header row and body rows |
+| `plotOutput()`, `imageOutput()` | columns on an axis. Use `type` for another kind of chart. |
+| `tableOutput()` | a header row and body rows |
+| `DT::DTOutput()` | the controls of DT: "Show entries", search, info and pages |
+| `reactable::reactableOutput()` | rows with thin lines, and pages for more than 10 rows |
+| `gt::gt_output()` | a title, a spanner, a label column and a source note |
+| `rhandsontable::rHandsontableOutput()` | a spreadsheet grid with row and column headers |
 | `textOutput()`, `verbatimTextOutput()` | lines of text, with a short last line |
 | `uiOutput()` | lines of text. Use `type` for a different shape. |
 
@@ -56,6 +60,39 @@ withBones(uiOutput("cards"),  type = "cards", n = 4)
 withBones(uiOutput("kpis"),   type = "value", n = 3, height = "90px")
 withBones(plotOutput("map"),  height = "600px", animation = "pulse")
 ```
+
+### Chart shapes
+
+A chart can have the shape of its kind:
+
+```r
+withBones(plotOutput("sales"),  type = "bar")
+withBones(plotOutput("trend"),  type = "line")
+withBones(plotOutput("growth"), type = "area")
+withBones(plotOutput("fit"),    type = "scatter")
+withBones(plotOutput("ages"),   type = "histogram")
+withBones(plotOutput("share"),  type = "pie")
+withBones(plotOutput("corr"),   type = "heatmap")
+```
+
+`bones` cannot find the kind for you. `plotOutput()` only says that a plot
+will be there. `renderPlot()` decides the kind later, on the server. With no
+`type`, a plot gets the bar shape.
+
+### Table shapes
+
+A table package is different: its output says which package it is. So
+`bones` gives DT, reactable, gt and rhandsontable their own shape with no
+`type`:
+
+```r
+withBones(DT::DTOutput("patients"), rows = 10)
+withBones(gt::gt_output("summary"), rows = 8, cols = 5)
+```
+
+Set `rows` to the number of rows on a page. DT and reactable show 10 by
+default. The space kept for each package was measured in a browser, so the
+page does not move when the table arrives.
 
 ## Two things that a spinner cannot do
 

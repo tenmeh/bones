@@ -20,10 +20,13 @@ withBones(
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
 \item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
-\code{"cards"} or \code{"value"}. \code{NULL} (the default) gets the shape from \code{ui}.}
+\code{"cards"}, \code{"value"}, a chart shape (\code{"bar"}, \code{"line"}, \code{"scatter"},
+\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}), or a table package
+shape (\code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the
+default) gets the shape from \code{ui}.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
-\code{"table"}.}
+\code{"table"} or a table package shape.}
 
 \item{lines}{The number of lines, when \code{type} is \code{"text"}.}
 
@@ -58,6 +61,18 @@ shape of a chart, \code{tableOutput()} gets rows and columns, and
 \code{textOutput()} gets lines of text. Use \code{type} to set a different shape.
 You must do this for \code{uiOutput()}, because its content is not known
 before it arrives.
+
+A \code{plotOutput()} gets the shape of a bar chart. If the chart is of
+another kind, give that kind: \code{"line"}, \code{"scatter"}, \code{"area"},
+\code{"histogram"}, \code{"pie"} or \code{"heatmap"}. The output cannot tell, because
+\code{renderPlot()} decides the kind later, on the server.
+
+A table from a table package gets the shape of that package, found from
+its output: \code{DT::DTOutput()} gets \code{"dt"}, \code{reactable::reactableOutput()}
+gets \code{"reactable"}, \code{gt::gt_output()} gets \code{"gt"}, and
+\code{rhandsontable::rHandsontableOutput()} gets \code{"rhandsontable"}. Each shape
+copies the parts of its package, such as the search box of DT. Set \code{rows}
+to the number of rows on a page: DT and reactable show 10 by default.
 }
 
 \section{Layout}{
@@ -75,5 +90,6 @@ if (requireNamespace("shiny", quietly = TRUE)) {
   withBones(plotOutput("chart"))
   withBones(tableOutput("results"), rows = 8, cols = 5)
   withBones(uiOutput("cards"), type = "cards", n = 4)
+  withBones(plotOutput("trend"), type = "line")
 }
 }

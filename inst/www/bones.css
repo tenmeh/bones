@@ -10,6 +10,7 @@
   --bones-highlight: rgba(128, 128, 128, 0.34);
   --bones-radius: 0.28rem;
   --bones-speed: 1.4s;
+  --bones-stripe: rgba(128, 128, 128, 0.07);
 }
 
 .bones-wrap {
@@ -46,6 +47,7 @@
 .bones-wrap > .bones-skeleton {
   position: absolute;
   inset: 0;
+  overflow: hidden;  /* a tall shape must not cover the content below */
   pointer-events: none;
 }
 
@@ -106,7 +108,8 @@
 
 /* --- plot ---------------------------------------------------------------- */
 
-.bones-skeleton-plot {
+/* Each chart shape: "plot", and the shapes such as "line" and "scatter". */
+.bones-skeleton-chart {
   justify-content: flex-end;
   gap: 0;
 }
@@ -114,6 +117,7 @@
 /* flex-grow, not height: 100%. The area and the axis under it thus share
    the height of the skeleton, and do not go outside it. */
 .bones-plot-area {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: 4%;
@@ -132,6 +136,281 @@
   height: 2px;
   margin-top: 0.4rem;
   border-radius: 1px;
+  background-color: var(--bones-highlight);
+}
+
+/* --- DT ------------------------------------------------------------------ */
+
+.bones-dt,
+.bones-dt-table,
+.bones-rt,
+.bones-gt {
+  display: flex;
+  flex-direction: column;
+}
+
+.bones-dt {
+  gap: 0.5rem;
+}
+
+.bones-dt-top,
+.bones-dt-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.bones-dt-length,
+.bones-dt-search,
+.bones-dt-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bones-dt-select {
+  width: 3rem;
+  height: 1.6rem;
+}
+
+.bones-dt-input {
+  width: 9rem;
+  height: 1.6rem;
+  border: 1px solid var(--bones-highlight);
+  border-radius: var(--bones-radius);
+}
+
+.bones-dt-page {
+  width: 1.8rem;
+  height: 1.6rem;
+}
+
+/* DT rows are 40px tall and striped. */
+.bones-dt-row {
+  padding: 0.9rem 0.5rem;
+}
+
+/* DT shades the 2nd, 4th and 6th body rows. The header is child 1, so
+   these are the odd children after it. */
+.bones-dt-row:nth-child(odd):not(.bones-dt-head) {
+  background-color: var(--bones-stripe);
+}
+
+.bones-dt-head {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+/* --- reactable ----------------------------------------------------------- */
+
+/* reactable rows are 38px tall, with a thin line under each one. */
+.bones-rt-row {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-rt-head {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-rt-pages {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+}
+
+.bones-rt-button {
+  width: 1.8rem;
+  height: 1.6rem;
+}
+
+/* --- gt ------------------------------------------------------------------ */
+
+.bones-gt-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0 0.9rem;
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-gt-spanner-row,
+.bones-gt-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0 0.3rem;
+}
+
+.bones-gt-spanner-row {
+  padding-top: 0.6rem;
+}
+
+/* The stub is the column of row labels, on the left. It is wider. */
+.bones-gt-stub,
+.bones-gt-corner {
+  flex: 1.6 1 0;
+}
+
+.bones-gt-cell {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bones-gt-spanner {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--bones-highlight);
+}
+
+/* gt rows are about 38px tall. */
+.bones-gt-row {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-gt-labels {
+  border-bottom: 2px solid var(--bones-highlight);
+}
+
+.bones-gt-note {
+  padding: 0.6rem 0.3rem;
+  border-top: 1px solid var(--bones-highlight);
+}
+
+/* --- rhandsontable ------------------------------------------------------- */
+
+/* A grid of 24px rows. skel_rhandsontable() in R sets the columns. */
+.bones-hot {
+  display: grid;
+  grid-auto-rows: 24px;
+  align-content: start;
+  border-top: 1px solid var(--bones-color);
+  border-left: 1px solid var(--bones-color);
+}
+
+.bones-hot > div {
+  display: flex;
+  align-items: center;
+  padding: 0 0.35rem;
+  border-right: 1px solid var(--bones-color);
+  border-bottom: 1px solid var(--bones-color);
+}
+
+.bones-hot-corner,
+.bones-hot-colhead,
+.bones-hot-rowhead {
+  justify-content: center;
+  background-color: var(--bones-stripe);
+}
+
+/* --- histogram ----------------------------------------------------------- */
+
+/* The columns of a histogram touch, as the bins do. */
+.bones-plot-area-tight {
+  gap: 2px;
+}
+
+/* --- scatter ------------------------------------------------------------- */
+
+/* The dots have their own position in the plot area, so the area is not a
+   flex row. */
+.bones-plot-area-free {
+  display: block;
+}
+
+.bones-dot {
+  position: absolute;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background-color: var(--bones-highlight);
+  transform: translate(-50%, 50%);
+}
+
+/* --- line and area ------------------------------------------------------- */
+
+/* The SVG fills the plot area. Its view box does not keep its aspect ratio,
+   so non-scaling-stroke keeps the line the same width at each size. */
+.bones-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bones-svg-line {
+  fill: none;
+  stroke: var(--bones-highlight);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.bones-svg-fill {
+  fill: var(--bones-color);
+  stroke: none;
+}
+
+/* --- pie ----------------------------------------------------------------- */
+
+.bones-pie {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 1rem;
+}
+
+.bones-pie-disc {
+  height: 80%;
+  width: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.bones-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  max-width: 12rem;
+}
+
+.bones-pie-key {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bones-pie-swatch {
+  width: 0.75rem;
+  border-radius: 2px;
+}
+
+/* --- heatmap ------------------------------------------------------------- */
+
+/* skel_heatmap() in R sets the number of columns in the style attribute. */
+.bones-heatmap {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bones-heat-cell {
+  height: auto;
+  border-radius: 2px;
   background-color: var(--bones-highlight);
 }
 
@@ -195,6 +474,12 @@
   animation: bones-pulse var(--bones-speed) ease-in-out infinite;
 }
 
+/* A gradient background does not move along an SVG stroke, so the line and
+   the area pulse in the wave animation. */
+.bones-anim-wave .bones-svg {
+  animation: bones-pulse var(--bones-speed) ease-in-out infinite;
+}
+
 @keyframes bones-pulse {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.55; }
@@ -206,7 +491,8 @@
   .bones-anim-wave .bones-bar,
   .bones-anim-wave .bones-axis,
   .bones-anim-pulse .bones-skeleton,
-  .bones-skeleton.bones-anim-pulse {
+  .bones-skeleton.bones-anim-pulse,
+  .bones-anim-wave .bones-svg {
     animation: none;
     background-image: none;
   }

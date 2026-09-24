@@ -23,6 +23,9 @@ Imports:
     utils
 Suggests:
     DT,
+    gt,
+    reactable,
+    rhandsontable,
     shiny (>= 1.7.0),
     shinytest2,
     testthat (>= 3.0.0),

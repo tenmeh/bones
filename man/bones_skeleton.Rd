@@ -5,7 +5,7 @@
 \title{Make a skeleton placeholder}
 \usage{
 bones_skeleton(
-  type = c("text", "table", "plot", "cards", "value"),
+  type = "text",
   rows = 6L,
   cols = 4L,
   lines = 3L,
@@ -14,12 +14,14 @@ bones_skeleton(
 )
 }
 \arguments{
-\item{type}{The shape: \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"} or
-\code{"value"}.}
+\item{type}{The shape: \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"},
+\code{"value"}, or one of the chart or table shapes above.}
 
-\item{rows}{The number of body rows, for \code{type = "table"}.}
+\item{rows}{The number of body rows, for \code{type = "table"} and the table
+package shapes.}
 
-\item{cols}{The number of columns, for \code{type = "table"}.}
+\item{cols}{The number of columns, for \code{type = "table"} and the table
+package shapes.}
 
 \item{lines}{The number of lines, for \code{type = "text"}.}
 
@@ -43,8 +45,24 @@ shape while you design a page.
 \details{
 The skeleton uses the animation and the colours from \code{\link[=bones_defaults]{bones_defaults()}}.
 }
+\section{Chart shapes}{
+A chart has a shape for each common kind: \code{"bar"}, \code{"line"},
+\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"} and \code{"heatmap"}. \code{"plot"}
+is the same as \code{"bar"}. \code{plotOutput()} cannot say which kind it will
+hold, because \code{renderPlot()} decides that later, on the server. So you
+name the kind yourself.
+}
+
+\section{Table shapes}{
+A table from a table package has a shape that copies that package:
+\code{"dt"}, \code{"reactable"}, \code{"gt"} and \code{"rhandsontable"}. \code{\link[=withBones]{withBones()}} finds
+it from the output by itself.
+}
+
 \examples{
 bones_skeleton("text", lines = 4)
 bones_skeleton("table", rows = 8, cols = 5)
 bones_skeleton("plot", height = "300px")
+bones_skeleton("scatter", height = "300px")
+bones_skeleton("dt", rows = 10, cols = 5)
 }

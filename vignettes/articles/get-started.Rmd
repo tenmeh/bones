@@ -1,0 +1,120 @@
+---
+title: "Get started with bones"
+output: rmarkdown::html_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE # Shiny apps can't run inside a static document.
+)
+```
+
+A spinner tells the user to wait. A skeleton shows the user what is coming:
+bars for a bar chart, rows for a table, lines for text. The page does not
+look empty, and the eye of the user can go to the place where the content
+will be.
+
+## Install
+
+`bones` is not on CRAN yet. Install it from GitHub:
+
+```{r}
+# install.packages("remotes")
+remotes::install_github("tenmeh/bones")
+```
+
+## Wrap an output
+
+Put `withBones()` around an output in the UI. That is all:
+
+```{r}
+library(shiny)
+library(bones)
+
+ui <- fluidPage(
+  withBones(plotOutput("chart")),
+  withBones(tableOutput("results"), rows = 8)
+)
+```
+
+`bones` finds the shape from the output. A `plotOutput()` gets columns on
+an axis, a `tableOutput()` gets a header row and body rows, and a
+`textOutput()` gets lines of text. A table from DT, reactable, gt or
+rhandsontable gets a shape that copies that package. The
+[Shapes](shapes.html) page shows each one.
+
+## Name the shape when bones cannot find it
+
+A `plotOutput()` only says that a plot will be there. `renderPlot()`
+decides the kind of chart later, on the server. So name the kind with
+`type`:
+
+```{r}
+withBones(plotOutput("trend"), type = "line")
+withBones(plotOutput("fit"),   type = "scatter")
+```
+
+A `uiOutput()` can hold anything, so give it a `type` too:
+
+```{r}
+withBones(uiOutput("kpis"),  type = "value", n = 3)
+withBones(uiOutput("cards"), type = "cards", n = 4)
+```
+
+## The page does not move
+
+Until the content arrives, the placeholder keeps the height of the output.
+If the output sets a height, as `plotOutput()` does, the placeholder uses
+it. If not, the height comes from `rows`, `lines` or `n`, or from `height`:
+
+```{r}
+withBones(uiOutput("summary"), type = "text", lines = 5)
+withBones(uiOutput("map"),     type = "plot", height = 500)
+```
+
+When the content arrives, the content sets the height, and no gap stays
+under it.
+
+## The second load keeps the old content
+
+On the first load, the user sees a skeleton. When the output calculates
+again, the old content stays on the screen, dimmed, until the new content
+arrives. The user is possibly in the middle of reading it, and grey boxes in
+its place would remove information.
+
+To show the skeleton again on each load, set `stale = FALSE`:
+
+```{r}
+withBones(plotOutput("chart"), stale = FALSE)
+```
+
+## Set the look for the whole app
+
+`bones_defaults()` sets the animation, the colours and the speed for the
+session. An argument to `withBones()` is stronger than a default:
+
+```{r}
+bones_defaults(
+  animation = "pulse",   # "wave" (the default), "pulse" or "none"
+  radius    = "0.5rem",
+  speed     = 2,
+  stale     = FALSE
+)
+```
+
+The default colours are greys that work on light and on dark themes. Users
+who ask their system to reduce motion get no animation.
+
+## A placeholder with no output
+
+`bones_skeleton()` makes a skeleton on its own, for a place where there is
+no Shiny output:
+
+```{r}
+output$panel <- renderUI({
+  if (is.null(data())) return(bones_skeleton("table", rows = 5))
+  tableOutput("results")
+})
+```
