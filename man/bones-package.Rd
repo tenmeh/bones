@@ -14,6 +14,7 @@ Shows a grey placeholder in the shape of the content while a 'Shiny' output load
 Useful links:
 \itemize{
   \item \url{https://github.com/tenmeh/bones}
+  \item \url{https://tenmeh.github.io/bones/}
   \item Report bugs at \url{https://github.com/tenmeh/bones/issues}
 }
 

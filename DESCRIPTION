@@ -30,7 +30,7 @@ Suggests:
     shinytest2,
     testthat (>= 3.0.0),
     withr
-URL: https://github.com/tenmeh/bones
+URL: https://github.com/tenmeh/bones, https://tenmeh.github.io/bones/
 BugReports: https://github.com/tenmeh/bones/issues
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
