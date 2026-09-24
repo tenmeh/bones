@@ -155,3 +155,45 @@ test_that("the skeleton inside a wrapper has no height of its own", {
   html <- as.character(withBones(fake_output("shiny-plot-output")))
   expect_false(grepl('class="bones-skeleton[^"]*"[^>]*style="height', html))
 })
+
+test_that("delay and min_time have defaults of 300 and 500 milliseconds", {
+  html <- as.character(withBones(fake_output("shiny-plot-output")))
+  expect_match(html, "--bones-delay: 300ms;", fixed = TRUE)
+  expect_match(html, 'data-bones-min-time="500"', fixed = TRUE)
+})
+
+test_that("delay and min_time can be set per output and for the session", {
+  html <- as.character(withBones(fake_output("shiny-plot-output"), delay = 0, min_time = 1000))
+  expect_match(html, "--bones-delay: 0ms;", fixed = TRUE)
+  expect_match(html, 'data-bones-min-time="1000"', fixed = TRUE)
+
+  old <- bones_defaults(delay = 150, min_time = 250)
+  on.exit(options(old), add = TRUE)
+  html <- as.character(withBones(fake_output("shiny-plot-output")))
+  expect_match(html, "--bones-delay: 150ms;", fixed = TRUE)
+  expect_match(html, 'data-bones-min-time="250"', fixed = TRUE)
+
+  # An argument is stronger than the session default.
+  html <- as.character(withBones(fake_output("shiny-plot-output"), delay = 50))
+  expect_match(html, "--bones-delay: 50ms;", fixed = TRUE)
+})
+
+test_that("delay and min_time must be single numbers of 0 or more", {
+  out <- fake_output("shiny-plot-output")
+  expect_error(withBones(out, delay = -1), "`delay` must be a single number of milliseconds")
+  expect_error(withBones(out, delay = "300"), "`delay` must be a single number of milliseconds")
+  expect_error(withBones(out, min_time = NA_real_), "`min_time` must be a single number of milliseconds")
+  expect_error(withBones(out, min_time = c(1, 2)), "`min_time` must be a single number of milliseconds")
+  expect_error(bones_defaults(delay = Inf), "`delay` must be a single number of milliseconds")
+})
+
+test_that("the skeleton and the dimming wait for the delay", {
+  css <- paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+  expect_match(css, "bones-appear 1ms linear var(--bones-delay) both", fixed = TRUE)
+  expect_match(css, "transition: opacity 120ms ease var(--bones-delay);", fixed = TRUE)
+  # Reduced motion drops the fade, but keeps the delay.
+  expect_match(css, "transition: opacity 0s linear var(--bones-delay);", fixed = TRUE)
+})

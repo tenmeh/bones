@@ -274,6 +274,72 @@ test_that("each chart shape draws visible marks inside its skeleton", {
   expect_no_shiny_errors(app)
 })
 
+test_that("a fast load shows nothing, and a skeleton stays at least min_time", {
+  testthat::skip_on_cran()
+
+  app <- local_app_driver(
+    test_path("apps", "flicker"),
+    name         = "bones-flicker-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  wait_for_settled(app)
+
+  # The timing is measured in the browser: a round trip from R takes too
+  # long. For each box, the time of the click, of the start of the
+  # skeleton ("bones-appear") or the dimming (the opacity transition), and
+  # of the end of the load (the class bones-loaded comes back).
+  app$run_js("
+    window.bonesLog = {};
+    var t0 = performance.now();
+    document.querySelectorAll('[id^=box-]').forEach(function (box) {
+      var k = box.id.slice(4), w = box.querySelector('.bones-wrap');
+      window.bonesLog[k] = {shown: null, dimmed: null, loaded: null, click: null};
+      box.addEventListener('animationstart', function (e) {
+        if (e.animationName === 'bones-appear') window.bonesLog[k].shown = performance.now() - t0;
+      }, true);
+      box.addEventListener('transitionstart', function (e) {
+        if (e.propertyName === 'opacity') window.bonesLog[k].dimmed = performance.now() - t0;
+      }, true);
+      new MutationObserver(function () {
+        var log = window.bonesLog[k];
+        if (log.click !== null && w.classList.contains('bones-loaded')) log.loaded = performance.now() - t0;
+      }).observe(w, {attributes: true, attributeFilter: ['class']});
+    });
+    window.bonesClick = function (k) {
+      window.bonesLog[k].click = performance.now() - t0;
+      document.getElementById('go_' + k).click();
+    };
+  ")
+
+  timing <- function(k) {
+    app$run_js(sprintf("window.bonesClick('%s');", k))
+    Sys.sleep(2.5)
+    log <- app$get_js(sprintf("window.bonesLog['%s']", k))
+    lapply(log, function(v) if (is.null(v)) NA_real_ else v - log$click)
+  }
+
+  fast <- timing("fast")
+  expect_true(is.na(fast$shown), info = "a 50ms load must not show a skeleton")
+  expect_false(is.na(fast$loaded))
+
+  faststale <- timing("faststale")
+  expect_true(is.na(faststale$dimmed), info = "a 50ms load must not dim the content")
+
+  slow <- timing("slow")
+  expect_false(is.na(slow$shown), info = "a slow load shows its skeleton")
+  expect_gte(slow$shown, 250)   # the delay is 300ms, less a small margin
+  expect_lte(slow$shown, 600)
+
+  medium <- timing("medium")
+  expect_false(is.na(medium$shown))
+  # The value came about 150ms after the skeleton appeared. min_time keeps
+  # the skeleton on the screen for 500ms.
+  expect_gte(medium$loaded - medium$shown, 480)
+
+  expect_no_shiny_errors(app)
+})
+
 test_that("the skeleton colours follow the theme of the page", {
   testthat::skip_on_cran()
   skip_if_not_installed("bslib")

@@ -10,7 +10,9 @@ bones_defaults(
   highlight = NULL,
   radius = NULL,
   speed = NULL,
-  stale = NULL
+  stale = NULL,
+  delay = NULL,
+  min_time = NULL
 )
 }
 \arguments{
@@ -33,6 +35,9 @@ it follows the rounding of the theme.}
 \item{speed}{The time of one animation cycle, in seconds.}
 
 \item{stale}{The default for the \code{stale} argument of \code{\link[=withBones]{withBones()}}.}
+
+\item{delay, min_time}{The defaults for the \code{delay} and \code{min_time}
+arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
 }
 \value{
 The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.

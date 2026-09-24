@@ -23,6 +23,7 @@
    work on light and on dark themes. */
 :root {
   --bones-speed: 1.4s;
+  --bones-delay: 300ms;
 }
 
 .bones-wrap,
@@ -99,7 +100,37 @@
 /* The output calculates again, and the old content stays on the screen. */
 .bones-wrap.bones-stale > .bones-content {
   opacity: 0.45;
-  transition: opacity 120ms ease;
+  /* The dimming starts only after --bones-delay. A recalculation that ends
+     before then never dims the content, so a fast one does not flicker.
+     The content comes back at once: the rule above has no transition. */
+  transition: opacity 120ms ease var(--bones-delay);
+}
+
+/* --- No flicker --------------------------------------------------------------
+
+   The skeleton appears only after --bones-delay. A load that ends before
+   then never shows a skeleton, so a fast output does not flash one.
+
+   An animation starts again each time an element changes from
+   display: none to shown. The skeleton is display: none while the wrapper
+   is loaded, so this delay applies again on each recalculation with
+   stale = FALSE, and not only on the first load. bones.js reads the start
+   of this animation to know when the skeleton became visible, for
+   min_time. */
+.bones-wrap:not(.bones-loaded) > .bones-skeleton {
+  animation: bones-appear 1ms linear var(--bones-delay) both;
+}
+
+/* The pulse is also an animation, so the two go in one declaration. */
+.bones-wrap.bones-anim-pulse:not(.bones-loaded) > .bones-skeleton {
+  animation:
+    bones-appear 1ms linear var(--bones-delay) both,
+    bones-pulse var(--bones-speed) ease-in-out var(--bones-delay) infinite;
+}
+
+@keyframes bones-appear {
+  from { visibility: hidden; }
+  to   { visibility: visible; }
 }
 
 /* Shiny also dims an output while it calculates. Inside a stale wrapper,
@@ -530,7 +561,14 @@
     background-image: none;
   }
 
+  /* No fade, but the same delay: a fast recalculation still must not dim
+     the content for a moment. */
   .bones-wrap.bones-stale > .bones-content {
-    transition: none;
+    transition: opacity 0s linear var(--bones-delay);
+  }
+
+  /* The skeleton still waits for the delay, but does not pulse. */
+  .bones-wrap.bones-anim-pulse:not(.bones-loaded) > .bones-skeleton {
+    animation: bones-appear 1ms linear var(--bones-delay) both;
   }
 }

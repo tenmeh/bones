@@ -45,13 +45,79 @@
   }
 
   function markLoaded(wrap) {
+    if (wrap._bonesTimer) {
+      window.clearTimeout(wrap._bonesTimer);
+      wrap._bonesTimer = null;
+    }
+    wrap._bonesShownAt = undefined;
     wrap.classList.add("bones-loaded", "bones-has-loaded");
     wrap.classList.remove("bones-loading", "bones-stale");
   }
 
+  /* --- No flicker ------------------------------------------------------------
+   *
+   * Two rules stop a skeleton, or the dimming, from flashing on the screen:
+   *
+   * 1. It appears only after a delay (--bones-delay). The stylesheet does
+   *    this with an animation delay and a transition delay, so a load that
+   *    ends before then shows nothing.
+   * 2. When it has appeared, it stays for at least min_time milliseconds
+   *    (data-bones-min-time). A load that ends a moment after the delay thus
+   *    does not show a skeleton for one frame. This script does this.
+   *
+   * The script does not guess when the skeleton appeared. It listens for
+   * the start of the "bones-appear" animation of the skeleton, and for the
+   * start of the opacity transition of dimmed content. Those events come
+   * exactly when the delay ends. */
+  var DEFAULT_MIN_TIME = 500;
+
+  function minTimeOf(wrap) {
+    var value = parseFloat(wrap.getAttribute("data-bones-min-time"));
+    return isFinite(value) && value >= 0 ? value : DEFAULT_MIN_TIME;
+  }
+
+  function now() {
+    return window.performance && performance.now ? performance.now() : Date.now();
+  }
+
+  /* End the load of `wrap`, now or when min_time has passed. */
+  function settle(wrap) {
+    if (wrap._bonesTimer) return;
+    var shown = wrap._bonesShownAt;
+    var wait = shown === undefined ? 0 : minTimeOf(wrap) - (now() - shown);
+    if (wait <= 0) {
+      markLoaded(wrap);
+      return;
+    }
+    wrap._bonesTimer = window.setTimeout(function () {
+      wrap._bonesTimer = null;
+      markLoaded(wrap);
+    }, wait);
+  }
+
+  document.addEventListener("animationstart", function (e) {
+    if (e.animationName !== "bones-appear") return;
+    var wrap = e.target.parentElement;
+    if (wrap && wrap.classList.contains("bones-wrap")) wrap._bonesShownAt = now();
+  }, true);
+
+  document.addEventListener("transitionstart", function (e) {
+    if (e.propertyName !== "opacity" || !e.target.classList.contains("bones-content")) return;
+    var wrap = e.target.parentElement;
+    if (wrap && wrap.classList.contains("bones-stale")) wrap._bonesShownAt = now();
+  }, true);
+
   function onInvalidated(e) {
     var wrap = wrapOf(e.target);
     if (!wrap) return;
+
+    // A new load starts. An end that waited for min_time is not the end of
+    // this load. The skeleton or the dimming stays on, so the time that it
+    // appeared stays the same.
+    if (wrap._bonesTimer) {
+      window.clearTimeout(wrap._bonesTimer);
+      wrap._bonesTimer = null;
+    }
 
     if (wrap.classList.contains("bones-loaded") && keepsStale(wrap)) {
       // The user is possibly reading this content, so it stays and dims.
@@ -66,7 +132,7 @@
 
   function onSettled(e) {
     var wrap = wrapOf(e.target);
-    if (wrap) markLoaded(wrap);
+    if (wrap) settle(wrap);
   }
 
   /* Listen for "shiny:outputinvalidated", not "shiny:recalculating".
@@ -113,7 +179,7 @@
         (output.textContent || "").trim().length > 0;
 
       if (wasRecalculating || (filled && !wrap.classList.contains("bones-loaded"))) {
-        markLoaded(wrap);
+        settle(wrap);
       }
     }
   }

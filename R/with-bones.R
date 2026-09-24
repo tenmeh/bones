@@ -54,6 +54,16 @@
 #'   the output calculates again. `FALSE` shows the skeleton again. `NULL`
 #'   uses the value from [bones_defaults()], which is `TRUE` if you did not
 #'   set it.
+#' @param delay The time in milliseconds before the skeleton, or the
+#'   dimming, appears. A load that ends sooner shows nothing, so a fast
+#'   output does not flicker. The space of the content is kept from the
+#'   start. `NULL` uses the value from [bones_defaults()], which is 300 if
+#'   you did not set it.
+#' @param min_time The shortest time in milliseconds that the skeleton, or
+#'   the dimming, stays on the screen once it has appeared. A load that ends
+#'   a moment after `delay` thus does not flash a skeleton for one frame.
+#'   `NULL` uses the value from [bones_defaults()], which is 500 if you did
+#'   not set it.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -77,7 +87,9 @@ withBones <- function(ui, # nolint: object_name_linter.
                       n = 3L,
                       height = NULL,
                       animation = NULL,
-                      stale = NULL) {
+                      stale = NULL,
+                      delay = NULL,
+                      min_time = NULL) {
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -97,6 +109,10 @@ withBones <- function(ui, # nolint: object_name_linter.
   animation <- match.arg(animation, c("wave", "pulse", "none"))
   stale <- stale %||% getOption("bones.stale", TRUE)
   check_flag(stale, "stale")
+  delay <- delay %||% getOption("bones.delay", 300)
+  check_ms(delay, "delay")
+  min_time <- min_time %||% getOption("bones.min_time", 500)
+  check_ms(min_time, "min_time")
 
   # --- Height to keep until the content arrives ---
   if (is.null(height)) {
@@ -116,6 +132,7 @@ withBones <- function(ui, # nolint: object_name_linter.
       class = paste0("bones-wrap bones-anim-", animation),
       `data-bones-type` = type,
       `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
+      `data-bones-min-time` = format(min_time, scientific = FALSE),
       # htmltools writes an NA attribute as an attribute with no value. Give
       # NULL instead, so that no `data-bones-id` attribute is written.
       `data-bones-id` = na_to_null(find_output_id(ui)),
@@ -124,6 +141,7 @@ withBones <- function(ui, # nolint: object_name_linter.
       # gap under content that is shorter than the estimate.
       style = paste(c(
         sprintf("--bones-reserve: %s;", height),
+        sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
         css_vars()
       ), collapse = " "),
       skeleton,
@@ -158,6 +176,8 @@ withBones <- function(ui, # nolint: object_name_linter.
 #'   it follows the rounding of the theme.
 #' @param speed The time of one animation cycle, in seconds.
 #' @param stale The default for the `stale` argument of [withBones()].
+#' @param delay,min_time The defaults for the `delay` and `min_time`
+#'   arguments of [withBones()], in milliseconds.
 #'
 #' @return The old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
@@ -175,7 +195,9 @@ bones_defaults <- function(animation = NULL,
                            highlight = NULL,
                            radius = NULL,
                            speed = NULL,
-                           stale = NULL) {
+                           stale = NULL,
+                           delay = NULL,
+                           min_time = NULL) {
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
@@ -186,6 +208,8 @@ bones_defaults <- function(animation = NULL,
     stop("`speed` must be a single positive number of seconds.", call. = FALSE)
   }
   if (!is.null(stale)) check_flag(stale, "stale")
+  if (!is.null(delay)) check_ms(delay, "delay")
+  if (!is.null(min_time)) check_ms(min_time, "min_time")
 
   # These values go into an inline style attribute. A value with a ";"
   # would end the declaration and start another one.
@@ -207,7 +231,9 @@ bones_defaults <- function(animation = NULL,
     bones.highlight = highlight,
     bones.radius    = radius,
     bones.speed     = speed,
-    bones.stale     = stale
+    bones.stale     = stale,
+    bones.delay     = delay,
+    bones.min_time  = min_time
   )
   new <- new[!vapply(new, is.null, logical(1))]
 

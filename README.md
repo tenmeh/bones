@@ -94,7 +94,7 @@ Set `rows` to the number of rows on a page. DT and reactable show 10 by
 default. The space kept for each package was measured in a browser, so the
 page does not move when the table arrives.
 
-## Two things that a spinner cannot do
+## What a spinner cannot do
 
 ### It keeps the content that the user reads
 
@@ -114,6 +114,19 @@ Turn it off for one output if you prefer a skeleton:
 
 ```r
 withBones(plotOutput("chart"), stale = FALSE)
+```
+
+### It does not flicker
+
+A skeleton that shows for a moment is worse than no skeleton. So the
+skeleton, and the dimming of old content, wait for 300 ms. A load that ends
+sooner shows nothing. When a skeleton has appeared, it stays for at least
+500 ms, so a load that ends a moment after the delay does not flash it for
+one frame. The space of the content is kept from the start.
+
+```r
+withBones(plotOutput("chart"), delay = 150, min_time = 400)
+bones_defaults(delay = 0)   # show the skeleton at once, for every output
 ```
 
 ### It keeps the space of the content

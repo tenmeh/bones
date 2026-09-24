@@ -24,6 +24,10 @@ First release.
   that package, with no `type`: for example the search box and the pages
   of DT, or the title and the spanner of gt. The space kept for each one
   was measured in a browser.
+* A fast load does not flicker. The skeleton, and the dimming of old
+  content, appear only after `delay` (300 ms), so a load that ends sooner
+  shows nothing. Once visible, they stay for at least `min_time` (500 ms).
+  Both are arguments of `withBones()` and `bones_defaults()`.
 * The colours come from the theme of the page: the text colour of the
   bslib theme, made faint. A skeleton thus takes the tint of a branded
   theme, and turns light in a dark theme or a dark part of a page, with no

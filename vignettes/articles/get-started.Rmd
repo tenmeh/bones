@@ -77,6 +77,16 @@ withBones(uiOutput("map"),     type = "plot", height = 500)
 When the content arrives, the content sets the height, and no gap stays
 under it.
 
+## A fast load does not flicker
+
+The skeleton waits for 300 ms before it appears, so a load that ends sooner
+shows nothing. Once it has appeared, it stays for at least 500 ms, so it
+never flashes for one frame. Change the times with `delay` and `min_time`:
+
+```{r}
+withBones(plotOutput("chart"), delay = 150, min_time = 400)
+```
+
 ## The second load keeps the old content
 
 On the first load, the user sees a skeleton. When the output calculates
