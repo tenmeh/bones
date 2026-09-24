@@ -20,6 +20,12 @@ First release.
 * A chart can have the shape of its kind: `type = "bar"`, `"line"`,
   `"area"`, `"scatter"`, `"histogram"`, `"pie"` or `"heatmap"`. A
   `plotOutput()` with no `type` gets the bar shape, as before.
+* A visualisation widget gets the shape of its kind, with no `type`. New
+  shapes: `"map"` (leaflet, tmap, mapview, mapdeck, mapgl, googleway,
+  threejs globe), `"network"` (visNetwork, DiagrammeR, networkD3,
+  collapsibleTree), `"timeline"` (timevis) and `"wordcloud"` (wordcloud2).
+  dygraphs gets `"line"`. plotly, echarts4r, highcharter, ggiraph and other
+  widgets that draw any chart keep the bar shape.
 * A table from DT, reactable, gt or rhandsontable gets a shape that copies
   that package, with no `type`: for example the search box and the pages
   of DT, or the title and the spanner of gt. The space kept for each one

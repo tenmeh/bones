@@ -6,20 +6,61 @@
 #' @keywords internal
 #' @noRd
 class_map <- function() {
-  list(
-    c(class = "shiny-plot-output",    type = "plot"),
-    c(class = "shiny-image-output",   type = "plot"),
-    c(class = "shiny-table-output",   type = "table"),
-    # Each table package puts its own class on the container. These come
-    # before the general classes below: an rhandsontable is also an
-    # htmlwidget, and a gt output is also an HTML output.
-    c(class = "datatables",           type = "dt"),
-    c(class = "reactable",            type = "reactable"),
-    c(class = "rhandsontable",        type = "rhandsontable"),
-    c(class = "gt_shiny",             type = "gt"),
-    c(class = "shiny-text-output",    type = "text"),
-    c(class = "html-widget-output",   type = "plot"),
-    c(class = "shiny-html-output",    type = "text")
+  c(
+    list(
+      c(class = "shiny-plot-output",    type = "plot"),
+      c(class = "shiny-image-output",   type = "plot"),
+      c(class = "shiny-table-output",   type = "table"),
+      # Each table package puts its own class on the container. These come
+      # before the general classes below: an rhandsontable is also an
+      # htmlwidget, and a gt output is also an HTML output.
+      c(class = "datatables",           type = "dt"),
+      c(class = "reactable",            type = "reactable"),
+      c(class = "rhandsontable",        type = "rhandsontable"),
+      c(class = "gt_shiny",             type = "gt")
+    ),
+    widget_map(),
+    list(
+      c(class = "shiny-text-output",    type = "text"),
+      # Any other htmlwidget, such as plotly, echarts4r, highcharter or
+      # ggiraph: these can draw any kind of chart, and the output does not
+      # say which, so they get the bar shape. `type` chooses another.
+      c(class = "html-widget-output",   type = "plot"),
+      c(class = "shiny-html-output",    type = "text")
+    )
+  )
+}
+
+
+#' htmlwidgets whose kind of picture is known from the widget alone
+#'
+#' An htmlwidget output writes the name of its widget as a class on the
+#' container, for example class="leaflet html-widget html-widget-output".
+#' A leaflet widget is always a map, so the name gives the shape.
+#'
+#' tmap and mapview draw with leaflet, so they are maps too. ggmap and a
+#' ggplot2 map draw into a plotOutput(), which gives no name: give them
+#' type = "map".
+#'
+#' @return A list of c(class, type) pairs, in the form of class_map().
+#' @keywords internal
+#' @noRd
+widget_map <- function() {
+  widgets <- list(
+    map = c("leaflet", "mapdeck", "globe", "google_map", "maplibregl", "mapboxgl",
+            "deckgl", "mapboxer"),
+    network = c("visNetwork", "grViz", "DiagrammeR", "forceNetwork", "sankeyNetwork",
+                "diagonalNetwork", "radialNetwork", "dendroNetwork", "collapsibleTree"),
+    timeline = "timevis",
+    wordcloud = "wordcloud2",
+    line = c("dygraphs", "sparkline"),
+    scatter = "scatterplotThree"
+  )
+  unlist(
+    lapply(names(widgets), function(type) {
+      lapply(widgets[[type]], function(name) c(class = name, type = type))
+    }),
+    recursive = FALSE
   )
 }
 

@@ -50,6 +50,17 @@ the kind with `type`: `withBones(plotOutput("p"), type = "scatter")`.
 gallery(c("plot", "bar", "line", "area", "scatter", "histogram", "pie", "heatmap"))
 ```
 
+## Maps, networks, timelines and word clouds
+
+These shapes are also for widgets. `bones` finds them from the output: a
+`leaflet::leafletOutput()` gets the map, a `visNetwork::visNetworkOutput()`
+gets the network, and so on. Give `type = "map"` to a map that draws into a
+`plotOutput()`, such as one from ggmap.
+
+```{r}
+gallery(c("map", "network", "timeline", "wordcloud"))
+```
+
 ## Tables
 
 A `tableOutput()` gets the plain table shape. A table from a table package

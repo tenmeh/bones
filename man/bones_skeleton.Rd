@@ -47,8 +47,10 @@ The skeleton uses the animation and the colours from \code{\link[=bones_defaults
 }
 \section{Chart shapes}{
 A chart has a shape for each common kind: \code{"bar"}, \code{"line"},
-\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"} and \code{"heatmap"}. \code{"plot"}
-is the same as \code{"bar"}. \code{plotOutput()} cannot say which kind it will
+\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"},
+\code{"network"}, \code{"timeline"} and \code{"wordcloud"}. \code{"plot"} is the same as
+\code{"bar"}. \code{\link[=withBones]{withBones()}} finds the shape of a map, network, timeline or
+word cloud widget from its output. \code{plotOutput()} cannot say which kind it will
 hold, because \code{renderPlot()} decides that later, on the server. So you
 name the kind yourself.
 }

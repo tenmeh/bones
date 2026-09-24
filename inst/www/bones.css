@@ -203,6 +203,118 @@
   background-color: var(--bones-highlight);
 }
 
+/* --- map ------------------------------------------------------------------- */
+
+/* Tiles: a grid of faint lines on a faint ground. The coast and the roads
+   are an SVG that fills the map. The pins and the zoom buttons are bars. */
+.bones-map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: calc(var(--bones-radius) * 2);
+  background-color: var(--bones-stripe);
+  background-image:
+    linear-gradient(var(--bones-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bones-color) 1px, transparent 1px);
+  background-size: 25% 25%;
+}
+
+.bones-svg-road {
+  fill: none;
+  stroke: var(--bones-color);
+  stroke-width: 6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The zoom buttons of leaflet, at the top left. */
+.bones-map-zoom {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bones-map-zoom-button {
+  width: 1.6rem;
+  height: 1.6rem;
+  background-color: var(--bones-highlight);
+}
+
+/* A pin: a square with three round corners, turned so that the sharp corner
+   points down, at the place that the pin marks. */
+.bones-pin {
+  position: absolute;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50% 50% 50% 0;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  background-color: var(--bones-highlight);
+}
+
+/* --- network ---------------------------------------------------------------- */
+
+.bones-network {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bones-svg-edge {
+  stroke: var(--bones-color);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.bones-svg-node {
+  fill: var(--bones-highlight);
+}
+
+/* --- timeline --------------------------------------------------------------- */
+
+/* Four rows of items. skel_timeline() in R sets the place of each item. */
+.bones-timeline {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bones-timeline-item {
+  position: absolute;
+  height: 18%;
+  max-height: 2rem;
+}
+
+.bones-timeline-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.4rem;
+}
+
+/* --- word cloud ------------------------------------------------------------- */
+
+/* Words of different sizes, wrapped around the centre. */
+.bones-wordcloud {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  padding: 0 8%;
+}
+
+.bones-word {
+  border-radius: calc(var(--bones-radius) * 1.5);
+}
+
 /* --- DT ------------------------------------------------------------------ */
 
 .bones-dt,

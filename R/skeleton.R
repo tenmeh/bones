@@ -11,8 +11,10 @@
 #' # Chart shapes
 #'
 #' A chart has a shape for each common kind: `"bar"`, `"line"`,
-#' `"scatter"`, `"area"`, `"histogram"`, `"pie"` and `"heatmap"`. `"plot"`
-#' is the same as `"bar"`. `plotOutput()` cannot say which kind it will
+#' `"scatter"`, `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`,
+#' `"network"`, `"timeline"` and `"wordcloud"`. `"plot"` is the same as
+#' `"bar"`. [withBones()] finds the shape of a map, network, timeline or
+#' word cloud widget from its output. `plotOutput()` cannot say which kind it will
 #' hold, because `renderPlot()` decides that later, on the server. So you
 #' name the kind yourself.
 #'
@@ -107,6 +109,10 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
     scatter   = skel_scatter(),
     pie       = skel_pie(),
     heatmap   = skel_heatmap(),
+    map       = skel_map(),
+    network   = skel_network(),
+    timeline  = skel_timeline(),
+    wordcloud = skel_wordcloud(),
     cards     = skel_cards(n),
     value     = skel_value(n)
   )
@@ -342,7 +348,8 @@ skel_rhandsontable <- function(rows, cols) {
 #' @keywords internal
 #' @noRd
 chart_types <- function() {
-  c("bar", "line", "scatter", "area", "histogram", "pie", "heatmap")
+  c("bar", "line", "scatter", "area", "histogram", "pie", "heatmap",
+    "map", "network", "timeline", "wordcloud")
 }
 
 #' The names of the table shapes for table packages, other than "table"
@@ -513,6 +520,125 @@ skel_heatmap <- function(n_rows = 6L, n_cols = 10L) {
 }
 
 
+#' A map: tiles, a coast, roads, three pins and the zoom buttons
+#'
+#' The tiles are a grid in the stylesheet. The coast and the roads are an
+#' SVG that fills the map, so they stretch with it. The pins and the zoom
+#' buttons are bars, so they have the wave animation.
+#' @keywords internal
+#' @noRd
+skel_map <- function() {
+  roads <- c(
+    "0,30 22,34 45,28 70,40 100,36",
+    "52,0 55,22 58,48 66,72 70,100",
+    "20,100 34,76 58,48 88,64 100,70"
+  )
+  pins <- list(c(28, 36), c(61, 54), c(78, 24))   # left and top, in percent
+  htmltools::tags$div(
+    class = "bones-map",
+    chart_svg(
+      htmltools::tags$polygon(
+        class = "bones-svg-fill",
+        points = "0,62 14,58 26,66 38,72 44,84 40,100 0,100"
+      ),
+      lapply(roads, function(p) htmltools::tags$polyline(class = "bones-svg-road", points = p))
+    ),
+    htmltools::tags$div(
+      class = "bones-map-zoom",
+      htmltools::tags$div(class = "bones-bar bones-map-zoom-button"),
+      htmltools::tags$div(class = "bones-bar bones-map-zoom-button")
+    ),
+    lapply(pins, function(p) {
+      htmltools::tags$div(
+        class = "bones-bar bones-pin",
+        style = sprintf("left: %g%%; top: %g%%;", p[1], p[2])
+      )
+    })
+  )
+}
+
+#' A network: nodes of different sizes, joined by edges
+#'
+#' This SVG keeps its aspect ratio, unlike the line and the area, so the
+#' nodes stay round. The network is centred in the space.
+#' @keywords internal
+#' @noRd
+skel_network <- function() {
+  nodes <- data.frame(
+    x = c(14, 32, 34, 52, 70, 72, 88, 52, 20, 90),
+    y = c(30, 14, 44, 28, 12, 46, 26, 54, 52, 50),
+    r = c(4, 3, 3.5, 5, 3, 3.5, 4, 2.8, 2.8, 2.6)
+  )
+  edges <- list(c(1, 2), c(1, 3), c(1, 4), c(2, 4), c(3, 4), c(4, 5), c(4, 6),
+                c(5, 7), c(6, 7), c(6, 8), c(3, 9), c(7, 10), c(6, 10))
+  htmltools::tags$div(
+    class = "bones-network",
+    htmltools::tags$svg(
+      class = "bones-svg",
+      xmlns = "http://www.w3.org/2000/svg",
+      viewBox = "0 0 100 60",
+      preserveAspectRatio = "xMidYMid meet",
+      focusable = "false",
+      # The edges first, so the nodes are drawn on top of them.
+      lapply(edges, function(e) {
+        htmltools::tags$line(
+          class = "bones-svg-edge",
+          x1 = nodes$x[e[1]], y1 = nodes$y[e[1]], x2 = nodes$x[e[2]], y2 = nodes$y[e[2]]
+        )
+      }),
+      lapply(seq_len(nrow(nodes)), function(i) {
+        htmltools::tags$circle(class = "bones-svg-node", cx = nodes$x[i], cy = nodes$y[i], r = nodes$r[i])
+      })
+    )
+  )
+}
+
+#' A timeline: items on four rows, over an axis with tick labels
+#' @keywords internal
+#' @noRd
+skel_timeline <- function() {
+  # row, left and width, in percent
+  items <- list(c(1, 4, 22), c(1, 38, 30), c(2, 14, 26), c(2, 52, 18),
+                c(3, 6, 16), c(3, 30, 34), c(4, 10, 20), c(4, 46, 40))
+  htmltools::tagList(
+    htmltools::tags$div(
+      class = "bones-timeline",
+      lapply(items, function(it) {
+        htmltools::tags$div(
+          class = "bones-bar bones-timeline-item",
+          style = sprintf("left: %g%%; top: %g%%; width: %g%%;", it[2], 6 + (it[1] - 1) * 24, it[3])
+        )
+      })
+    ),
+    htmltools::tags$div(class = "bones-axis"),
+    htmltools::tags$div(
+      class = "bones-timeline-ticks",
+      lapply(1:6, function(i) bar(width = "2.5rem"))
+    )
+  )
+}
+
+#' A word cloud: words of different sizes, around the centre
+#' @keywords internal
+#' @noRd
+skel_wordcloud <- function() {
+  # width and height of each word, in rem. The big words are strong.
+  words <- list(
+    c(4, 0.9), c(6, 1.3), c(3, 0.7), c(5, 1.1), c(9, 2.2), c(3.5, 0.8),
+    c(4.5, 1.0), c(7, 1.6), c(2.8, 0.7), c(5.5, 1.2), c(3.2, 0.8), c(8, 1.9),
+    c(4, 0.9), c(2.5, 0.6), c(6, 1.4), c(3.6, 0.8), c(5, 1.1), c(3, 0.7)
+  )
+  htmltools::tags$div(
+    class = "bones-wordcloud",
+    lapply(words, function(w) {
+      htmltools::tags$div(
+        class = paste(c("bones-bar", "bones-word", if (w[2] >= 1.6) "bones-bar-strong"), collapse = " "),
+        style = sprintf("width: %grem; height: %grem;", w[1], w[2])
+      )
+    })
+  )
+}
+
 #' Card shapes, side by side
 #' @keywords internal
 #' @noRd
@@ -562,6 +688,10 @@ default_height <- function(type, rows = 6L, lines = 3L, n = 3L) {
     plot  = "400px",
     # The same height as plotOutput(), for each chart shape.
     bar = , line = , scatter = , area = , histogram = , pie = , heatmap = "400px",
+    # A map, a network and a word cloud are as tall as leafletOutput() and
+    # most other widget outputs. A timeline has a few rows, so it is lower.
+    map = , network = , wordcloud = "400px",
+    timeline = "300px",
     # The table packages, measured in a browser with Bootstrap 5, which is
     # the larger of Bootstrap 3 and 5. A reserve that is too tall closes
     # when the content arrives; one that is too short pushes the page down.
