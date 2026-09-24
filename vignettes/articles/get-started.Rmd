@@ -77,6 +77,10 @@ withBones(uiOutput("map"),     type = "plot", height = 500)
 When the content arrives, the content sets the height, and no gap stays
 under it.
 
+The browser also stores the real height of the content. On the next visit,
+the placeholder keeps that height in place of the estimate, so the page does
+not move at all. Turn this off with `remember = FALSE`.
+
 ## A fast load does not flicker
 
 The skeleton waits for 300 ms before it appears, so a load that ends sooner

@@ -340,6 +340,52 @@ test_that("a fast load shows nothing, and a skeleton stays at least min_time", {
   expect_no_shiny_errors(app)
 })
 
+test_that("the real height is remembered for the next visit", {
+  testthat::skip_on_cran()
+
+  app <- local_app_driver(
+    test_path("apps", "remember"),
+    name         = "bones-remember-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+
+  # The kept space of each box, measured while its content still loads.
+  kept <- function() {
+    app$wait_for_js("document.querySelectorAll('.bones-wrap').length === 2", timeout = 30000)
+    unlist(app$get_js("
+      ['remember', 'forget'].map(function (k) {
+        var w = document.querySelector('#box-' + k + ' .bones-wrap');
+        return w.classList.contains('bones-has-loaded') ? -1 : Math.round(w.getBoundingClientRect().height);
+      })
+    "))
+  }
+
+  # --- first visit: nothing stored, so both keep the 72px estimate -------
+  app$run_js("try { localStorage.clear(); } catch (e) {}")
+  app$run_js("location.reload();")
+  Sys.sleep(0.5)
+  expect_equal(kept(), c(72, 72))
+
+  # The content arrives, and the real height (400px) is stored. After a
+  # reload, the idle tracking of shinytest2 is gone, so wait_for_idle()
+  # cannot be used: wait for the state itself.
+  loaded <- "document.querySelectorAll('.bones-wrap.bones-loaded').length === 2"
+  app$wait_for_js(loaded, timeout = 30000)
+  Sys.sleep(0.6)
+  stored <- app$get_js("Object.keys(localStorage).filter(function (k) { return k.indexOf('bones:height:') === 0; })")
+  expect_length(unlist(stored), 1L)
+
+  # --- second visit: the one that remembers keeps 400px from the start --
+  app$run_js("location.reload();")
+  Sys.sleep(0.5)
+  expect_equal(kept(), c(400, 72))
+
+  app$wait_for_js(loaded, timeout = 30000)
+  expect_no_shiny_errors(app)
+})
+
 test_that("the skeleton colours follow the theme of the page", {
   testthat::skip_on_cran()
   skip_if_not_installed("bslib")

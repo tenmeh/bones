@@ -187,6 +187,31 @@ test_that("delay and min_time must be single numbers of 0 or more", {
   expect_error(bones_defaults(delay = Inf), "`delay` must be a single number of milliseconds")
 })
 
+test_that("only an estimated height is marked to be remembered", {
+  # An estimate: the output sets no height.
+  html <- as.character(withBones(fake_output("shiny-html-output", id = "a"), type = "text"))
+  expect_match(html, 'data-bones-remember="true"', fixed = TRUE)
+
+  # Exact already: the output sets its height, or the caller gives one.
+  html <- as.character(withBones(fake_output("shiny-plot-output", style = "height:320px")))
+  expect_false(grepl("data-bones-remember", html, fixed = TRUE))
+  html <- as.character(withBones(fake_output("shiny-html-output"), height = 200))
+  expect_false(grepl("data-bones-remember", html, fixed = TRUE))
+})
+
+test_that("remember can be turned off per output and for the session", {
+  out <- fake_output("shiny-html-output", id = "a")
+  expect_false(grepl("data-bones-remember", as.character(withBones(out, remember = FALSE)), fixed = TRUE))
+
+  old <- bones_defaults(remember = FALSE)
+  on.exit(options(old), add = TRUE)
+  expect_false(grepl("data-bones-remember", as.character(withBones(out)), fixed = TRUE))
+  expect_match(as.character(withBones(out, remember = TRUE)), 'data-bones-remember="true"', fixed = TRUE)
+
+  expect_error(withBones(out, remember = "yes"), "`remember` must be TRUE or FALSE")
+  expect_error(bones_defaults(remember = NA), "`remember` must be TRUE or FALSE")
+})
+
 test_that("the skeleton and the dimming wait for the delay", {
   css <- paste(
     readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),

@@ -52,7 +52,102 @@
     wrap._bonesShownAt = undefined;
     wrap.classList.add("bones-loaded", "bones-has-loaded");
     wrap.classList.remove("bones-loading", "bones-stale");
+
+    // The content is on the screen now. Measure it a moment later, when a
+    // widget has finished drawing.
+    if (wrap._bonesSaveHeight) {
+      wrap._bonesSaveHeight = false;
+      window.setTimeout(function () { saveHeight(wrap); }, 250);
+    }
   }
+
+  /* --- Remember the real height ------------------------------------------
+   *
+   * The space that a wrapper keeps before its content arrives is an
+   * estimate, unless the output sets its own height. The estimate can be
+   * wrong, and the page then moves when the content arrives. So when the
+   * content has arrived, its real height is stored in localStorage. On the
+   * next visit, the wrapper keeps that height in place of the estimate.
+   *
+   * Only a wrapper with data-bones-remember="true" does this: withBones()
+   * sets it only when the height came from an estimate. The key is the path
+   * of the page and the id of the output, so two apps on one server do not
+   * mix their heights. A stored height is used only when the wrapper has
+   * almost the same width as when it was measured: a narrower wrapper, as on
+   * a phone, makes taller content, and the estimate is then better.
+   *
+   * localStorage can be absent or full, or blocked in a private window. Each
+   * access is thus in a try block, and a failure only means no stored
+   * height. */
+  var HEIGHT_PREFIX = "bones:height:";
+
+  function heightKey(wrap) {
+    var id = wrap.getAttribute("data-bones-id");
+    return id ? HEIGHT_PREFIX + window.location.pathname + ":" + id : null;
+  }
+
+  function remembers(wrap) {
+    return wrap.getAttribute("data-bones-remember") === "true";
+  }
+
+  function readHeight(key) {
+    try {
+      var value = JSON.parse(window.localStorage.getItem(key));
+      return value && isFinite(value.h) && isFinite(value.w) && value.h > 0 ? value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveHeight(wrap) {
+    if (!remembers(wrap) || !wrap.classList.contains("bones-loaded")) return;
+    var key = heightKey(wrap);
+    var content = wrap.querySelector(".bones-content");
+    if (!key || !content) return;
+    var h = Math.round(content.getBoundingClientRect().height);
+    var w = Math.round(wrap.getBoundingClientRect().width);
+    if (!(h > 0 && w > 0)) return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify({h: h, w: w}));
+    } catch (e) {
+      // No storage: the next visit uses the estimate.
+    }
+  }
+
+  function restoreHeight(wrap) {
+    if (wrap._bonesRestored || !remembers(wrap) ||
+        wrap.classList.contains("bones-has-loaded")) return;
+    var key = heightKey(wrap);
+    if (!key) return;
+    var width = wrap.getBoundingClientRect().width;
+    // A wrapper in a hidden tab has no width yet. Try again when its output
+    // starts to load (see onInvalidated).
+    if (!(width > 0)) return;
+    wrap._bonesRestored = true;
+    var saved = readHeight(key);
+    if (saved && Math.abs(width - saved.w) <= 0.1 * saved.w) {
+      wrap.style.setProperty("--bones-reserve", saved.h + "px");
+    }
+  }
+
+  function restoreIn(node) {
+    if (node.nodeType !== 1) return;
+    if (node.matches(".bones-wrap[data-bones-remember]")) restoreHeight(node);
+    var inner = node.querySelectorAll(".bones-wrap[data-bones-remember]");
+    for (var i = 0; i < inner.length; i++) restoreHeight(inner[i]);
+  }
+
+  // Restore as each wrapper enters the page: while the page loads, and when
+  // a renderUI() inserts one. The records come before the browser paints,
+  // so the wrapper has the stored height from its first frame. Only the
+  // added nodes are examined, so a busy app does little extra work.
+  restoreIn(document.documentElement);
+  new MutationObserver(function (records) {
+    for (var r = 0; r < records.length; r++) {
+      var added = records[r].addedNodes;
+      for (var a = 0; a < added.length; a++) restoreIn(added[a]);
+    }
+  }).observe(document.documentElement, {childList: true, subtree: true});
 
   /* --- No flicker ------------------------------------------------------------
    *
@@ -119,6 +214,9 @@
       wrap._bonesTimer = null;
     }
 
+    // A wrapper that was in a hidden tab can have a width now.
+    restoreHeight(wrap);
+
     if (wrap.classList.contains("bones-loaded") && keepsStale(wrap)) {
       // The user is possibly reading this content, so it stays and dims.
       // Grey blocks in its place would remove information and add none.
@@ -132,7 +230,11 @@
 
   function onSettled(e) {
     var wrap = wrapOf(e.target);
-    if (wrap) settle(wrap);
+    if (!wrap) return;
+    // Only a real value has a height worth storing. An error, or a silent
+    // req(), leaves the output empty or shows a message.
+    if (e.type === "shiny:value") wrap._bonesSaveHeight = true;
+    settle(wrap);
   }
 
   /* Listen for "shiny:outputinvalidated", not "shiny:recalculating".

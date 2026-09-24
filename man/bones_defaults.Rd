@@ -12,7 +12,8 @@ bones_defaults(
   speed = NULL,
   stale = NULL,
   delay = NULL,
-  min_time = NULL
+  min_time = NULL,
+  remember = NULL
 )
 }
 \arguments{
@@ -38,6 +39,9 @@ it follows the rounding of the theme.}
 
 \item{delay, min_time}{The defaults for the \code{delay} and \code{min_time}
 arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
+
+\item{remember}{The default for the \code{remember} argument of
+\code{\link[=withBones]{withBones()}}.}
 }
 \value{
 The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.

@@ -140,6 +140,12 @@ yourself.
 When the content arrives, the content sets the height. If the estimate was
 too tall, the space closes. No gap stays under the content.
 
+An estimate can be wrong. So when the content arrives, the browser stores
+its real height, and on the next visit the placeholder keeps that height in
+place of the estimate. From the second visit, the page does not move at
+all. Only an estimated height is stored, per page and per output, and it is
+used only at almost the same width. Turn it off with `remember = FALSE`.
+
 ## A note about the implementation
 
 The content is hidden with `visibility: hidden`, not with `display: none`.

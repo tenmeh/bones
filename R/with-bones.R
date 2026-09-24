@@ -64,6 +64,14 @@
 #'   a moment after `delay` thus does not flash a skeleton for one frame.
 #'   `NULL` uses the value from [bones_defaults()], which is 500 if you did
 #'   not set it.
+#' @param remember `TRUE` stores the real height of the content in the
+#'   browser, and keeps that height on the next visit in place of the
+#'   estimate, so the page does not move when the content arrives. Only a
+#'   height from an estimate is stored: a height from `height`, or from the
+#'   output itself, is exact already. The height is kept per page and per
+#'   output id, and it is used only when the output has almost the same
+#'   width as when it was measured. `NULL` uses the value from
+#'   [bones_defaults()], which is `TRUE` if you did not set it.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -89,7 +97,8 @@ withBones <- function(ui, # nolint: object_name_linter.
                       animation = NULL,
                       stale = NULL,
                       delay = NULL,
-                      min_time = NULL) {
+                      min_time = NULL,
+                      remember = NULL) {
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -113,12 +122,18 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_ms(delay, "delay")
   min_time <- min_time %||% getOption("bones.min_time", 500)
   check_ms(min_time, "min_time")
+  remember <- remember %||% getOption("bones.remember", TRUE)
+  check_flag(remember, "remember")
 
   # --- Height to keep until the content arrives ---
+  # Only an estimated height can be improved by the real one, so only an
+  # estimate is marked for bones.js to remember.
+  estimated <- FALSE
   if (is.null(height)) {
     height <- find_inline_height(ui)
     if (is.na(height)) {
       height <- default_height(type, rows = rows, lines = lines, n = n)
+      estimated <- TRUE
     }
   }
 
@@ -133,6 +148,8 @@ withBones <- function(ui, # nolint: object_name_linter.
       `data-bones-type` = type,
       `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
       `data-bones-min-time` = format(min_time, scientific = FALSE),
+      # Read by bones.js: store the real height, and use it next time.
+      `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
       # htmltools writes an NA attribute as an attribute with no value. Give
       # NULL instead, so that no `data-bones-id` attribute is written.
       `data-bones-id` = na_to_null(find_output_id(ui)),
@@ -178,6 +195,8 @@ withBones <- function(ui, # nolint: object_name_linter.
 #' @param stale The default for the `stale` argument of [withBones()].
 #' @param delay,min_time The defaults for the `delay` and `min_time`
 #'   arguments of [withBones()], in milliseconds.
+#' @param remember The default for the `remember` argument of
+#'   [withBones()].
 #'
 #' @return The old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
@@ -197,7 +216,8 @@ bones_defaults <- function(animation = NULL,
                            speed = NULL,
                            stale = NULL,
                            delay = NULL,
-                           min_time = NULL) {
+                           min_time = NULL,
+                           remember = NULL) {
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
@@ -210,6 +230,7 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(stale)) check_flag(stale, "stale")
   if (!is.null(delay)) check_ms(delay, "delay")
   if (!is.null(min_time)) check_ms(min_time, "min_time")
+  if (!is.null(remember)) check_flag(remember, "remember")
 
   # These values go into an inline style attribute. A value with a ";"
   # would end the declaration and start another one.
@@ -233,7 +254,8 @@ bones_defaults <- function(animation = NULL,
     bones.speed     = speed,
     bones.stale     = stale,
     bones.delay     = delay,
-    bones.min_time  = min_time
+    bones.min_time  = min_time,
+    bones.remember  = remember
   )
   new <- new[!vapply(new, is.null, logical(1))]
 
