@@ -9,7 +9,8 @@
 # render functions one at a time, so only the first output does the slow
 # work. A wrapper that waited for its own render to start thus did not go
 # stale at all. The test looks at the page 0.4 seconds after a refresh,
-# while the slow work runs, and each wrapper must already show it.
+# while the slow work runs, and each chart must already show it. It then
+# opens each tab of the demo, and each tab must load.
 #
 # The second test uses a small application in apps/settle. It sends the
 # outputs down each path that ends a recalculation: a value, a silent
@@ -31,7 +32,26 @@ click_without_wait <- function(app, id) {
   app$run_js(sprintf("document.getElementById('%s').click();", id))
 }
 
-test_that("the demo app: skeletons on load, stale content on refresh", {
+# The output ids on the tab that shows. An output on another tab does not
+# load until its tab shows.
+shown_ids <- function(app) {
+  unlist(app$get_js("
+    Array.from(document.querySelectorAll('.tab-pane.active .bones-wrap'))
+      .map(function (w) { return w.getAttribute('data-bones-id'); })
+  "))
+}
+
+show_tab <- function(app, tab) {
+  app$set_inputs(tab = tab, wait_ = FALSE)
+  app$wait_for_js(sprintf(
+    "document.querySelector('.tab-pane.active[data-value=\"%s\"]') !== null", tab
+  ))
+  ids <- shown_ids(app)
+  if (length(ids) > 0L) wait_for_settled(app, ids = ids)
+  ids
+}
+
+test_that("the demo app: each tab loads, stale and animation controls work", {
   testthat::skip_on_cran()
 
   app <- local_app_driver(
@@ -41,31 +61,45 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
     load_timeout = 45000L,
     timeout      = 15000L
   )
-  wait_for_settled(app)
+  charts <- c("bar", "line", "scatter", "histogram", "pie", "heatmap")
+  app$set_inputs(seconds = 1.2)
+  wait_for_settled(app, ids = charts)
 
-  # --- first load: each wrapper shows its content -------------------------
-  expect_equal(
-    wrapper_states(app),
-    c(chart = "loaded", table = "loaded", boxes = "loaded", summary = "loaded")
-  )
+  # --- first load: each chart shows its content ----------------------------
+  expect_equal(wrapper_states(app, charts), setNames(rep("loaded", 6), charts))
+  expect_equal(unname(unlist(app$get_js("
+    Array.from(document.querySelectorAll('[data-bones-id=bar], [data-bones-id=pie]'))
+      .map(function (w) { return w.getAttribute('data-bones-type'); })
+  "))), c("bar", "pie"))
 
-  # --- refresh: each wrapper shows the recalculation at once --------------
+  # --- refresh with stale on: the old charts stay, dimmed ------------------
   click_without_wait(app, "refresh")
   Sys.sleep(0.4)
-  expect_equal(
-    wrapper_states(app),
-    c(chart = "stale", table = "stale", boxes = "stale", summary = "loading")
-  )
+  expect_equal(wrapper_states(app, charts), setNames(rep("stale", 6), charts))
+  wait_for_settled(app, ids = charts)
 
-  # --- after the refresh: each wrapper shows its content again ------------
-  wait_for_settled(app)
-  expect_equal(
-    wrapper_states(app),
-    c(chart = "loaded", table = "loaded", boxes = "loaded", summary = "loaded")
-  )
+  # --- refresh with stale off: the skeletons come back ---------------------
+  app$run_js("document.getElementById('stale').click();")
+  click_without_wait(app, "refresh")
+  Sys.sleep(0.4)
+  expect_equal(wrapper_states(app, charts), setNames(rep("loading", 6), charts))
+  wait_for_settled(app, ids = charts)
 
-  # --- the reserved height goes after the content arrives -----------------
-  # A text output of two lines must not keep the space of three.
+  # --- the animation control changes the class of every wrapper ------------
+  app$run_js("document.querySelector('input[name=animation][value=pulse]').click();")
+  expect_true(app$get_js("
+    Array.from(document.querySelectorAll('.bones-wrap')).every(function (w) {
+      return w.classList.contains('bones-anim-pulse') &&
+        !w.classList.contains('bones-anim-wave');
+    })
+  "))
+
+  # --- each other tab loads when it shows ----------------------------------
+  expect_true("plain" %in% show_tab(app, "Tables"))
+  expect_setequal(show_tab(app, "Text and cards"), c("values", "cards", "summary"))
+
+  # The reserved height goes after the content arrives: the summary must
+  # not keep the space of three lines.
   summary_gap <- app$get_js("
     (function () {
       var w = document.querySelector('[data-bones-id=summary]');
@@ -75,6 +109,10 @@ test_that("the demo app: skeletons on load, stale content on refresh", {
   ")
   expect_lt(summary_gap, 1)
 
+  show_tab(app, "Maps and networks")
+
+  # Every wrapper on the page has now loaded.
+  wait_for_settled(app)
   expect_no_shiny_errors(app)
 })
 

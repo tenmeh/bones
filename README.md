@@ -27,11 +27,18 @@ That is all. The shape comes from the output that you wrap.
 remotes::install_github("tenmeh/bones")
 ```
 
-Then run the demo. It shows the difference:
+Then run the demo:
 
 ```r
 shiny::runApp(system.file("examples/demo", package = "bones"))
 ```
+
+The demo is a tour. It has a tab for charts, tables, text and cards, and
+maps and networks, and each output shows the skeleton of its shape. The
+sidebar sets the load time and the animation, turns `stale` on and off,
+and turns on the dark mode. The tables tab uses DT, reactable and gt, and
+the maps tab uses leaflet and visNetwork. If a package is not installed,
+its card tells you so, and the rest of the demo still runs.
 
 ## The idea
 
