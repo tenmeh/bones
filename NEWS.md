@@ -49,3 +49,6 @@ First release.
 * The arguments are checked, and a bad value gives a message that names
   the argument. `height` works as in Shiny, so a number is pixels.
 * There is no animation for users who ask their system to reduce motion.
+* The demo is a tour, with a tab for charts, tables, text and cards, and
+  maps and networks. The sidebar sets the load time, `stale`, the animation
+  and the dark mode, so you can see each option at work.

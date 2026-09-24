@@ -143,17 +143,20 @@ local_app_driver <- function(app_dir, ...) {
 #'
 #' @param app A live `shinytest2::AppDriver`.
 #' @param timeout The longest wait, in milliseconds.
+#' @param ids The output ids to wait for. `NULL` waits for all of them. An
+#'   output on a tab that does not show never loads, so give the ids of the
+#'   tab that shows.
 #' @return The application, invisibly.
-wait_for_settled <- function(app, timeout = 20000L) {
+wait_for_settled <- function(app, timeout = 20000L, ids = NULL) {
   app$wait_for_js(
-    "(function () {
-       var w = document.querySelectorAll('.bones-wrap');
-       return w.length > 0 && Array.from(w).every(function (x) {
+    sprintf("(function () {
+       var w = %s;
+       return w.length > 0 && w.every(function (x) {
          return x.classList.contains('bones-loaded') &&
            !x.classList.contains('bones-stale') &&
            !x.classList.contains('bones-loading');
        });
-     })()",
+     })()", wrap_query(ids)),
     timeout = timeout
   )
   app$wait_for_idle(timeout = timeout)
@@ -163,20 +166,34 @@ wait_for_settled <- function(app, timeout = 20000L) {
 #' The state classes of each bones wrapper, by output id.
 #'
 #' @param app A live `shinytest2::AppDriver`.
+#' @param ids The output ids to look at. `NULL` looks at all of them.
 #' @return A named character vector. Each value is one of "skeleton",
 #'   "loaded", "stale" or "loading".
-wrapper_states <- function(app) {
-  states <- app$get_js("
-    Array.from(document.querySelectorAll('.bones-wrap')).map(function (w) {
+wrapper_states <- function(app, ids = NULL) {
+  states <- app$get_js(sprintf("
+    %s.map(function (w) {
       var c = w.classList;
       var s = c.contains('bones-stale') ? 'stale' :
               c.contains('bones-loading') ? 'loading' :
               c.contains('bones-loaded') ? 'loaded' : 'skeleton';
       return [w.getAttribute('data-bones-id'), s];
     })
-  ")
+  ", wrap_query(ids)))
   stats::setNames(
     vapply(states, `[[`, character(1), 2L),
     vapply(states, `[[`, character(1), 1L)
   )
+}
+
+#' JS for an array of the bones wrappers of the given outputs.
+#'
+#' @param ids Output ids, or `NULL` for all the wrappers.
+#' @return A string of JS.
+wrap_query <- function(ids = NULL) {
+  selector <- if (is.null(ids)) {
+    ".bones-wrap"
+  } else {
+    paste0(".bones-wrap[data-bones-id=\"", ids, "\"]", collapse = ", ")
+  }
+  sprintf("Array.from(document.querySelectorAll('%s'))", selector)
 }
