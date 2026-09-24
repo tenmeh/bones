@@ -61,12 +61,14 @@ gets the network, and so on. Give `type = "map"` to a map that draws into a
 gallery(c("map", "network", "timeline", "wordcloud"))
 ```
 
-## plotly
+## plotly, echarts4r and highcharter
 
-A `plotly::plotlyOutput()` can hold any kind of chart, so its first
+A `plotly::plotlyOutput()`, `echarts4r::echarts4rOutput()` or
+`highcharter::highchartOutput()` can hold any kind of chart, so its first
 skeleton has the bar shape. When its first value arrives, `bones` reads the
-kind of the chart from the plot spec, and the next loads show that shape:
-bar, line, area, scatter, histogram, pie, heatmap or map. `bones` stores the
+kind of the chart from its series, and the next loads show that shape:
+bar, line, area, scatter, histogram, pie, heatmap, map, network or word
+cloud. A kind with no shape, such as a box plot, keeps the bar shape. `bones` stores the
 kind in the browser too, so on the next visit the first skeleton has the
 right shape. Set `remember = FALSE` to store nothing, or give `type` to
 choose the shape yourself.

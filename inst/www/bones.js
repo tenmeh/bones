@@ -145,24 +145,44 @@
 
   /* --- The kind of a chart, from its value -----------------------------------
    *
-   * A plotly output can hold any kind of chart, so withBones() gives it the
-   * bar shape. The value of the output holds the plot spec, and each trace
-   * in it names its kind. When the value arrives, this script reads the kind
-   * and puts the skeleton of that kind in place of the bar shape. The next
-   * load with stale = FALSE then shows the right shape.
+   * A plotly, echarts4r or highcharter output can hold any kind of chart, so
+   * withBones() gives it the bar shape. The value of the output holds the
+   * spec of the chart, and each series in it names its kind. When the value
+   * arrives, this script reads the kind and puts the skeleton of that kind in
+   * place of the bar shape. The next load with stale = FALSE then shows the
+   * right shape.
    *
    * With remember, the kind is also stored in localStorage, with a key in
    * the form of the height key. On the next visit the first skeleton has the
    * right shape too. The skeletons come from a template that withBones()
-   * writes once on the page, so their markup is made only in R. */
+   * writes once on the page, so their markup is made only in R.
+   *
+   * The kind of one series is a shape name, or NO_SHAPE for a kind that has
+   * no shape, such as a box plot, or null for a series that says nothing,
+   * such as the outliers of a box plot. */
   var KIND_PREFIX = "bones:kind:";
+  var NO_SHAPE = false;
 
   function kindKey(wrap) {
     var id = wrap.getAttribute("data-bones-id");
     return id ? KIND_PREFIX + window.location.pathname + ":" + id : null;
   }
 
-  /* The kind of one plotly trace, or null if no shape fits it. */
+  /* The kind of the first series that names one. The first series is
+   * usually the main one: in a ggplotly chart of points with a smooth line,
+   * the points come first. A first series of a kind with no shape stops the
+   * search, so a box plot does not get the shape of its outliers. */
+  function firstKind(series, kindOf) {
+    if (!Array.isArray(series)) return null;
+    for (var i = 0; i < series.length; i++) {
+      var kind = series[i] ? kindOf(series[i]) : null;
+      if (kind === NO_SHAPE) return null;
+      if (kind) return kind;
+    }
+    return null;
+  }
+
+  /* plotly: value.x.data holds the traces. */
   function plotlyTraceKind(trace) {
     var type = trace.type || "scatter";
     switch (type) {
@@ -179,6 +199,10 @@
       case "choroplethmapbox": case "densitymapbox": case "scattermap":
       case "choroplethmap": case "densitymap":
         return "map";
+      case "sankey":
+        return "network";
+      case "box": case "violin": case "candlestick": case "ohlc":
+        return NO_SHAPE;
       case "scatter": case "scattergl":
         // Any fill is an area. ggplotly() draws geom_area() and geom_ribbon()
         // as a closed shape with fill "toself". A ggplot2 map drawn with
@@ -192,18 +216,98 @@
     }
   }
 
-  /* The kind of the first trace that has a shape. The first trace is
-   * usually the main one: in a ggplotly chart of points with a smooth
-   * line, the points come first. */
   function plotlyKind(value) {
-    var data = value && value.x && value.x.data;
-    if (!Array.isArray(data)) return null;
-    for (var i = 0; i < data.length; i++) {
-      var kind = data[i] && plotlyTraceKind(data[i]);
-      if (kind) return kind;
-    }
-    return null;
+    return firstKind(value && value.x && value.x.data, plotlyTraceKind);
   }
+
+  /* echarts4r: value.x.opts.series holds the series. e_area() is a line
+   * with an areaStyle, and e_histogram() is a bar. */
+  function echartsSeriesKind(series) {
+    // A scatter or a line on a map is a map.
+    var system = series.coordinateSystem;
+    if (system === "geo" || system === "leaflet" || system === "bmap") return "map";
+    switch (series.type) {
+      case "bar": case "pictorialBar":
+        return "bar";
+      case "line":
+        return series.areaStyle ? "area" : "line";
+      case "scatter": case "effectScatter":
+        return "scatter";
+      case "pie": case "sunburst":
+        return "pie";
+      case "heatmap":
+        return "heatmap";
+      case "map": case "lines":
+        return "map";
+      case "graph": case "tree": case "sankey":
+        return "network";
+      case "wordCloud":
+        return "wordcloud";
+      case "boxplot": case "candlestick": case "gauge": case "radar":
+      case "funnel": case "parallel": case "themeRiver": case "liquidFill":
+        return NO_SHAPE;
+      default:
+        return null;
+    }
+  }
+
+  function echartsKind(value) {
+    var opts = value && value.x && value.x.opts;
+    return firstKind(opts && opts.series, echartsSeriesKind);
+  }
+
+  /* highcharter: value.x.hc_opts holds the options. A series has its own
+   * type, or takes chart.type, or is a line. hchart() of numbers draws a
+   * histogram as columns, so it gets the bar shape. */
+  function highchartSeriesKind(type) {
+    switch (type) {
+      case "line": case "spline":
+        return "line";
+      case "area": case "areaspline": case "arearange": case "areasplinerange":
+      case "streamgraph":
+        return "area";
+      case "column": case "bar": case "columnrange": case "waterfall":
+        return "bar";
+      case "histogram":
+        return "histogram";
+      case "scatter": case "bubble":
+        return "scatter";
+      case "pie": case "variablepie": case "sunburst":
+        return "pie";
+      case "heatmap": case "tilemap":
+        return "heatmap";
+      case "map": case "mapbubble": case "mappoint": case "mapline":
+        return "map";
+      case "networkgraph": case "sankey": case "dependencywheel":
+      case "organization":
+        return "network";
+      case "wordcloud":
+        return "wordcloud";
+      case "boxplot": case "candlestick": case "ohlc": case "errorbar":
+      case "gauge": case "solidgauge": case "funnel": case "pyramid":
+        return NO_SHAPE;
+      default:
+        return null;
+    }
+  }
+
+  function highchartKind(value) {
+    var x = value && value.x;
+    if (!x) return null;
+    // hcmap() makes a map chart, whose series have no type of their own.
+    if (x.type === "map") return "map";
+    var opts = x.hc_opts || {};
+    var chartType = (opts.chart && opts.chart.type) || "line";
+    return firstKind(opts.series, function (series) {
+      return highchartSeriesKind(series.type || chartType);
+    });
+  }
+
+  var KIND_READERS = {
+    plotly: plotlyKind,
+    echarts4r: echartsKind,
+    highchart: highchartKind
+  };
 
   function templateOf(kind) {
     var template = document.querySelector("template.bones-kinds");
@@ -256,8 +360,9 @@
    * put in place when the load ends (see markLoaded), because the skeleton
    * can still show until min_time has passed. */
   function readKind(wrap, value) {
-    if (wrap.getAttribute("data-bones-detect") !== "plotly") return;
-    var kind = plotlyKind(value);
+    var reader = KIND_READERS[wrap.getAttribute("data-bones-detect")];
+    if (!reader) return;
+    var kind = reader(value);
     if (!kind) return;
     wrap._bonesKind = kind;
     saveKind(wrap, kind);

@@ -44,7 +44,9 @@ test_that("a widget of one kind of chart gets that shape", {
 
 test_that("a widget that can draw any chart keeps the bar shape", {
   # plotly, echarts4r and the others can draw any kind of chart. The output
-  # does not say which, so `type` is still the way to choose.
+  # does not say which, so the first shape is a bar. For plotly, echarts4r
+  # and highcharter, bones.js finds the kind later, from the value. For the
+  # others, `type` is still the way to choose.
   for (name in c("plotly", "echarts4r", "highchart", "girafe", "apexcharter",
                  "billboarder", "something-new")) {
     expect_equal(bones:::infer_type(widget_output(name)), "plot", info = name)
@@ -53,11 +55,15 @@ test_that("a widget that can draw any chart keeps the bar shape", {
   expect_match(html, 'data-bones-type="line"', fixed = TRUE)
 })
 
-test_that("a plotly output is marked to find its kind in the browser", {
+test_that("a plotly, echarts4r or highcharter output is marked to find its kind", {
+  for (name in c("plotly", "echarts4r", "highchart")) {
+    html <- as.character(withBones(widget_output(name)))
+    expect_match(html, 'data-bones-type="plot"', fixed = TRUE, info = name)
+    expect_match(html, sprintf('data-bones-detect="%s"', name), fixed = TRUE, info = name)
+    expect_match(html, 'data-bones-remember-kind="true"', fixed = TRUE, info = name)
+  }
+
   html <- as.character(withBones(widget_output("plotly")))
-  expect_match(html, 'data-bones-type="plot"', fixed = TRUE)
-  expect_match(html, 'data-bones-detect="plotly"', fixed = TRUE)
-  expect_match(html, 'data-bones-remember-kind="true"', fixed = TRUE)
 
   # The template holds one skeleton of each shape that can be found.
   expect_match(html, '<template class="bones-kinds">', fixed = TRUE)
@@ -77,7 +83,10 @@ test_that("a type that you give, or remember = FALSE, turns detection off or dow
   expect_no_match(forget, "data-bones-remember-kind", fixed = TRUE)
 
   # Other widgets are not detected.
-  expect_no_match(as.character(withBones(widget_output("echarts4r"))), "data-bones-detect", fixed = TRUE)
+  for (name in c("girafe", "apexcharter", "leaflet")) {
+    html <- as.character(withBones(widget_output(name)))
+    expect_no_match(html, "data-bones-detect", fixed = TRUE, info = name)
+  }
 })
 
 test_that("the page holds the template of the shapes only once", {

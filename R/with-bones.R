@@ -30,20 +30,21 @@
 #' in the same way. A map (leaflet, tmap, mapview, mapdeck and others) gets
 #' `"map"`. A network or a diagram (visNetwork, DiagrammeR, networkD3,
 #' collapsibleTree) gets `"network"`. timevis gets `"timeline"`, wordcloud2
-#' gets `"wordcloud"`, and dygraphs gets `"line"`. A widget that can draw any
-#' chart, such as echarts4r, highcharter or ggiraph, gets the bar shape:
-#' give its kind with `type`. plotly finds its kind by itself (see below). ggmap and a ggplot2 map draw into a
-#' `plotOutput()`, so give them `type = "map"`.
+#' gets `"wordcloud"`, and dygraphs gets `"line"`. ggmap and a ggplot2 map
+#' draw into a `plotOutput()`, so give them `type = "map"`.
 #'
-#' A plotly output with no `type` finds its kind by itself, but only when
-#' its first value arrives in the browser: the plot spec names the kind of
-#' each trace. The first skeleton thus has the bar shape. The next loads,
-#' with `stale = FALSE`, show the shape of the kind: `"bar"`, `"line"`,
-#' `"area"`, `"scatter"`, `"histogram"`, `"pie"`, `"heatmap"` or `"map"`. With
-#' `remember`, the kind is also stored in the browser, so on the next visit
-#' the first skeleton has that shape too. The first trace with a shape
-#' decides. A chart of a kind with no shape, such as a box plot, keeps the
-#' bar shape. A `type` that you give always wins.
+#' A plotly, echarts4r or highcharter output can draw any kind of chart. With
+#' no `type`, it finds its kind by itself, but only when its first value
+#' arrives in the browser: the spec of the chart names the kind of each
+#' series. The first skeleton thus has the bar shape. The next loads, with
+#' `stale = FALSE`, show the shape of the kind: `"bar"`, `"line"`, `"area"`,
+#' `"scatter"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`, `"network"` or
+#' `"wordcloud"`. With `remember`, the kind is also stored in the browser, so
+#' on the next visit the first skeleton has that shape too. The first series
+#' that names a kind decides. A chart of a kind with no shape, such as a box
+#' plot, keeps the bar shape. A `type` that you give always wins. Other
+#' widgets that can draw any chart, such as ggiraph, keep the bar shape: give
+#' their kind with `type`.
 #'
 #' # Layout
 #'
@@ -90,8 +91,8 @@
 #'   height from an estimate is stored: a height from `height`, or from the
 #'   output itself, is exact already. The height is kept per page and per
 #'   output id, and it is used only when the output has almost the same
-#'   width as when it was measured. For a plotly output, `remember` also
-#'   stores the kind of the chart (see "Shape"). `NULL` uses the value from
+#'   width as when it was measured. For a plotly, echarts4r or highcharter
+#'   output, `remember` also stores the kind of the chart (see "Shape"). `NULL` uses the value from
 #'   [bones_defaults()], which is `TRUE` if you did not set it.
 #'
 #' @return `ui`, in a placeholder container.
@@ -129,8 +130,9 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_count(n, "n")
   height <- as_css_length(height, "height")
 
-  # A type that you give always wins. Only an inferred shape of a plotly
-  # output is replaced by the kind that bones.js reads from the value.
+  # A type that you give always wins. Only an inferred shape of a plotly,
+  # echarts4r or highcharter output is replaced by the kind that bones.js
+  # reads from the value.
   detect <- NA_character_
   if (is.null(type)) {
     type <- infer_type(ui)
