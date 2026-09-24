@@ -57,3 +57,8 @@ First release.
   show that shape. With `remember`, the kind is stored in the browser, so
   the first skeleton of the next visit has the right shape too. A `type`
   that you give always wins.
+* `bones_auto()` puts each Shiny output in a UI in `withBones()`, so an
+  app gets skeletons with one call. It keeps an output that is already
+  wrapped, and leaves alone an inline output and the ids in `exclude`.
+  Other arguments go to each wrapper. A bslib page keeps its class and
+  its theme.

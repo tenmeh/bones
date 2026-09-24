@@ -65,9 +65,11 @@ reference:
     desc: >
       The one call that most applications need. It finds the shape from the
       output, keeps the space of the content, and shows the old content,
-      dimmed, when the output calculates again.
+      dimmed, when the output calculates again. bones_auto() does this for
+      every output in a UI.
     contents:
       - withBones
+      - bones_auto
 
   - title: Placeholders on their own
     desc: >

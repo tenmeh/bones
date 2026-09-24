@@ -556,3 +556,41 @@ test_that("the skeleton colours follow the theme of the page", {
 
   expect_no_shiny_errors(app)
 })
+
+test_that("bones_auto() wraps the outputs of a whole page, and they work", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("bslib")
+
+  app <- local_app_driver(
+    test_path("apps", "auto"),
+    name         = "bones-auto-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  wrapped <- c("chart", "rows", "summary", "extra")
+
+  # Only the four block outputs have a wrapper.
+  app$wait_for_js("document.querySelectorAll('.bones-wrap').length === 4", timeout = 30000)
+  ids <- unlist(app$get_js(
+    "Array.from(document.querySelectorAll('.bones-wrap')).map(function (w) { return w.getAttribute('data-bones-id'); })"
+  ))
+  expect_equal(ids, wrapped)
+
+  # The page keeps its theme: the primary colour is the one of the theme.
+  expect_equal(
+    tolower(trimws(app$get_js("getComputedStyle(document.documentElement).getPropertyValue('--bs-primary')"))),
+    "#7a1f5c"
+  )
+
+  wait_for_settled(app, ids = wrapped)
+  expect_equal(wrapper_states(app), setNames(rep("loaded", 4), wrapped))
+
+  # stale = FALSE went to each wrapper, so a new load shows the skeletons.
+  click_without_wait(app, "refresh")
+  Sys.sleep(0.5)
+  expect_equal(wrapper_states(app), setNames(rep("loading", 4), wrapped))
+  wait_for_settled(app, ids = wrapped)
+
+  expect_no_shiny_errors(app)
+})

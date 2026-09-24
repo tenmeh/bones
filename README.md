@@ -20,6 +20,16 @@ ui <- fluidPage(
 
 That is all. The shape comes from the output that you wrap.
 
+To give every output a skeleton at once, give the whole UI to
+`bones_auto()`:
+
+```r
+ui <- bones_auto(fluidPage(
+  plotOutput("chart"),
+  tableOutput("results")
+))
+```
+
 ## Installation
 
 ```r
