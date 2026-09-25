@@ -27,7 +27,10 @@ library(bones)
 
 # --- Optional packages --------------------------------------------------------
 
-has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+# system.file(), not requireNamespace(): in the live demo, webR answers a
+# requireNamespace() for a missing package by downloading it, and the live
+# demo leaves some packages out on purpose, to start faster.
+has <- function(pkg) nzchar(system.file(package = pkg))
 HAS <- vapply(c("DT", "reactable", "gt", "leaflet", "visNetwork"), has, logical(1))
 
 # --- Data ---------------------------------------------------------------------
@@ -73,13 +76,13 @@ optional_card <- function(pkg, title, ui) {
   if (HAS[[pkg]]) demo_card(title, ui) else missing_card(title, pkg)
 }
 
-# A card for a package that is not installed.
+# A card for a package that is not installed. The live demo on the pkgdown
+# site leaves some packages out, to download less, and says so.
 missing_card <- function(title, pkg) {
-  card(
-    card_header(title),
-    card_body(
-      class = "text-muted",
-      sprintf("Install %s to see this output: install.packages(\"%s\")", pkg, pkg)
-    )
-  )
+  text <- if (isTRUE(getOption("bones.demo.live"))) {
+    sprintf("The live demo leaves %s out, so that it starts faster. Run the demo in R to see this output.", pkg)
+  } else {
+    sprintf("Install %s to see this output: install.packages(\"%s\")", pkg, pkg)
+  }
+  card(card_header(title), card_body(class = "text-muted", text))
 }
