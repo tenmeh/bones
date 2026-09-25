@@ -309,10 +309,24 @@
     highchart: highchartKind
   };
 
+  /* withBones() writes the template once on the page, as a singleton, in
+   * the first wrapper that needs it. Shiny inserts a singleton only once,
+   * so when a renderUI() that holds it renders again, the template goes
+   * away with the old content and does not come back. The script thus
+   * keeps its own copy as soon as the template is on the page (see
+   * restoreAll). */
+  var shapes = null;
+
+  function keepTemplate(node) {
+    if (shapes || node.nodeType !== 1) return;
+    var template = node.matches("template.bones-kinds") ? node :
+      node.querySelector("template.bones-kinds");
+    if (template && template.content) shapes = template.content.cloneNode(true);
+  }
+
   function templateOf(kind) {
-    var template = document.querySelector("template.bones-kinds");
-    if (!template || !template.content) return null;
-    return template.content.querySelector('[data-bones-kind="' + kind + '"]');
+    if (!shapes) keepTemplate(document.documentElement);
+    return shapes ? shapes.querySelector('[data-bones-kind="' + kind + '"]') : null;
   }
 
   /* Put the skeleton of `kind` in place of the skeleton of `wrap`. */
@@ -327,12 +341,17 @@
     wrap.setAttribute("data-bones-type", kind);
   }
 
+  /* Store the kind for the next visit, or remove it when `kind` is null. */
   function saveKind(wrap, kind) {
     if (wrap.getAttribute("data-bones-remember-kind") !== "true") return;
     var key = kindKey(wrap);
     if (!key) return;
     try {
-      window.localStorage.setItem(key, kind);
+      if (kind) {
+        window.localStorage.setItem(key, kind);
+      } else {
+        window.localStorage.removeItem(key);
+      }
     } catch (e) {
       // No storage: the next visit starts with the bar shape.
     }
@@ -363,8 +382,10 @@
     var reader = KIND_READERS[wrap.getAttribute("data-bones-detect")];
     if (!reader) return;
     var kind = reader(value);
-    if (!kind) return;
-    wrap._bonesKind = kind;
+    // A chart with no shape, such as a box plot, goes back to the first
+    // shape, "plot", and the kind of an earlier chart is not kept for the
+    // next visit. A chart can change its kind: its type can follow an input.
+    wrap._bonesKind = kind || "plot";
     saveKind(wrap, kind);
   }
 
@@ -375,6 +396,7 @@
   function restoreAll(node) {
     restoreIn(node);
     if (node.nodeType !== 1) return;
+    keepTemplate(node);
     if (node.matches(".bones-wrap[data-bones-detect]")) restoreKind(node);
     var inner = node.querySelectorAll(".bones-wrap[data-bones-detect]");
     for (var i = 0; i < inner.length; i++) restoreKind(inner[i]);

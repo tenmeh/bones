@@ -73,3 +73,6 @@ First release.
   colours and the animation of bones, and any tags around it. It waits for
   `delay`, keeps the space of the content, and keeps stale content, as a
   built-in shape does.
+* A wrapped output that fills its container in a fillable bslib layout, such
+  as a plot in a card, still fills it: the wrapper passes the fill on. This
+  needs htmltools 0.5.4 or newer.
