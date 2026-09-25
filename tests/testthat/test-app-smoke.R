@@ -661,6 +661,18 @@ test_that("each animation moves, your own placeholder shows, and reduced motion 
   )
   shown <- "document.querySelectorAll('.bones-wrap:not(.bones-loaded) > .bones-skeleton').length === 6"
 
+  # Set the motion preference of the page, and load the page again with it.
+  # The test must set it: the GitHub runners for Windows and macOS report
+  # "reduce", so bones there stops every animation, as it should.
+  with_motion <- function(value) {
+    app$get_chromote_session()$Emulation$setEmulatedMedia(
+      features = list(list(name = "prefers-reduced-motion", value = value))
+    )
+    app$run_js("window.bonesOldPage = true; location.reload();")
+    app$wait_for_js("!window.bonesOldPage && document.querySelectorAll('.bones-wrap').length === 6",
+                    timeout = 30000)
+  }
+
   # The animation of each chart, read while the skeletons show: the name of
   # the animation on the first bar, the delay of the second bar, and the
   # animation of the layer of the sweep.
@@ -680,6 +692,7 @@ test_that("each animation moves, your own placeholder shows, and reduced motion 
     ")
   }
 
+  with_motion("no-preference")
   app$wait_for_js(shown, timeout = 30000)
   Sys.sleep(0.6)
   m <- stats::setNames(motion(), c("wave", "pulse", "cascade", "sweep", "none"))
@@ -723,10 +736,7 @@ test_that("each animation moves, your own placeholder shows, and reduced motion 
   app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 6", timeout = 30000)
 
   # --- reduced motion: nothing moves --------------------------------------
-  app$get_chromote_session()$Emulation$setEmulatedMedia(
-    features = list(list(name = "prefers-reduced-motion", value = "reduce"))
-  )
-  app$run_js("location.reload();")
+  with_motion("reduce")
   app$wait_for_js(shown, timeout = 30000)
   Sys.sleep(0.6)
   still <- motion()
