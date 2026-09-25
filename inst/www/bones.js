@@ -317,16 +317,26 @@
    * restoreAll). */
   var shapes = null;
 
+  /* Keep a copy of the template in `node`, once. Not while the page loads:
+   * the parser can give the template to this script before it has read all
+   * of its content, and a copy then would miss the later shapes for good.
+   * A template that a renderUI() inserts comes whole, after the page has
+   * loaded. */
   function keepTemplate(node) {
-    if (shapes || node.nodeType !== 1) return;
+    if (shapes || node.nodeType !== 1 || document.readyState === "loading") return;
     var template = node.matches("template.bones-kinds") ? node :
       node.querySelector("template.bones-kinds");
     if (template && template.content) shapes = template.content.cloneNode(true);
   }
 
   function templateOf(kind) {
+    var selector = '[data-bones-kind="' + kind + '"]';
     if (!shapes) keepTemplate(document.documentElement);
-    return shapes ? shapes.querySelector('[data-bones-kind="' + kind + '"]') : null;
+    if (shapes) return shapes.querySelector(selector);
+    // While the page loads: the template as the parser has read it so far.
+    // A shape that is not there yet gives null, and the caller tries again.
+    var template = document.querySelector("template.bones-kinds");
+    return template && template.content ? template.content.querySelector(selector) : null;
   }
 
   /* Put the skeleton of `kind` in place of the skeleton of `wrap`. */
