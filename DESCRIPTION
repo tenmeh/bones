@@ -24,7 +24,9 @@ Imports:
 Suggests:
     bslib,
     DT,
+    echarts4r,
     gt,
+    highcharter,
     plotly,
     reactable,
     rhandsontable,

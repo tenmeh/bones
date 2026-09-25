@@ -108,8 +108,8 @@ with no `type`:
 | timevis | `"timeline"`: items on rows over an axis |
 | wordcloud2 | `"wordcloud"`: words of different sizes |
 | dygraphs | `"line"` |
-| plotly | the bar shape at first. The kind comes from the traces of the first value, and later loads and visits use it |
-| echarts4r, highcharter, ggiraph, apexcharter | the bar shape: these draw any chart, so give `type` |
+| plotly, echarts4r, highcharter | the bar shape at first. The kind comes from the series of the first value, and later loads and visits use it |
+| ggiraph, apexcharter, billboarder | the bar shape: these draw any chart, so give `type` |
 
 ggmap and other ggplot2 maps draw into a `plotOutput()`, so give them
 `type = "map"`.
