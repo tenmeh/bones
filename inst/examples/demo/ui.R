@@ -102,7 +102,7 @@ ui <- page_sidebar(
       demo_card('Value boxes  (type = "value")', withBones(uiOutput("values"), type = "value", n = 3)),
       demo_card('Cards  (type = "cards")', withBones(uiOutput("cards"), type = "cards", n = 3)),
       demo_card("Your own placeholder  (skeleton = )",
-                withBones(uiOutput("regions"), skeleton = region_skeleton, height = 136)),
+                withBones(uiOutput("regions"), skeleton = region_skeleton, height = 160)),
       demo_card("textOutput(), stale = FALSE",
                 withBones(textOutput("summary"), lines = 3, stale = FALSE))
     ),

@@ -74,7 +74,7 @@ region_row <- function(badge, name, detail) {
   div(
     style = "display: flex; gap: 0.75rem; align-items: center;",
     badge,
-    div(style = "flex: 1; display: grid; gap: 0.35rem;", name, detail)
+    div(style = "flex: 1; display: grid; gap: 0.35rem; line-height: 1.2;", name, detail)
   )
 }
 
@@ -82,7 +82,7 @@ region_row <- function(badge, name, detail) {
 # No built-in shape has a round badge, so the list brings its own.
 region_skeleton <- tagList(lapply(1:3, function(i) {
   region_row(
-    bones_block(40, 40, shape = "circle"),
+    bones_block(48, 48, shape = "circle"),
     bones_block("30%"),
     bones_block("55%", "0.6rem")
   )

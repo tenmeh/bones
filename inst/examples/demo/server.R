@@ -86,7 +86,7 @@ server <- function(input, output, session) {
         region_row(
           div(class = "rounded-circle bg-primary text-white d-flex align-items-center ",
               class = "justify-content-center fw-bold",
-              style = "width: 40px; height: 40px;", substr(region, 1, 1)),
+              style = "width: 48px; height: 48px;", substr(region, 1, 1)),
           strong(region),
           span(class = "text-muted small", sprintf("%s units sold", top[[region]]))
         )
