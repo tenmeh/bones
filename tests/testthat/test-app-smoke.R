@@ -594,3 +594,57 @@ test_that("bones_auto() wraps the outputs of a whole page, and they work", {
 
   expect_no_shiny_errors(app)
 })
+
+test_that("an echarts4r or highcharter chart gets the shape of its kind", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("echarts4r")
+  skip_if_not_installed("highcharter")
+
+  app <- local_app_driver(
+    test_path("apps", "widget-kinds"),
+    name         = "bones-widget-kinds-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  ids <- c("e_line", "e_area", "e_pie", "e_cloud", "e_box",
+           "h_column", "h_area", "h_scatter", "h_default", "h_box")
+  count <- length(ids)
+
+  reload <- function() {
+    app$run_js("window.bonesOldPage = true; location.reload();")
+    app$wait_for_js(sprintf(
+      "!window.bonesOldPage && document.querySelectorAll('.bones-wrap').length === %d", count
+    ), timeout = 30000)
+  }
+  shapes <- function() {
+    stats::setNames(unlist(app$get_js("
+      Array.from(document.querySelectorAll('.bones-wrap')).map(function (w) {
+        var sk = w.querySelector(':scope > .bones-skeleton');
+        var type = w.getAttribute('data-bones-type');
+        return sk.classList.contains('bones-skeleton-' + type) ? type : 'mismatch';
+      })
+    ")), ids)
+  }
+  loaded <- sprintf(
+    "document.querySelectorAll('.bones-wrap.bones-loaded:not(.bones-loading)').length === %d", count
+  )
+  found <- c(e_line = "line", e_area = "area", e_pie = "pie", e_cloud = "wordcloud", e_box = "plot",
+             h_column = "bar", h_area = "area", h_scatter = "scatter", h_default = "line", h_box = "plot")
+
+  # --- first visit: each chart starts as a bar shape, then takes its kind --
+  app$wait_for_js(loaded, timeout = 30000)
+  app$run_js("try { localStorage.clear(); } catch (e) {}")
+  reload()
+  expect_equal(unname(shapes()), rep("plot", count))
+  app$wait_for_js(loaded, timeout = 30000)
+  Sys.sleep(0.6)
+  expect_equal(shapes(), found)
+
+  # --- next visit: the first skeleton already has the stored kind ---------
+  reload()
+  expect_equal(shapes(), found)
+
+  app$wait_for_js(loaded, timeout = 30000)
+  expect_no_shiny_errors(app)
+})
