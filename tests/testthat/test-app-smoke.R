@@ -749,3 +749,68 @@ test_that("each animation moves, your own placeholder shows, and reduced motion 
   app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 6", timeout = 30000)
   expect_no_shiny_errors(app)
 })
+
+test_that("the faults of the second review stay fixed", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("bslib")
+  skip_if_not_installed("plotly")
+
+  app <- local_app_driver(
+    test_path("apps", "review"),
+    name         = "bones-review-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  # Each test app has its own port, so its storage starts empty.
+  type_of <- function(id) {
+    app$get_js(sprintf(
+      "document.querySelector('[data-bones-id=%s]').getAttribute('data-bones-type')", id
+    ))
+  }
+  stored <- function(id) {
+    app$get_js(sprintf(
+      "Object.keys(localStorage).filter(function (k) {
+         return /:%s$/.test(k) && k.indexOf('bones:kind:') === 0;
+       }).length",
+      id
+    ))
+  }
+  app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 4", timeout = 30000)
+  Sys.sleep(0.5)
+  expect_equal(type_of("inner"), "line")
+  expect_equal(type_of("changes"), "line")
+  expect_equal(stored("changes"), 1L)
+
+  # --- 1 and 2: a click renders the panel again, and makes a box plot ------
+  app$click("go")
+  app$wait_for_js(
+    "document.querySelectorAll('#panel .bones-wrap.bones-loaded').length === 2",
+    timeout = 30000
+  )
+  Sys.sleep(0.5)
+  # The template of the first render is gone from the page, but bones.js
+  # kept a copy, so the new wrapper still takes the kind of its chart.
+  expect_equal(app$get_js("document.querySelectorAll('template.bones-kinds').length"), 0L)
+  expect_equal(type_of("inner"), "line")
+  # A box plot has no shape: back to the first shape, and the line is not
+  # stored for the next visit.
+  expect_equal(type_of("changes"), "plot")
+  expect_equal(stored("changes"), 0L)
+
+  # --- 3: a wrapped plot fills its card as a plain plot does --------------
+  heights <- unlist(app$get_js("
+    ['plain', 'wrapped'].map(function (id) {
+      return Math.round(document.getElementById(id).getBoundingClientRect().height);
+    })
+  "))
+  expect_lt(heights[[1]], 400)            # the card, not the 400px default
+  expect_equal(heights[[2]], heights[[1]])
+
+  # --- 4: a bones_skeleton() in the content gets no band -----------------
+  nested <- app$get_js("
+    getComputedStyle(document.querySelector('#box-nested .bones-content .bones-skeleton'), '::after').animationName
+  ")
+  expect_equal(nested, "none")
+
+  expect_no_shiny_errors(app)
+})

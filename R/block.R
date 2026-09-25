@@ -50,11 +50,9 @@ bones_block <- function(width = "100%", height = "0.75rem", shape = c("rect", "c
   if (is.null(height)) stop("`height` must be a CSS height, not NULL.", call. = FALSE)
   shape <- match.arg(shape)
 
-  htmltools::tags$div(
-    class = paste(c("bones-bar", "bones-block", if (shape == "circle") "bones-block-circle"),
-                  collapse = " "),
-    style = sprintf("width: %s; height: %s;", width, height)
-  )
+  # The same element as the bars of the built-in shapes, so it takes their
+  # colours and their animation.
+  bar(width, height, class = c("bones-block", if (shape == "circle") "bones-block-circle"))
 }
 
 

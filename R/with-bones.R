@@ -213,39 +213,62 @@ withBones <- function(ui, # nolint: object_name_linter.
     skeleton_tag(type = type, rows = rows, cols = cols, lines = lines, n = n)
   }
 
-  htmltools::attachDependencies(
-    htmltools::tags$div(
-      class = paste0("bones-wrap bones-anim-", animation),
-      `data-bones-type` = if (custom) "custom" else type,
-      `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
-      `data-bones-min-time` = format(min_time, scientific = FALSE),
-      # Read by bones.js: store the real height, and use it next time.
-      `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
-      # Read by bones.js: find the chart kind from the value, and with
-      # remember, store it for the next visit.
-      `data-bones-detect` = na_to_null(detect),
-      `data-bones-remember-kind` = if (!is.na(detect) && isTRUE(remember)) "true",
-      # htmltools writes an NA attribute as an attribute with no value. Give
-      # NULL instead, so that no `data-bones-id` attribute is written.
-      `data-bones-id` = na_to_null(find_output_id(ui)),
-      # A custom property, not a min-height. bones.css applies it only
-      # until the content arrives. A min-height that stayed would leave a
-      # gap under content that is shorter than the estimate.
-      style = paste(c(
-        sprintf("--bones-reserve: %s;", height),
-        sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
-        css_vars()
-      ), collapse = " "),
-      skeleton,
-      if (!is.na(detect)) kind_templates(),
-      # The content has its box from the start, but it is hidden. With
-      # `display: none`, Shiny would read a width of zero, and
-      # plotOutput() would make its image at the wrong size. That image
-      # then stays until something causes a new render.
-      htmltools::tags$div(class = "bones-content", ui)
-    ),
-    bones_dependency()
-  )
+  # In a fillable layout of bslib, such as a card, an output that is a fill
+  # item grows to fill its container, and each tag between them must pass
+  # the fill on. The wrapper and the content div are between them, so they
+  # become fill containers and fill items too. Other outputs keep their own
+  # height, and their wrapper stays a plain block.
+  fill <- is_fill_item(ui)
+  fill_role <- function(tag) {
+    if (fill) htmltools::bindFillRole(tag, container = TRUE, item = TRUE) else tag
+  }
+
+  # The content has its box from the start, but it is hidden. With
+  # `display: none`, Shiny would read a width of zero, and plotOutput()
+  # would make its image at the wrong size. That image then stays until
+  # something causes a new render.
+  content <- fill_role(htmltools::tags$div(class = "bones-content", ui))
+
+  wrap <- fill_role(htmltools::tags$div(
+    class = paste0("bones-wrap bones-anim-", animation),
+    `data-bones-type` = if (custom) "custom" else type,
+    `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
+    `data-bones-min-time` = format(min_time, scientific = FALSE),
+    # Read by bones.js: store the real height, and use it next time.
+    `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
+    # Read by bones.js: find the chart kind from the value, and with
+    # remember, store it for the next visit.
+    `data-bones-detect` = na_to_null(detect),
+    `data-bones-remember-kind` = if (!is.na(detect) && isTRUE(remember)) "true",
+    # htmltools writes an NA attribute as an attribute with no value. Give
+    # NULL instead, so that no `data-bones-id` attribute is written.
+    `data-bones-id` = na_to_null(find_output_id(ui)),
+    # A custom property, not a min-height. bones.css applies it only
+    # until the content arrives. A min-height that stayed would leave a
+    # gap under content that is shorter than the estimate.
+    style = paste(c(
+      sprintf("--bones-reserve: %s;", height),
+      sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
+      css_vars()
+    ), collapse = " "),
+    skeleton,
+    if (!is.na(detect)) kind_templates(),
+    content
+  ))
+
+  htmltools::attachDependencies(wrap, bones_dependency(), append = TRUE)
+}
+
+
+#' Is the output a fill item, which grows in a fillable layout?
+#'
+#' @param ui A UI element.
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+#' @noRd
+is_fill_item <- function(ui) {
+  classes <- unlist(strsplit(collect_classes(ui), "\\s+"), use.names = FALSE)
+  "html-fill-item" %in% classes
 }
 
 

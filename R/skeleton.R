@@ -385,7 +385,8 @@ detected_types <- function() {
 #' @keywords internal
 #' @noRd
 kind_templates <- function() {
-  shapes <- lapply(detected_types(), function(type) {
+  # "plot" too: bones.js goes back to it for a chart of a kind with no shape.
+  shapes <- lapply(c("plot", detected_types()), function(type) {
     htmltools::tagAppendAttributes(
       skeleton_tag(type, rows = 6L, cols = 4L, lines = 3L, n = 3L),
       `data-bones-kind` = type

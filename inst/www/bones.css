@@ -717,7 +717,11 @@
    top of the placeholder, so it also crosses the lines, dots and nodes of
    an SVG shape. The band has the colour of the page, so it is light on a
    light page and dark on a dark page. */
-.bones-anim-sweep .bones-skeleton::after,
+/* Only the skeleton of the wrapper itself (">"), or a skeleton that has
+   the class itself. A bones_skeleton() in the content of a wrapper is not
+   positioned, so a band on it would cover the whole wrapper, and cross the
+   page next to it. */
+.bones-wrap.bones-anim-sweep > .bones-skeleton::after,
 .bones-skeleton.bones-anim-sweep::after {
   content: "";
   position: absolute;
@@ -763,7 +767,7 @@
     background-image: none;
   }
 
-  .bones-anim-sweep .bones-skeleton::after,
+  .bones-wrap.bones-anim-sweep > .bones-skeleton::after,
   .bones-skeleton.bones-anim-sweep::after {
     animation: none;
     display: none;

@@ -86,5 +86,30 @@ test_that("the stylesheet has the new animations, and stops them for reduced mot
   expect_match(css, "@keyframes bones-sweep", fixed = TRUE)
   reduced <- sub(".*@media \\(prefers-reduced-motion: reduce\\)", "", css)
   expect_match(reduced, ".bones-anim-cascade .bones-bar", fixed = TRUE)
-  expect_match(reduced, ".bones-anim-sweep .bones-skeleton::after", fixed = TRUE)
+  expect_match(reduced, ".bones-wrap.bones-anim-sweep > .bones-skeleton::after", fixed = TRUE)
+
+  # The band belongs to the skeleton of the wrapper itself (">"), not to a
+  # bones_skeleton() in the content, which is not positioned.
+  expect_no_match(css, ".bones-anim-sweep .bones-skeleton::after", fixed = TRUE)
+})
+
+test_that("a fill output gets a wrapper that passes the fill on", {
+  skip_if_not_installed("shiny")
+  classes <- function(html, cls) {
+    regmatches(html, regexpr(sprintf('class="%s[^"]*"', cls), html))
+  }
+  plot <- as.character(withBones(shiny::plotOutput("p")))
+  expect_match(classes(plot, "bones-wrap"), "html-fill-container", fixed = TRUE)
+  expect_match(classes(plot, "bones-wrap"), "html-fill-item", fixed = TRUE)
+  expect_match(classes(plot, "bones-content"), "html-fill-container", fixed = TRUE)
+
+  # An output that is not a fill item keeps a plain wrapper.
+  table <- as.character(withBones(shiny::tableOutput("t")))
+  expect_no_match(table, "html-fill", fixed = TRUE)
+})
+
+test_that("the template of the chart kinds has the first shape, plot, too", {
+  widget <- htmltools::tags$div(id = "w", class = "plotly html-widget html-widget-output")
+  html <- as.character(withBones(widget))
+  expect_match(html, 'data-bones-kind="plot"', fixed = TRUE)
 })
