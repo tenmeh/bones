@@ -254,6 +254,25 @@ footer {
   color: var(--bn-ink-2);
 }
 
+/* ---- live demo --------------------------------------------------------- */
+
+/* The shinylive app of articles/live-demo.Rmd. The app has a sidebar and a
+   grid of charts, so it gets the full width of the column and most of the
+   height of the window. */
+.bones-live-demo {
+  border: 1px solid var(--bn-line);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  margin: 1.5rem 0 0.5rem;
+}
+.bones-live-demo iframe {
+  display: block;
+  width: 100%;
+  height: 85vh;
+  min-height: 640px;
+  border: 0;
+}
+
 /* ---- search ------------------------------------------------------------ */
 
 #search-input {

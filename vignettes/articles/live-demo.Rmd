@@ -1,0 +1,34 @@
+---
+title: "Live demo"
+output: rmarkdown::html_document
+---
+
+This is the demo app of `bones`, running in your browser. There is no
+server: [shinylive](https://posit-dev.github.io/r-shinylive/) runs R and
+Shiny in the page with webR. The first start downloads R and the packages,
+so it can take half a minute. Later visits start faster.
+
+Things to try:
+
+* Open each tab. Its outputs load when the tab first shows, and each one
+  shows a skeleton in the shape of its content first.
+* Press **Load new data**. With **stale** on, the content stays and dims.
+  Turn **stale** off and press again: the skeletons come back.
+* Set the load time below 0.3 seconds. A load that fast shows nothing, so
+  the page does not flicker.
+* Change the animation, or turn on the dark mode with the moon.
+
+```{=html}
+<div class="bones-live-demo">
+  <iframe src="../demo/" title="bones live demo" loading="lazy"></iframe>
+</div>
+<p class="small text-muted">
+  <a href="../demo/" target="_blank" rel="noopener">Open the demo in a new tab</a>
+</p>
+```
+
+To run the same demo on your own machine:
+
+```r
+shiny::runApp(system.file("examples/demo", package = "bones"))
+```

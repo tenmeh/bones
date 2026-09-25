@@ -101,7 +101,9 @@ server <- function(input, output, session) {
       data()
       nodes <- data.frame(id = 1:10, label = LETTERS[1:10])
       edges <- data.frame(from = sample(1:10, 14, replace = TRUE), to = sample(1:10, 14, replace = TRUE))
-      visNetwork::visNetwork(nodes, edges)
+      # Grey labels read on a light and on a dark page, as on the plots.
+      visNetwork::visNetwork(nodes, edges) |>
+        visNetwork::visNodes(font = list(color = "#888888"))
     })
   }
 }

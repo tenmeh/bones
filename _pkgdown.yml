@@ -40,7 +40,7 @@ home:
 
 navbar:
   structure:
-    left: [intro, shapes, reference, news]
+    left: [intro, shapes, demo, reference, news]
     right: [search, lightswitch, github]
   components:
     intro:
@@ -49,6 +49,9 @@ navbar:
     shapes:
       text: Shapes
       href: articles/shapes.html
+    demo:
+      text: Live demo
+      href: articles/live-demo.html
     reference:
       text: Reference
       href: reference/index.html
