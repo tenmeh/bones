@@ -1,5 +1,12 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+#' The names of the animations, in the order of the documentation
+#' @keywords internal
+#' @noRd
+animation_types <- function() {
+  c("wave", "pulse", "cascade", "sweep", "none")
+}
+
 #' Give NULL for NA, so that htmltools does not write the attribute
 #' @keywords internal
 #' @noRd

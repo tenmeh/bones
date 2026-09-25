@@ -96,7 +96,7 @@ test_that("the demo app: each tab loads, stale and animation controls work", {
 
   # --- each other tab loads when it shows ----------------------------------
   expect_true("plain" %in% show_tab(app, "Tables"))
-  expect_setequal(show_tab(app, "Text and cards"), c("values", "cards", "summary"))
+  expect_setequal(show_tab(app, "Text and cards"), c("values", "cards", "regions", "summary"))
 
   # The reserved height goes after the content arrives: the summary must
   # not keep the space of three lines.
@@ -646,5 +646,96 @@ test_that("an echarts4r or highcharter chart gets the shape of its kind", {
   expect_equal(shapes(), found)
 
   app$wait_for_js(loaded, timeout = 30000)
+  expect_no_shiny_errors(app)
+})
+
+test_that("each animation moves, your own placeholder shows, and reduced motion stops them", {
+  testthat::skip_on_cran()
+
+  app <- local_app_driver(
+    test_path("apps", "animations"),
+    name         = "bones-animations-smoke",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  shown <- "document.querySelectorAll('.bones-wrap:not(.bones-loaded) > .bones-skeleton').length === 6"
+
+  # The animation of each chart, read while the skeletons show: the name of
+  # the animation on the first bar, the delay of the second bar, and the
+  # animation of the layer of the sweep.
+  motion <- function() {
+    app$get_js("
+      ['wave', 'pulse', 'cascade', 'sweep', 'none'].map(function (a) {
+        var sk = document.querySelector('#box-' + a + ' .bones-wrap > .bones-skeleton');
+        var bars = sk.querySelectorAll('.bones-bar');
+        return {
+          animation: a,
+          bar: getComputedStyle(bars[0]).animationName,
+          delay2: getComputedStyle(bars[1]).animationDelay,
+          skeleton: getComputedStyle(sk).animationName,
+          sweep: getComputedStyle(sk, '::after').animationName
+        };
+      })
+    ")
+  }
+
+  app$wait_for_js(shown, timeout = 30000)
+  Sys.sleep(0.6)
+  m <- stats::setNames(motion(), c("wave", "pulse", "cascade", "sweep", "none"))
+
+  expect_equal(m$wave$bar, "bones-wave")
+  expect_match(m$pulse$skeleton, "bones-pulse", fixed = TRUE)
+  # Cascade: the bars light up one after the other, so their delays differ.
+  expect_equal(m$cascade$bar, "bones-cascade")
+  expect_false(identical(m$cascade$delay2, "0s"))
+  # Sweep: the band is a layer over the whole skeleton; the bars stay still.
+  expect_equal(m$sweep$sweep, "bones-sweep")
+  expect_equal(m$sweep$bar, "none")
+  expect_equal(m$none$bar, "none")
+  expect_equal(m$none$sweep, "none")
+
+  # --- your own placeholder -----------------------------------------------
+  custom <- app$get_js("
+    (function () {
+      var w = document.querySelector('#box-custom .bones-wrap');
+      var sk = w.querySelector(':scope > .bones-skeleton');
+      var circle = sk.querySelector('.bones-block-circle');
+      var r = circle.getBoundingClientRect();
+      return {
+        type: w.getAttribute('data-bones-type'),
+        visible: getComputedStyle(sk).visibility,
+        blocks: sk.querySelectorAll('.bones-block').length,
+        width: r.width, height: r.height,
+        radius: getComputedStyle(circle).borderRadius,
+        animation: getComputedStyle(circle).animationName
+      };
+    })()
+  ")
+  expect_equal(custom$type, "custom")
+  expect_equal(custom$visible, "visible")
+  expect_equal(custom$blocks, 3L)
+  expect_equal(c(custom$width, custom$height), c(48, 48))
+  expect_equal(custom$radius, "50%")
+  expect_equal(custom$animation, "bones-wave")
+
+  # Each output loads, the one with your own placeholder too.
+  app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 6", timeout = 30000)
+
+  # --- reduced motion: nothing moves --------------------------------------
+  app$get_chromote_session()$Emulation$setEmulatedMedia(
+    features = list(list(name = "prefers-reduced-motion", value = "reduce"))
+  )
+  app$run_js("location.reload();")
+  app$wait_for_js(shown, timeout = 30000)
+  Sys.sleep(0.6)
+  still <- motion()
+  for (s in still) {
+    expect_equal(s$bar, "none", info = s$animation)
+    expect_equal(s$sweep, "none", info = s$animation)
+    expect_false(grepl("bones-pulse", s$skeleton), info = s$animation)
+  }
+
+  app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 6", timeout = 30000)
   expect_no_shiny_errors(app)
 })

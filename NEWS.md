@@ -64,3 +64,12 @@ First release.
   wrapped, and leaves alone an inline output and the ids in `exclude`.
   Other arguments go to each wrapper. A bslib page keeps its class and
   its theme.
+* Two more animations: `"cascade"`, where each bar, cell or line lights up
+  a little after the one before, and `"sweep"`, where one band of light
+  crosses the whole placeholder. Both stop for users who ask to reduce
+  motion.
+* `withBones(skeleton = )` takes a placeholder of your own, for a layout that
+  no built-in shape fits. Build it from `bones_block()`, a grey block with the
+  colours and the animation of bones, and any tags around it. It waits for
+  `delay`, keeps the space of the content, and keeps stale content, as a
+  built-in shape does.

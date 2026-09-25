@@ -74,6 +74,12 @@ reference:
       - withBones
       - bones_auto
 
+  - title: Your own placeholder
+    desc: >
+      The block to build a placeholder of your own, for withBones(skeleton = ).
+    contents:
+      - bones_block
+
   - title: Placeholders on their own
     desc: >
       A skeleton where there is no Shiny output, such as inside a

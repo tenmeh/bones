@@ -69,6 +69,25 @@ demo_card <- function(title, ui) {
   card(card_header(title), ui)
 }
 
+# One row of the list of top regions: a round badge, a name and a number.
+region_row <- function(badge, name, detail) {
+  div(
+    style = "display: flex; gap: 0.75rem; align-items: center;",
+    badge,
+    div(style = "flex: 1; display: grid; gap: 0.35rem;", name, detail)
+  )
+}
+
+# The placeholder of the list: the same rows, made of bones_block() blocks.
+# No built-in shape has a round badge, so the list brings its own.
+region_skeleton <- tagList(lapply(1:3, function(i) {
+  region_row(
+    bones_block(40, 40, shape = "circle"),
+    bones_block("30%"),
+    bones_block("55%", "0.6rem")
+  )
+}))
+
 # A card for an output from an optional package. R evaluates `ui` only when
 # the package is installed, so the output function of a missing package is
 # never called.

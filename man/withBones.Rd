@@ -16,7 +16,8 @@ withBones(
   stale = NULL,
   delay = NULL,
   min_time = NULL,
-  remember = NULL
+  remember = NULL,
+  skeleton = NULL
 )
 }
 \arguments{
@@ -41,8 +42,9 @@ shape from \code{ui}.}
 in Shiny. \code{NULL} uses the height of the output. If the output has no
 height, \code{NULL} uses a default for the type.}
 
-\item{animation}{\code{"wave"}, \code{"pulse"} or \code{"none"}. \code{NULL} uses the value
-from \code{\link[=bones_defaults]{bones_defaults()}}.}
+\item{animation}{\code{"wave"}, \code{"pulse"}, \code{"cascade"}, \code{"sweep"} or
+\code{"none"}. See \code{\link[=bones_defaults]{bones_defaults()}} for what each one does. \code{NULL} uses the
+value from \code{\link[=bones_defaults]{bones_defaults()}}.}
 
 \item{stale}{\code{TRUE} keeps the old content on the screen, dimmed, while
 the output calculates again. \code{FALSE} shows the skeleton again. \code{NULL}
@@ -68,8 +70,13 @@ height from an estimate is stored: a height from \code{height}, or from the
 output itself, is exact already. The height is kept per page and per
 output id, and it is used only when the output has almost the same
 width as when it was measured. For a plotly, echarts4r or highcharter
-output, \code{remember} also stores the kind of the chart (see "Shape"). \code{NULL} uses the value from
-\code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you did not set it.}
+output, \code{remember} also stores the kind of the chart (see "Shape").
+\code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
+did not set it.}
+
+\item{skeleton}{Your own placeholder, in place of a built-in shape: a tag
+or a tag list, made of \code{\link[=bones_block]{bones_block()}} blocks and any layout around
+them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.}
 }
 \value{
 \code{ui}, in a placeholder container.
@@ -123,6 +130,15 @@ widgets that can draw any chart, such as ggiraph, keep the bar shape: give
 their kind with \code{type}.
 }
 
+\section{Your own placeholder}{
+When no built-in shape fits, give your own with \code{skeleton}. Build it from
+\code{\link[=bones_block]{bones_block()}}, a grey block that takes the colours and the animation of
+bones, and lay the blocks out with any tags. The tags at the top level
+stack with a small gap. The placeholder behaves as a built-in shape does: it
+waits for \code{delay}, it stays for \code{min_time}, it keeps the space of the
+content, and the old content stays when \code{stale} is \code{TRUE}.
+}
+
 \section{Layout}{
 The wrapper keeps the space of the output until the content arrives, so
 the page does not move. If the output sets its own height, as
@@ -139,5 +155,18 @@ if (requireNamespace("shiny", quietly = TRUE)) {
   withBones(tableOutput("results"), rows = 8, cols = 5)
   withBones(uiOutput("cards"), type = "cards", n = 4)
   withBones(plotOutput("trend"), type = "line")
+
+  # Your own placeholder: an avatar and two lines of text.
+  withBones(
+    uiOutput("profile"),
+    skeleton = div(
+      style = "display: flex; gap: 1rem; align-items: center;",
+      bones_block("3rem", "3rem", shape = "circle"),
+      div(
+        style = "flex: 1; display: grid; gap: 0.5rem;",
+        bones_block("60\%"), bones_block("40\%")
+      )
+    )
+  )
 }
 }

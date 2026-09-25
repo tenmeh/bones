@@ -142,7 +142,7 @@ session. An argument to `withBones()` is stronger than a default:
 
 ```{r}
 bones_defaults(
-  animation = "pulse",   # "wave" (the default), "pulse" or "none"
+  animation = "pulse",   # "wave" (the default), "pulse", "cascade", "sweep" or "none"
   radius    = "0.5rem",
   speed     = 2,
   stale     = FALSE

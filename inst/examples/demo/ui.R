@@ -11,7 +11,8 @@ ui <- page_sidebar(
     actionButton("refresh", "Load new data", class = "btn-primary"),
     sliderInput("seconds", "Load time (seconds)", min = 0.1, max = 4, value = 1.5, step = 0.1),
     input_switch("stale", "stale: keep the old content, dimmed, while it loads", value = TRUE),
-    radioButtons("animation", "Animation", c("wave", "pulse", "none"), inline = TRUE),
+    radioButtons("animation", "Animation", c("wave", "pulse", "cascade", "sweep", "none"),
+                 inline = TRUE),
     input_dark_mode(id = "mode"),
     tags$p(
       class = "small text-muted mt-2",
@@ -33,7 +34,9 @@ ui <- page_sidebar(
       $(document).on('change', 'input[name=animation]', function () {
         var value = this.value;
         document.querySelectorAll('.bones-wrap').forEach(function (w) {
-          w.classList.remove('bones-anim-wave', 'bones-anim-pulse', 'bones-anim-none');
+          Array.from(w.classList).forEach(function (c) {
+            if (c.indexOf('bones-anim-') === 0) w.classList.remove(c);
+          });
           w.classList.add('bones-anim-' + value);
         });
       });
@@ -92,11 +95,14 @@ ui <- page_sidebar(
       "Text and cards",
       tags$p(
         class = "text-muted",
-        "A uiOutput() can hold anything, so it names its shape with type. The ",
-        "summary has stale = FALSE, so it always shows its skeleton."
+        "A uiOutput() can hold anything, so it names its shape with type, or ",
+        "brings a placeholder of its own. The summary has stale = FALSE, so it ",
+        "always shows its skeleton."
       ),
       demo_card('Value boxes  (type = "value")', withBones(uiOutput("values"), type = "value", n = 3)),
       demo_card('Cards  (type = "cards")', withBones(uiOutput("cards"), type = "cards", n = 3)),
+      demo_card("Your own placeholder  (skeleton = )",
+                withBones(uiOutput("regions"), skeleton = region_skeleton, height = 136)),
       demo_card("textOutput(), stale = FALSE",
                 withBones(textOutput("summary"), lines = 3, stale = FALSE))
     ),

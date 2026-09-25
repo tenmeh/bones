@@ -17,10 +17,18 @@ bones_defaults(
 )
 }
 \arguments{
-\item{animation}{\code{"wave"} (a band of light moves across the
-placeholder), \code{"pulse"} (the placeholder fades out and in), or
-\code{"none"}. Users who ask their system to reduce motion always get
-\code{"none"}.}
+\item{animation}{How the placeholder moves:
+\itemize{
+\item \code{"wave"}: a band of light moves along each bar.
+\item \code{"pulse"}: the whole placeholder fades out and in.
+\item \code{"cascade"}: each bar, cell or line lights up a little after the one
+before, so a ripple runs through the shape.
+\item \code{"sweep"}: one band of light crosses the whole placeholder, over
+every mark at once, the lines and dots of a chart too.
+\item \code{"none"}: no movement.
+}
+
+Users who ask their system to reduce motion always get \code{"none"}.}
 
 \item{color}{The colour of the placeholder, as a CSS colour. By default
 it comes from the theme of the page: the text colour of the bslib
