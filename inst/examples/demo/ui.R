@@ -107,7 +107,8 @@ ui <- page_sidebar(
                 withBones(textOutput("summary"), lines = 3, stale = FALSE))
     ),
 
-    nav_panel(
+    # Not in the live demo. A NULL tab is left out.
+    if (!LIVE) nav_panel(
       "Maps and networks",
       tags$p(
         class = "text-muted",
