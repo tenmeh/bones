@@ -17,10 +17,10 @@
 # The browser downloads every package that the app bundles before the app
 # starts, also packages for a tab that nobody opens. So the download is the
 # start time, and the live demo bundles only the packages in
-# `live_packages`. leaflet is left out: with sf, terra, raster and sp, it is
-# about a third of the download. Its card then says that the live demo
-# leaves it out. Set BONES_LIVE_PACKAGES (comma-separated) to try another
-# list.
+# `live_packages`. The live demo leaves out its maps and networks tab (see
+# LIVE in the demo's global.R), so leaflet and visNetwork are not bundled.
+# leaflet, with sf, terra, raster and sp, was about a third of the
+# download. Set BONES_LIVE_PACKAGES (comma-separated) to try another list.
 #
 # shinylive finds the packages to bundle with renv::dependencies(), which
 # reads the code of the app for library() and pkg:: calls. It does this
@@ -35,7 +35,7 @@
 #     vendor/demo/               a copy of inst/examples/demo
 #     vendor/lib/bones/          bones, installed from this commit
 
-live_packages <- strsplit(Sys.getenv("BONES_LIVE_PACKAGES", "DT,reactable,gt,visNetwork"), ",")[[1]]
+live_packages <- strsplit(Sys.getenv("BONES_LIVE_PACKAGES", "DT,reactable,gt"), ",")[[1]]
 
 args <- commandArgs(trailingOnly = TRUE)
 site <- if (length(args) >= 1L) args[[1]] else "docs"
@@ -70,8 +70,8 @@ writeLines(c(
   "# Live demo. The demo is in vendor/demo, and bones is in vendor/lib.",
   "# See pkgdown/live-demo.R in the source of bones.",
   ".libPaths(c(normalizePath(\"vendor/lib\"), .libPaths()))",
-  "# Tells the demo that it runs live, for the cards of the packages that",
-  "# the live demo leaves out.",
+  "# Tells the demo that it runs live: it then leaves out the maps and",
+  "# networks tab, and says so on the card of any package that is missing.",
   "options(bones.demo.live = TRUE)",
   "source(\"vendor/demo/global.R\")"
 ), file.path(app, "global.R"))

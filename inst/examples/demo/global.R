@@ -33,6 +33,12 @@ library(bones)
 has <- function(pkg) nzchar(system.file(package = pkg))
 HAS <- vapply(c("DT", "reactable", "gt", "leaflet", "visNetwork"), has, logical(1))
 
+# TRUE in the live demo on the pkgdown site, which runs in the browser. It
+# leaves out the maps and networks tab: leaflet and the map packages that
+# it needs are about a third of the download, and the download is the
+# time that the live demo takes to start.
+LIVE <- isTRUE(getOption("bones.demo.live"))
+
 # --- Data ---------------------------------------------------------------------
 
 REGIONS <- c("North", "South", "East", "West", "Central", "Coast")
