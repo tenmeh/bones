@@ -77,6 +77,23 @@ server <- function(input, output, session) {
     )
   })
 
+  output$regions <- renderUI({
+    d <- data()
+    top <- sort(d$sales, decreasing = TRUE)[1:3]
+    div(
+      style = "display: grid; gap: 0.5rem;",
+      lapply(names(top), function(region) {
+        region_row(
+          div(class = "rounded-circle bg-primary text-white d-flex align-items-center ",
+              class = "justify-content-center fw-bold",
+              style = "width: 48px; height: 48px;", substr(region, 1, 1)),
+          strong(region),
+          span(class = "text-muted small", sprintf("%s units sold", top[[region]]))
+        )
+      })
+    )
+  })
+
   output$summary <- renderText({
     d <- data()
     sprintf(

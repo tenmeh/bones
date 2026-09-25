@@ -198,7 +198,7 @@ problem cannot occur.
 
 ```r
 bones_defaults(
-  animation = "wave",      # or "pulse", or "none"
+  animation = "wave",      # or "pulse", "cascade", "sweep" or "none"
   color     = "#e9ecef",
   highlight = "#f8f9fa",
   radius    = "0.5rem",
@@ -215,8 +215,41 @@ With no Bootstrap 5 theme, as with `fluidPage()`, or in an old browser, the
 colours are neutral greys that work on light and on dark pages. A colour
 from `bones_defaults()` is stronger than the theme.
 
+There are five animations:
+
+| Animation | What moves |
+|---|---|
+| `"wave"` | a band of light moves along each bar |
+| `"pulse"` | the whole placeholder fades out and in |
+| `"cascade"` | each bar, cell or line lights up a little after the one before, so a ripple runs through the shape |
+| `"sweep"` | one band of light crosses the whole placeholder, over the lines and dots of a chart too |
+| `"none"` | nothing |
+
 Users who ask their system to reduce motion get no animation. A placeholder
 that moves is exactly what that setting is for.
+
+## Your own placeholder
+
+When no built-in shape fits, give your own with `skeleton`. Build it from
+`bones_block()`, a grey block with the colours and the animation of bones:
+
+```r
+person <- div(
+  style = "display: flex; gap: 0.75rem; align-items: center;",
+  bones_block(40, 40, shape = "circle"),
+  div(
+    style = "flex: 1; display: grid; gap: 0.4rem;",
+    bones_block("40%"),
+    bones_block("80%", "0.6rem")
+  )
+)
+
+withBones(uiOutput("people"), skeleton = tagList(person, person, person))
+```
+
+The tags at the top level stack with a small gap. The placeholder behaves
+as a built-in shape does: it waits for `delay`, keeps the space of the
+content, and leaves the old content on the screen when `stale` is `TRUE`.
 
 ## Placeholders on their own
 

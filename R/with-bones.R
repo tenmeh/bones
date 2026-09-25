@@ -48,6 +48,15 @@
 #' widgets that can draw any chart, such as ggiraph, keep the bar shape: give
 #' their kind with `type`.
 #'
+#' # Your own placeholder
+#'
+#' When no built-in shape fits, give your own with `skeleton`. Build it from
+#' [bones_block()], a grey block that takes the colours and the animation of
+#' bones, and lay the blocks out with any tags. The tags at the top level
+#' stack with a small gap. The placeholder behaves as a built-in shape does: it
+#' waits for `delay`, it stays for `min_time`, it keeps the space of the
+#' content, and the old content stays when `stale` is `TRUE`.
+#'
 #' # Layout
 #'
 #' The wrapper keeps the space of the output until the content arrives, so
@@ -71,8 +80,9 @@
 #' @param height A CSS height for the placeholder, or a number of pixels, as
 #'   in Shiny. `NULL` uses the height of the output. If the output has no
 #'   height, `NULL` uses a default for the type.
-#' @param animation `"wave"`, `"pulse"` or `"none"`. `NULL` uses the value
-#'   from [bones_defaults()].
+#' @param animation `"wave"`, `"pulse"`, `"cascade"`, `"sweep"` or
+#'   `"none"`. See [bones_defaults()] for what each one does. `NULL` uses the
+#'   value from [bones_defaults()].
 #' @param stale `TRUE` keeps the old content on the screen, dimmed, while
 #'   the output calculates again. `FALSE` shows the skeleton again. `NULL`
 #'   uses the value from [bones_defaults()], which is `TRUE` if you did not
@@ -94,8 +104,12 @@
 #'   output itself, is exact already. The height is kept per page and per
 #'   output id, and it is used only when the output has almost the same
 #'   width as when it was measured. For a plotly, echarts4r or highcharter
-#'   output, `remember` also stores the kind of the chart (see "Shape"). `NULL` uses the value from
-#'   [bones_defaults()], which is `TRUE` if you did not set it.
+#'   output, `remember` also stores the kind of the chart (see "Shape").
+#'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
+#'   did not set it.
+#' @param skeleton Your own placeholder, in place of a built-in shape: a tag
+#'   or a tag list, made of [bones_block()] blocks and any layout around
+#'   them. See "Your own placeholder". Give `type` or `skeleton`, not both.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -107,6 +121,19 @@
 #'   withBones(tableOutput("results"), rows = 8, cols = 5)
 #'   withBones(uiOutput("cards"), type = "cards", n = 4)
 #'   withBones(plotOutput("trend"), type = "line")
+#'
+#'   # Your own placeholder: an avatar and two lines of text.
+#'   withBones(
+#'     uiOutput("profile"),
+#'     skeleton = div(
+#'       style = "display: flex; gap: 1rem; align-items: center;",
+#'       bones_block("3rem", "3rem", shape = "circle"),
+#'       div(
+#'         style = "flex: 1; display: grid; gap: 0.5rem;",
+#'         bones_block("60%"), bones_block("40%")
+#'       )
+#'     )
+#'   )
 #' }
 #' @export
 # The name is camelCase, not snake_case, on purpose. It follows the wrappers
@@ -122,7 +149,8 @@ withBones <- function(ui, # nolint: object_name_linter.
                       stale = NULL,
                       delay = NULL,
                       min_time = NULL,
-                      remember = NULL) {
+                      remember = NULL,
+                      skeleton = NULL) {
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -131,6 +159,14 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_count(lines, "lines")
   check_count(n, "n")
   height <- as_css_length(height, "height")
+  if (!is.null(skeleton)) {
+    if (!is.null(type)) {
+      stop("Give `type` or `skeleton`, not both.", call. = FALSE)
+    }
+    if (!inherits(skeleton, c("shiny.tag", "shiny.tag.list", "html")) && !is.list(skeleton)) {
+      stop("`skeleton` must be a tag or a tag list, such as `bones_block()`.", call. = FALSE)
+    }
+  }
 
   # A type that you give always wins. Only an inferred shape of a plotly,
   # echarts4r or highcharter output is replaced by the kind that bones.js
@@ -138,13 +174,14 @@ withBones <- function(ui, # nolint: object_name_linter.
   detect <- NA_character_
   if (is.null(type)) {
     type <- infer_type(ui)
-    detect <- detect_widget(ui)
+    # Your own placeholder wins too: its shape must not change.
+    if (is.null(skeleton)) detect <- detect_widget(ui)
   } else {
     type <- match.arg(type, skeleton_types())
   }
 
   animation <- animation %||% getOption("bones.animation", "wave")
-  animation <- match.arg(animation, c("wave", "pulse", "none"))
+  animation <- match.arg(animation, animation_types())
   stale <- stale %||% getOption("bones.stale", TRUE)
   check_flag(stale, "stale")
   delay <- delay %||% getOption("bones.delay", 300)
@@ -166,15 +203,20 @@ withBones <- function(ui, # nolint: object_name_linter.
     }
   }
 
-  # No height here. Inside the wrapper, the skeleton fills the wrapper.
-  skeleton <- skeleton_tag(
-    type = type, rows = rows, cols = cols, lines = lines, n = n
-  )
+  # No height here. Inside the wrapper, the skeleton fills the wrapper. The
+  # height of the output, or the default for the shape of the output, still
+  # sets the space, also for your own placeholder.
+  custom <- !is.null(skeleton)
+  skeleton <- if (custom) {
+    custom_skeleton_tag(skeleton)
+  } else {
+    skeleton_tag(type = type, rows = rows, cols = cols, lines = lines, n = n)
+  }
 
   htmltools::attachDependencies(
     htmltools::tags$div(
       class = paste0("bones-wrap bones-anim-", animation),
-      `data-bones-type` = type,
+      `data-bones-type` = if (custom) "custom" else type,
       `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
       `data-bones-min-time` = format(min_time, scientific = FALSE),
       # Read by bones.js: store the real height, and use it next time.
@@ -213,10 +255,16 @@ withBones <- function(ui, # nolint: object_name_linter.
 #' An argument that is `NULL` does not change its default. An argument that
 #' you give to [withBones()] is stronger than a default from here.
 #'
-#' @param animation `"wave"` (a band of light moves across the
-#'   placeholder), `"pulse"` (the placeholder fades out and in), or
-#'   `"none"`. Users who ask their system to reduce motion always get
-#'   `"none"`.
+#' @param animation How the placeholder moves:
+#'   * `"wave"`: a band of light moves along each bar.
+#'   * `"pulse"`: the whole placeholder fades out and in.
+#'   * `"cascade"`: each bar, cell or line lights up a little after the one
+#'     before, so a ripple runs through the shape.
+#'   * `"sweep"`: one band of light crosses the whole placeholder, over
+#'     every mark at once, the lines and dots of a chart too.
+#'   * `"none"`: no movement.
+#'
+#'   Users who ask their system to reduce motion always get `"none"`.
 #' @param color The colour of the placeholder, as a CSS colour. By default
 #'   it comes from the theme of the page: the text colour of the bslib
 #'   theme, made faint. A colour given here is stronger than the theme.
@@ -255,7 +303,7 @@ bones_defaults <- function(animation = NULL,
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
-    animation <- match.arg(animation, c("wave", "pulse", "none"))
+    animation <- match.arg(animation, animation_types())
   }
   if (!is.null(speed) &&
         (!is.numeric(speed) || length(speed) != 1L || is.na(speed) || speed <= 0)) {

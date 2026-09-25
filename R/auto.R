@@ -56,6 +56,10 @@ bones_auto <- function(ui, ..., exclude = NULL) {
   if (length(args) > 0L && (is.null(names(args)) || any(!nzchar(names(args))))) {
     stop("Each argument in `...` must have a name, such as `stale = FALSE`.", call. = FALSE)
   }
+  if ("skeleton" %in% names(args)) {
+    stop("`skeleton` cannot go to bones_auto(): each output gets the shape of its own kind. ",
+         "Wrap one output in withBones(skeleton = ) to give it your own placeholder.", call. = FALSE)
+  }
   if ("type" %in% names(args)) {
     stop("`type` cannot go to bones_auto(): each output gets the shape of its own kind. ",
          "Wrap one output in withBones(type = ) to give it a shape.", call. = FALSE)
