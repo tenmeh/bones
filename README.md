@@ -126,7 +126,8 @@ withBones(gt::gt_output("summary"), rows = 8, cols = 5)
 ```
 
 Set `rows` to the number of rows on a page. DT and reactable show 10 by
-default. The space kept for each package was measured in a browser, so the
+default. Before gt 1.0.0, `gt_output()` did not mark its output as a gt
+table, so with an older gt, give `type = "gt"`. The space kept for each package was measured in a browser, so the
 page does not move when the table arrives.
 
 ## What a spinner cannot do

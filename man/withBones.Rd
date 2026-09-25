@@ -99,6 +99,8 @@ gets \code{"reactable"}, \code{gt::gt_output()} gets \code{"gt"}, and
 \code{rhandsontable::rHandsontableOutput()} gets \code{"rhandsontable"}. Each shape
 copies the parts of its package, such as the search box of DT. Set \code{rows}
 to the number of rows on a page: DT and reactable show 10 by default.
+Before gt 1.0.0, \code{gt_output()} did not mark its output as a gt table, so
+with an older gt, give \code{type = "gt"}.
 
 A visualisation widget gets the shape of its kind, found from its output
 in the same way. A map (leaflet, tmap, mapview, mapdeck and others) gets

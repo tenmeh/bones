@@ -78,7 +78,13 @@ ui <- page_sidebar(
         optional_card("DT", "DT::DTOutput()", withBones(DT::DTOutput("dt"), rows = 8)),
         optional_card("reactable", "reactable::reactableOutput()",
                       withBones(reactable::reactableOutput("reactable"), rows = 8)),
-        optional_card("gt", "gt::gt_output()", withBones(gt::gt_output("gt"), rows = 8, cols = 5))
+        # Before gt 1.0.0, gt_output() did not mark its output as a gt table,
+        # so an older gt needs the type. webR, for the live demo, has an
+        # older gt.
+        optional_card("gt", "gt::gt_output()", withBones(
+          gt::gt_output("gt"), rows = 8, cols = 5,
+          type = if (utils::packageVersion("gt") < "1.0.0") "gt"
+        ))
       )
     ),
 

@@ -29,7 +29,8 @@ First release.
 * A table from DT, reactable, gt or rhandsontable gets a shape that copies
   that package, with no `type`: for example the search box and the pages
   of DT, or the title and the spanner of gt. The space kept for each one
-  was measured in a browser.
+  was measured in a browser. gt is found from gt 1.0.0; with an older gt,
+  give `type = "gt"`.
 * The real height of the content is remembered. When the content arrives,
   the browser stores its height, and on the next visit the placeholder
   keeps that height in place of the estimate, so the page does not move.
