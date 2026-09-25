@@ -22,9 +22,11 @@ plotly
 reactable
 rhandsontable
 roxygen
+shinylive
 stylesheet
 threejs
 timevis
 tmap
 visNetwork
+webR
 wordcloud

@@ -54,12 +54,20 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          # shinylive builds the live demo. leaflet and visNetwork are used
+          # by the demo, and are not in Suggests.
+          extra-packages: any::pkgdown, any::shinylive, any::leaflet, any::visNetwork, local::.
           needs: website
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
+
+      # The live demo: the demo app, exported with shinylive into docs/demo.
+      # articles/live-demo.html shows it in an iframe. See the script for
+      # how bones gets into webR.
+      - name: Build live demo
+        run: Rscript pkgdown/live-demo.R docs
 
       - name: Upload artifact
         if: github.event_name != 'pull_request' && !github.event.repository.private
