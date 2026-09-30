@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 132" width="132" height="132" role="img">
+<title>The bones hex logo, alive: the bone bounces and a teal wave sweeps across the grey lines under it.</title>
+<!--
+  The animated hex of the documentation site, for the home page.
+
+  It comes from the hero of the post "How bones began" on the blog, with the
+  side doodles, the cream card and the green disc taken away, so that only
+  the logo is left. The logo has no wordmark here: a picture that the page
+  loads as a background cannot load a font, and the name is written on the
+  page.
+
+  The square is 132 units wide. That is wider than the hex, 96 by 112, on
+  purpose: the sway tilts the hex by 4 degrees and lifts it a little, and
+  anything tighter would cut a corner. The hex is the same size and at the
+  same place as in rewind-hero.svg, so that the reduced-motion rule of
+  extra.css, which swaps in the still hex at 85% of the height, is right
+  for both.
+
+  The paths and the colours are those of pkgdown/logo/bones-hex.svg: the
+  bone, and the two lines of a skeleton loader with the teal wave across
+  them. The bone is centred in the hex, as there is no wordmark under it.
+  There is no background, so the hex sits on the paper in the light mode
+  and on the charcoal in the dark mode. The hex is paper-coloured with an
+  ink border, so it shows on both. The picture cannot know which mode the
+  visitor chose, because the site has its own switch, so it has one look
+  that works on both.
+
+  It is self-contained: the animation is CSS in this file. No script, no
+  font, no link to another file.
+-->
+<style>
+svg{display:block}
+.sway,.bone,.band{transform-box:view-box;transform-origin:0 0}
+.shadow{transform-box:fill-box;transform-origin:center}
+.sway{animation:sway 5.6s ease-in-out infinite}
+.shadow{opacity:.28;animation:shadow 5.6s ease-in-out infinite}
+.bone{transform-origin:50px 38px;animation:bounce 5.6s infinite}
+.band{animation:sweep 2.8s cubic-bezier(.45,.05,.55,.95) infinite}
+@keyframes sway{0%{transform:translateY(0) rotate(-4deg)}25%{transform:translateY(-3.4px) rotate(0deg)}50%{transform:translateY(0) rotate(4deg)}75%{transform:translateY(-3.4px) rotate(0deg)}100%{transform:translateY(0) rotate(-4deg)}}
+@keyframes shadow{0%,50%,100%{transform:scaleX(1);opacity:.28}25%,75%{transform:scaleX(.86);opacity:.18}}
+@keyframes bounce{
+0%,17%{transform:translateY(0) rotate(0) scale(1,1)}
+19.5%{transform:translateY(0) rotate(0) scale(1.12,.86);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
+22.5%{transform:translateY(-6px) rotate(-7deg) scale(.94,1.1);animation-timing-function:cubic-bezier(.6,0,.9,.5)}
+25.5%{transform:translateY(0) rotate(6deg) scale(1.1,.9)}
+28%{transform:translateY(0) rotate(-3deg) scale(.98,1.03)}
+30.5%,64%{transform:translateY(0) rotate(0) scale(1,1)}
+67%{transform:translateY(0) rotate(-6deg) scale(1,1)}
+70%{transform:translateY(0) rotate(6deg) scale(1,1)}
+72.5%{transform:translateY(0) rotate(-3deg) scale(1,1)}
+75%,100%{transform:translateY(0) rotate(0) scale(1,1)}}
+@keyframes sweep{0%,20%{transform:translateX(-42px)}56%,100%{transform:translateX(36px)}}
+/* Still under reduced motion. Every moving group has no transform of its own,
+   so with the animation off, the hex stands upright with the bone at rest and
+   the wave in the middle of the two lines, as in the logo. extra.css also
+   swaps this picture for the still hex under the same setting, because a
+   browser does not always pass the setting on to a picture that a page draws
+   as a background. */
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+</style>
+<defs>
+<linearGradient id="band"><stop offset="0" stop-color="#237A80" stop-opacity="0"/><stop offset=".5" stop-color="#237A80"/><stop offset="1" stop-color="#237A80" stop-opacity="0"/></linearGradient>
+<clipPath id="lines"><rect x="21" y="58" width="58" height="6" rx="3"/><rect x="21" y="68" width="38" height="6" rx="3"/></clipPath>
+</defs>
+<ellipse class="shadow" cx="66" cy="126.5" rx="38" ry="3" fill="#237A80"/>
+<g transform="translate(66 64)"><g class="sway"><g transform="translate(-50 -58)">
+<path d="M50 2 L98 30 L98 86 L50 114 L2 86 L2 30 Z" fill="#F4EFE4"/>
+<path d="M50 2 L98 30 L98 86 L50 114 L2 86 L2 30 Z" fill="none" stroke="#17202A" stroke-width="3" stroke-linejoin="round"/>
+<g transform="translate(50 58) scale(1.15) translate(-50 -49.75)">
+<g class="bone" fill="#17202A"><rect x="31" y="32" width="38" height="12" rx="3"/><circle cx="30" cy="32.5" r="7"/><circle cx="30" cy="43.5" r="7"/><circle cx="70" cy="32.5" r="7"/><circle cx="70" cy="43.5" r="7"/></g>
+<rect x="21" y="58" width="58" height="6" rx="3" fill="#B9B2A3" opacity=".85"/>
+<rect x="21" y="68" width="38" height="6" rx="3" fill="#B9B2A3" opacity=".7"/>
+<g clip-path="url(#lines)"><rect class="band" x="44.7" y="56" width="17" height="20" fill="url(#band)"/></g>
+</g></g></g></g>
+</svg>
