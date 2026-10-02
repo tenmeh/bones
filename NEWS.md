@@ -1,3 +1,15 @@
+# bones (development version)
+
+* `withBones()` now shows a calm panel when an output fails. After a good
+  load, it keeps the old content dimmed with a banner. This is on by default
+  and changes the error display on upgrade. Use
+  `bones_defaults(fallback = FALSE)` to keep the error text of Shiny.
+  Silent `req()` errors and `validate()` messages keep their usual behaviour
+  (#19).
+* `bones_fallback()` builds an error panel with a custom message. Error detail
+  is off by default; use it only for development. Messages from `safeError()`
+  still show when detail is off (#19).
+
 # bones 0.1.0
 
 First release.
