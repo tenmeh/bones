@@ -110,6 +110,11 @@
 #' @param skeleton Your own placeholder, in place of a built-in shape: a tag
 #'   or a tag list, made of [bones_block()] blocks and any layout around
 #'   them. See "Your own placeholder". Give `type` or `skeleton`, not both.
+#' @param fallback A panel for a failed output: a tag or a tag list.
+#'   `NULL` uses [bones_defaults()], or [bones_fallback()] if unset.
+#'   `FALSE` keeps the error text of Shiny. Silent `req()` errors and
+#'   `validate()` messages keep their usual behaviour. After a good load,
+#'   the old content stays dimmed with the panel as a banner.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -150,7 +155,8 @@ withBones <- function(ui, # nolint: object_name_linter.
                       delay = NULL,
                       min_time = NULL,
                       remember = NULL,
-                      skeleton = NULL) {
+                      skeleton = NULL,
+                      fallback = NULL) {
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -190,6 +196,11 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_ms(min_time, "min_time")
   remember <- remember %||% getOption("bones.remember", TRUE)
   check_flag(remember, "remember")
+  fallback <- fallback %||% getOption("bones.fallback", bones_fallback())
+  check_fallback(fallback)
+  if (!identical(fallback, FALSE) && !is_error_panel(fallback)) {
+    fallback <- htmltools::tags$div(class = "bones-error", role = "alert", fallback)
+  }
 
   # --- Height to keep until the content arrives ---
   # Only an estimated height can be improved by the real one, so only an
@@ -233,6 +244,7 @@ withBones <- function(ui, # nolint: object_name_linter.
     class = paste0("bones-wrap bones-anim-", animation),
     `data-bones-type` = if (custom) "custom" else type,
     `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
+    `data-bones-error` = if (!identical(fallback, FALSE)) "true",
     `data-bones-min-time` = format(min_time, scientific = FALSE),
     # Read by bones.js: store the real height, and use it next time.
     `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
@@ -253,7 +265,8 @@ withBones <- function(ui, # nolint: object_name_linter.
     ), collapse = " "),
     skeleton,
     if (!is.na(detect)) kind_templates(),
-    content
+    content,
+    if (!identical(fallback, FALSE)) fallback
   ))
 
   htmltools::attachDependencies(wrap, bones_dependency(), append = TRUE)
@@ -302,6 +315,8 @@ is_fill_item <- function(ui) {
 #'   arguments of [withBones()], in milliseconds.
 #' @param remember The default for the `remember` argument of
 #'   [withBones()].
+#' @param fallback The default for the `fallback` argument of [withBones()].
+#'   `NULL` leaves the option unchanged. Use `FALSE` for the error text of Shiny.
 #'
 #' @return The old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
@@ -322,7 +337,8 @@ bones_defaults <- function(animation = NULL,
                            stale = NULL,
                            delay = NULL,
                            min_time = NULL,
-                           remember = NULL) {
+                           remember = NULL,
+                           fallback = NULL) {
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
@@ -336,6 +352,7 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(delay)) check_ms(delay, "delay")
   if (!is.null(min_time)) check_ms(min_time, "min_time")
   if (!is.null(remember)) check_flag(remember, "remember")
+  if (!is.null(fallback)) check_fallback(fallback)
 
   # These values go into an inline style attribute. A value with a ";"
   # would end the declaration and start another one.
@@ -360,7 +377,8 @@ bones_defaults <- function(animation = NULL,
     bones.stale     = stale,
     bones.delay     = delay,
     bones.min_time  = min_time,
-    bones.remember  = remember
+    bones.remember  = remember,
+    bones.fallback  = fallback
   )
   new <- new[!vapply(new, is.null, logical(1))]
 

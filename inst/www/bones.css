@@ -102,6 +102,62 @@
   visibility: hidden;
 }
 
+/* A failure has no animation or delay. After a good load, the content
+   stays in its box and the banner takes its own space above it. */
+.bones-error {
+  display: none;
+  position: absolute;
+  inset: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--bones-highlight);
+  border-radius: var(--bones-radius);
+  color: currentColor;
+  background: var(--bs-body-bg, Canvas);
+  overflow: auto;
+}
+
+.bones-wrap.bones-errored > .bones-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.bones-wrap.bones-errored > .bones-skeleton {
+  display: none;
+}
+
+.bones-wrap.bones-errored:not(.bones-has-loaded) > .bones-error {
+  align-items: center;
+  text-align: center;
+}
+
+.bones-wrap.bones-errored.bones-has-loaded {
+  display: flex;
+  flex-direction: column;
+}
+
+.bones-wrap.bones-errored.bones-has-loaded > .bones-content {
+  visibility: visible;
+  opacity: 0.45;
+  transition: none;
+  flex-shrink: 0;
+}
+
+.bones-wrap.bones-errored.bones-has-loaded > .bones-error {
+  position: static;
+  order: -1;
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.bones-error-detail {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .bones-wrap.bones-loaded > .bones-skeleton {
   display: none;
 }

@@ -93,3 +93,17 @@ check_flag <- function(x, name) {
   }
   invisible(x)
 }
+
+#' Stop unless `x` is FALSE, a tag, or a tag list
+#'
+#' @param x The value to check.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+check_fallback <- function(x) {
+  if (!identical(x, FALSE) &&
+        !inherits(x, c("shiny.tag", "shiny.tag.list"))) {
+    stop("`fallback` must be FALSE, a tag, or a tag list.", call. = FALSE)
+  }
+  invisible(x)
+}

@@ -114,6 +114,11 @@ reference:
     contents:
       - bones_block
 
+  - title: Error states
+    desc: A calm panel for a failed output.
+    contents:
+      - bones_fallback
+
   - title: Placeholders on their own
     desc: >
       A skeleton where there is no Shiny output, such as inside a
