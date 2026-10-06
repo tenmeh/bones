@@ -1,6 +1,6 @@
 Package: bones
 Type: Package
-Title: Content-Shaped Loading Placeholders for 'Shiny' Outputs
+Title: Content-Shaped Loading Placeholders for 'shiny' Outputs
 Version: 0.1.0
 Authors@R: person(
     given = "Tanmay",
@@ -8,7 +8,7 @@ Authors@R: person(
     email = "tanmaychanda96@gmail.com",
     role = c("aut", "cre", "cph"))
 Description: Shows a grey placeholder in the shape of the content while a
-    'Shiny' output loads, in place of a spinner. The user can thus see what
+    'shiny' output loads, in place of a spinner. The user can thus see what
     is coming, and not only that something happens. The shape comes from
     the type of the output. The placeholder keeps the space of the content,
     so the page does not move when the content arrives. When an output
