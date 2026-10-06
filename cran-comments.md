@@ -1,8 +1,17 @@
 # CRAN comments
 
-## Submission
+## Resubmission
 
-This is a new submission. The package has not been on CRAN before.
+This is a resubmission of a new package. The first submission was 0.1.0.
+In this version I have:
+
+* Written the package name 'shiny' in single quotes, in lower case, in
+  the Title and the Description.
+* Reset par() in the demo app in inst/examples/demo/server.R. The plot
+  code saves the old values and gives them back with on.exit(). This was
+  the only place in the examples, demos and inst folder that changed
+  par(), options() or the working directory. The example of
+  bones_defaults() already restores options().
 
 ## Test environments
 
@@ -27,10 +36,10 @@ The only note is the standard note for a first submission.
 
 ## Notes for the reviewer
 
-* The package gives 'Shiny' outputs a loading placeholder in the shape of
+* The package gives 'shiny' outputs a loading placeholder in the shape of
   the content. Its R functions only build HTML, and its JavaScript runs in
-  the browser of the user of a 'Shiny' app.
-* The examples run without a 'Shiny' session. They build the HTML and
+  the browser of the user of a 'shiny' app.
+* The examples run without a 'shiny' session. They build the HTML and
   return it. The examples that use 'shiny' run only when it is installed.
 * The tests that start an app in a headless browser use shinytest2. They
   call skip_on_cran(), and they skip when Chrome or a suggested package
