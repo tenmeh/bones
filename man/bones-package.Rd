@@ -4,11 +4,11 @@
 \name{bones-package}
 \alias{bones}
 \alias{bones-package}
-\title{bones: Content-Shaped Loading Placeholders for 'Shiny' Outputs}
+\title{bones: Content-Shaped Loading Placeholders for 'shiny' Outputs}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Shows a grey placeholder in the shape of the content while a 'Shiny' output loads, in place of a spinner. The user can thus see what is coming, and not only that something happens. The shape comes from the type of the output. The placeholder keeps the space of the content, so the page does not move when the content arrives. When an output calculates again, the old content stays on the screen, dimmed, and a placeholder does not replace it.
+Shows a grey placeholder in the shape of the content while a 'shiny' output loads, in place of a spinner. The user can thus see what is coming, and not only that something happens. The shape comes from the type of the output. The placeholder keeps the space of the content, so the page does not move when the content arrives. When an output calculates again, the old content stays on the screen, dimmed, and a placeholder does not replace it.
 }
 \seealso{
 Useful links:

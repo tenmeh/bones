@@ -6,7 +6,8 @@ This is a resubmission of a new package. The first submission was 0.1.0.
 In this version I have:
 
 * Written the package name 'shiny' in single quotes, in lower case, in
-  the Title and the Description.
+  the Title and the Description, and in the package help page that is
+  made from them.
 * Reset par() in the demo app in inst/examples/demo/server.R. The plot
   code saves the old values and gives them back with on.exit(). This was
   the only place in the examples, demos and inst folder that changed
