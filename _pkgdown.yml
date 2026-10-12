@@ -5,54 +5,54 @@ template:
   light-switch: true
   default-theme: light
   bslib:
-    # The ground and the ink come from the blog of the author, so that the
-    # documentation and the blog are one family: warm bone paper, and a
-    # blue-black ink. In the dark mode they are the charcoal of the logo and
-    # a warm cream. Bootstrap makes its own tints and shades from these
-    # values, so they are set here and not only in extra.css, which holds
-    # the same values in its tokens. Change both places together.
+    # The site has the shapes of the blog of the author (tenmeh.github.io),
+    # and the colours of the logo: the bone paper (#F4EFE4), the ink
+    # (#17202A) and the teal (#237A80). In the light mode the ground is the
+    # bone paper and the text is the ink. In the dark mode the ground is the
+    # ink. Bootstrap makes its own tints and shades from these values, so
+    # they are set here and not only in extra.css, which holds the same
+    # values in its tokens. Change both places together.
     bg: "#f4efe4"
     fg: "#17202a"
-    body-bg-dark: "#1f1d1b"
+    body-bg-dark: "#17202a"
     body-color-dark: "#ece5d6"
-    border-color: "#cfc5b1"
-    border-color-dark: "#3d3833"
-    # A dark teal, of the hue of the logo shimmer. It is NOT the teal of the
-    # logo itself (#237A80). As a link colour on the paper that one has a
-    # contrast of 4.4:1, and a link must have 4.5:1 to pass WCAG AA. On
-    # white it had 5.0:1, which is why the first version of this site used
-    # it.
+    border-color: "#ddd4c2"
+    border-color-dark: "#2c3844"
+    # The teal of the logo is 4.4:1 on the paper, and WCAG AA asks for
+    # 4.5:1. The glows of the ground make it worse. The light mode thus uses
+    # a darker teal of the same hue. It gives 6.9:1 on the paper, and 5.0:1
+    # at the centre of the glows, where the ground is at its most teal.
+    # extra.css lists the contrast of each colour.
     #
-    # The paper is darker than white, so the teal of the logo fails on it.
-    # The pills and the active tab also put the accent on a 12% tint of
-    # itself, and there #237A80 is only 3.8:1. #1B6A70 gives 5.5:1 on the
-    # paper (#F4EFE4), 5.9:1 on the cards and the code blocks (#FBF8F1), and
-    # 4.6:1 on the tint of the pills. It is the lightest teal of this hue
-    # that passes on the tint, which is the hardest of the three grounds.
-    #
-    # The dark mode does not derive its link colour from this one any more.
-    # Bootstrap would lighten it by 40%, which gives a dusty grey-teal
-    # (#76A6A9) that looks little like the logo. The teal of the logo itself
-    # is too dark to read on the charcoal (3.3:1), so the dark mode takes a
-    # lighter teal of the same hue, #5CC4CA. It gives 8.2:1 on the charcoal (#1F1D1B), 7.4:1 on
-    # the cards (#282523) and 5.4:1 on its 16% tint.
-    primary: "#1B6A70"
-    link-color-dark: "#5CC4CA"
-    # Set as plain Sass variables rather than through bslib's font helpers:
-    # Recursive is served from pkgdown/assets/fonts by @font-face in
-    # extra.css, so there is nothing for bslib to fetch or bundle. One family
-    # does all the work, as on the blog: the plain style for text and
-    # headings, and the mono axis of the same file for code (extra.css turns
-    # it on). The mono stack after it is for the moment before the font
-    # loads, and for a browser that blocks it.
-    font-family-base: "Recursive, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    headings-font-family: "Recursive, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    font-family-monospace: "Recursive, 'SF Mono', 'Cascadia Mono', Consolas, monospace"
-    headings-font-weight: 650
-    line-height-base: 1.66
-    # The cards, the code blocks and the sidebar have round corners of 14px,
-    # the same as the cards of the blog.
-    border-radius: "14px"
+    # The dark mode does not derive its link colour from this one. Bootstrap
+    # would lighten it by 40%, which gives a dusty grey-teal that looks
+    # little like the logo. The logo teal itself is too dark to read on the
+    # ink (3.3:1), so the dark mode takes a lighter teal of the same hue. It
+    # gives 8.0:1 on the ink.
+    primary: "#145a5f"
+    link-color-dark: "#5cc4ca"
+    # Geist for the text and the headings, and Geist Mono for the code, as on
+    # the blog. bslib downloads the files from Google Fonts when the site is
+    # built, and the site serves them itself. A visitor thus makes no request
+    # to Google.
+    base_font:
+      google:
+        family: "Geist"
+        wght: "400..800"
+    heading_font:
+      google:
+        family: "Geist"
+        wght: "400..800"
+    code_font:
+      google:
+        family: "Geist Mono"
+        wght: "400..600"
+    font-size-root: "17px"
+    headings-font-weight: 600
+    line-height-base: 1.72
+    # The cards and the code blocks of the blog have round corners of about
+    # 10 to 14px. Bootstrap uses this value for its own boxes.
+    border-radius: "0.6rem"
 
   # The picture that Slack, LinkedIn, X and WhatsApp show when the address of
   # the site is shared. Without it pkgdown uses the logo, which is a small
