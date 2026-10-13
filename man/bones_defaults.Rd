@@ -13,7 +13,8 @@ bones_defaults(
   stale = NULL,
   delay = NULL,
   min_time = NULL,
-  remember = NULL
+  remember = NULL,
+  fallback = NULL
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
 
 \item{remember}{The default for the \code{remember} argument of
 \code{\link[=withBones]{withBones()}}.}
+
+\item{fallback}{The default for the \code{fallback} argument of \code{\link[=withBones]{withBones()}}.
+\code{NULL} leaves the option unchanged. Use \code{FALSE} for the error text of Shiny.}
 }
 \value{
 The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.

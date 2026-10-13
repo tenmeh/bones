@@ -1,6 +1,6 @@
 /* bones - content-shaped loading placeholders for Shiny outputs
  *
- * This script sets one of four states on each wrapper element, with classes:
+ * This script sets one of five states on each wrapper element, with classes:
  *
  *   (no class)     First load. The skeleton shows. The content is hidden,
  *                  but it has its box.
@@ -9,6 +9,7 @@
  *                  output calculates again.
  *   bones-loading  The output calculates again and the stale option is off.
  *                  The skeleton shows again.
+ *   bones-errored  A failure. A panel shows, or a banner over old content.
  *
  * One more class records the history, not the state:
  *
@@ -51,7 +52,7 @@
     }
     wrap._bonesShownAt = undefined;
     wrap.classList.add("bones-loaded", "bones-has-loaded");
-    wrap.classList.remove("bones-loading", "bones-stale");
+    wrap.classList.remove("bones-loading", "bones-stale", "bones-errored");
 
     // The skeleton is hidden now, so a change of its shape is not seen.
     if (wrap._bonesKind) {
@@ -64,6 +65,34 @@
     if (wrap._bonesSaveHeight) {
       wrap._bonesSaveHeight = false;
       window.setTimeout(function () { saveHeight(wrap); }, 250);
+    }
+  }
+
+  // Shiny 1.x sends an array for validation, a string for safeError(),
+  // and no type for stop(). Treat either form as a list of classes.
+  function errorHasType(error, type) {
+    var types = error && error.type;
+    return Array.isArray(types) ? types.indexOf(type) >= 0 : types === type;
+  }
+
+  function markErrored(wrap, error) {
+    if (wrap._bonesTimer) {
+      window.clearTimeout(wrap._bonesTimer);
+      wrap._bonesTimer = null;
+    }
+    wrap._bonesShownAt = undefined;
+    wrap._bonesSaveHeight = false;
+    var panel = wrap.querySelector(":scope > .bones-error");
+    var safe = panel && panel.querySelector(".bones-error-safe");
+    if (safe) safe.textContent = errorHasType(error, "shiny.custom.error") ? error.message : "";
+    var detail = panel && panel.querySelector(".bones-error-detail");
+    if (detail) detail.textContent = error && error.message || "";
+    wrap.classList.add("bones-errored");
+    wrap.classList.remove("bones-loading", "bones-stale");
+    if (wrap.classList.contains("bones-has-loaded")) {
+      wrap.classList.add("bones-loaded");
+    } else {
+      wrap.classList.remove("bones-loaded");
     }
   }
 
@@ -480,6 +509,8 @@
   function onInvalidated(e) {
     var wrap = wrapOf(e.target);
     if (!wrap) return;
+    wrap.classList.remove("bones-errored");
+    wrap._bonesErrorPending = null;
 
     // A new load starts. An end that waited for min_time is not the end of
     // this load. The skeleton or the dimming stays on, so the time that it
@@ -506,9 +537,47 @@
   function onSettled(e) {
     var wrap = wrapOf(e.target);
     if (!wrap) return;
+    if (e.type === "shiny:error" && wrap.getAttribute("data-bones-error") === "true") {
+      // Both req() and validate() send "validation" in the payload.
+      // Their output classes arrive later, and req() adds none.
+      if (errorHasType(e.error, "validation")) {
+        settle(wrap);
+        return;
+      }
+      // Only a real failure reaches here. Keep the actual nodes, including
+      // widget state and event handlers, before Shiny writes error text.
+      // Restore them one tick later, after that write has finished.
+      var output = e.target;
+      var old = wrap.classList.contains("bones-has-loaded") ? $(output).contents().detach() : null;
+      var pending = {};
+      wrap._bonesErrorPending = pending;
+      if (wrap._bonesTimer) {
+        window.clearTimeout(wrap._bonesTimer);
+        wrap._bonesTimer = null;
+      }
+      wrap._bonesSaveHeight = false;
+      window.setTimeout(function () {
+        if (wrap._bonesErrorPending !== pending) {
+          if (old) old.remove();
+          return;
+        }
+        wrap._bonesErrorPending = null;
+        if (old) {
+          $(output).empty().append(old);
+          // Shiny's next value clears these classes as usual.
+          var classes = Array.from(output.classList).filter(function (name) {
+            return name === "shiny-output-error" || name.indexOf("shiny-output-error-") === 0;
+          });
+          classes.forEach(function (name) { output.classList.remove(name); });
+        }
+        markErrored(wrap, e.error);
+      }, 0);
+      return;
+    }
     // Only a real value has a height worth storing. An error, or a silent
     // req(), leaves the output empty or shows a message.
     if (e.type === "shiny:value") {
+      wrap._bonesErrorPending = null;
       wrap._bonesSaveHeight = true;
       readKind(wrap, e.value);
     }
@@ -549,7 +618,8 @@
     for (var i = 0; i < wraps.length; i++) {
       var wrap = wraps[i];
       var output = outputOf(wrap);
-      if (!output || output.classList.contains("recalculating")) continue;
+      if (!output || output.classList.contains("recalculating") ||
+          wrap.classList.contains("bones-errored") || wrap._bonesErrorPending) continue;
 
       var wasRecalculating =
         wrap.classList.contains("bones-stale") ||
