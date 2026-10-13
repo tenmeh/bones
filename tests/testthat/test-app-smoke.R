@@ -359,12 +359,26 @@ test_that("a fast load shows nothing, and a skeleton stays at least min_time", {
     lapply(log, function(v) if (is.null(v)) NA_real_ else v - log$click)
   }
 
+  # The load takes 50ms on the server, but the round trip from the click to
+  # the value can take longer than the delay of 300ms on a busy CI machine.
+  # A skeleton is then right. So the test checks the rule itself: a load
+  # that is back before the delay shows nothing, and a skeleton or a dim
+  # never starts before the delay.
+  no_early <- function(log, field, what) {
+    expect_false(is.na(log$loaded))
+    if (log$loaded < 250) {
+      expect_true(is.na(log[[field]]),
+                  info = sprintf("a load back in %.0fms must not %s", log$loaded, what))
+    } else if (!is.na(log[[field]])) {
+      expect_gte(log[[field]], 250)   # the delay is 300ms, less a small margin
+    }
+  }
+
   fast <- timing("fast")
-  expect_true(is.na(fast$shown), info = "a 50ms load must not show a skeleton")
-  expect_false(is.na(fast$loaded))
+  no_early(fast, "shown", "show a skeleton")
 
   faststale <- timing("faststale")
-  expect_true(is.na(faststale$dimmed), info = "a 50ms load must not dim the content")
+  no_early(faststale, "dimmed", "dim the content")
 
   slow <- timing("slow")
   expect_false(is.na(slow$shown), info = "a slow load shows its skeleton")

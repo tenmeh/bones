@@ -10,7 +10,7 @@
   is off by default; use it only for development. Messages from `safeError()`
   still show when detail is off (#19).
 
-# bones 0.1.0
+# bones 0.1.1
 
 First release.
 

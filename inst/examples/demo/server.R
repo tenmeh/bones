@@ -16,8 +16,10 @@ server <- function(input, output, session) {
     renderPlot(bg = "transparent", {
       d <- data()
       grey <- "#888888"   # reads on a light and on a dark page
-      par(mar = c(3, 3, 1, 1), mgp = c(2, 0.6, 0), las = 1,
-          fg = grey, col.axis = grey, col.lab = grey)
+      # Give the user's par() back when the plot is drawn.
+      old_par <- par(mar = c(3, 3, 1, 1), mgp = c(2, 0.6, 0), las = 1,
+                     fg = grey, col.axis = grey, col.lab = grey)
+      on.exit(par(old_par), add = TRUE)
       draw(d)
     })
   }
