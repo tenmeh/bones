@@ -67,8 +67,13 @@ collects boxes. Each box is relative to the top left of the content.
   box. The text in table cells counts, which gives the rows of a table.
 - Elements with no text: `img`, `input`, `select`, `textarea` and `button`
   give one box each.
-- Frames: an element with a visible border, or a background that is not
-  transparent, gives one frame box. Cards and value boxes are frames.
+- Frames: an element gives one frame box when it has a visible border on
+  all four sides, or a background colour that is not transparent and not
+  the same as the background of its parent. Cards and value boxes are
+  frames. These are never frames: the parts of a table (`table`, `thead`,
+  `tbody`, `tfoot`, `tr`, `th`, `td`), and an element smaller than 24px in
+  width or in height. Without this rule, each striped row of a table would
+  be a frame.
 
 Skipped:
 
