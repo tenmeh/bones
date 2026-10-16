@@ -1,6 +1,8 @@
 # bones <img src="man/figures/logo.png" align="right" height="139" alt="bones logo" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/bones)](https://CRAN.R-project.org/package=bones)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/bones)](https://CRAN.R-project.org/package=bones)
 [![R-CMD-check](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tenmeh/bones/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
@@ -31,6 +33,12 @@ ui <- bones_auto(fluidPage(
 ```
 
 ## Installation
+
+```r
+install.packages("bones")
+```
+
+To get the development version from GitHub:
 
 ```r
 # install.packages("remotes")
