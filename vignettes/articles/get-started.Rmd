@@ -18,7 +18,13 @@ will be.
 
 ## Install
 
-`bones` is not on CRAN yet. Install it from GitHub:
+Install `bones` from CRAN:
+
+```{r}
+install.packages("bones")
+```
+
+To get the development version from GitHub:
 
 ```{r}
 # install.packages("remotes")
