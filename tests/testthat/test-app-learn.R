@@ -15,12 +15,20 @@ wait_all_loaded <- function(app) {
   Sys.sleep(0.8)
 }
 
-# A first visit with an empty storage.
+# The number of stored layouts, as JS.
+layout_count_js <- "Object.keys(localStorage).filter(function (k) {
+  return k.indexOf('bones:layout:') === 0;
+}).length"
+
+# A first visit with an empty storage. It ends when the four outputs that
+# learn have stored their layouts: on a busy machine that can take longer
+# than the 250ms after each load.
 first_visit <- function(app) {
   app$run_js("try { localStorage.clear(); } catch (e) {}")
   app$run_js("location.reload();")
   Sys.sleep(0.5)
   wait_all_loaded(app)
+  app$wait_for_js(paste(layout_count_js, "=== 4"), timeout = 15000)
 }
 
 # The stored layouts, as JSON strings named by output id.
@@ -179,7 +187,13 @@ test_that("the newest layout wins", {
 
   app$run_js("document.getElementById('fewer').click();")
   app$wait_for_js("document.querySelectorAll('#tbl tbody tr').length === 4", timeout = 15000)
-  Sys.sleep(0.8)
+  # Wait for the new layout itself, not for a fixed time.
+  app$wait_for_js(sprintf("(function () {
+    var k = Object.keys(localStorage).filter(function (k) {
+      return k.indexOf('bones:layout:') === 0 && k.split(':').pop() === 'tbl';
+    })[0];
+    return JSON.parse(localStorage.getItem(k)).b.length < %d;
+  })()", before), timeout = 15000)
 
   reload_page(app)
   info <- skeleton_info(app)
