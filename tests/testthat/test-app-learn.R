@@ -201,3 +201,77 @@ test_that("a learned skeleton does not scroll the page sideways", {
   expect_true(info$tbl$learned)
   expect_true(app$get_js("document.documentElement.scrollWidth <= window.innerWidth"))
 })
+
+# --- Storage that fails -------------------------------------------------------
+
+# Run `js` on each new page before its scripts, and keep the errors of the
+# page in window.bonesErrors. The log of shinytest2 does not follow a
+# reload, so the page keeps its own list. The Page domain must be on, or
+# Chrome does not run the script on the new page.
+on_new_page <- function(app, js = "") {
+  session <- app$get_chromote_session()
+  session$Page$enable()
+  session$Page$addScriptToEvaluateOnNewDocument(source = paste0("
+    window.bonesErrors = [];
+    window.addEventListener('error', function (e) { window.bonesErrors.push(String(e.message)); });
+  ", js))
+}
+
+page_errors <- function(app) unlist(app$get_js("window.bonesErrors"))
+
+test_that("storage that throws gives the built-in shape and no error", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-blocked",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  first_visit(app)
+
+  # Before bones.js runs on the next page: every access to the storage
+  # throws, as in a browser that blocks it.
+  on_new_page(app, "
+    ['getItem', 'setItem', 'removeItem'].forEach(function (name) {
+      Storage.prototype[name] = function () { throw new Error('blocked'); };
+    });
+  ")
+  reload_page(app)
+  info <- skeleton_info(app)
+  for (id in learn_ids) expect_false(info[[id]]$learned, info = id)
+
+  wait_all_loaded(app)
+  expect_length(page_errors(app), 0)
+  expect_no_shiny_errors(app)
+})
+
+test_that("a record that does not parse, or of another form, is ignored", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-corrupt",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  first_visit(app)
+  on_new_page(app)
+
+  app$run_js("
+    var key = function (id) {
+      return Object.keys(localStorage).filter(function (k) {
+        return k.indexOf('bones:layout:') === 0 && k.split(':').pop() === id;
+      })[0];
+    };
+    localStorage.setItem(key('tbl'), '{');
+    var txt = JSON.parse(localStorage.getItem(key('txt')));
+    txt.v = 2;
+    localStorage.setItem(key('txt'), JSON.stringify(txt));
+    var cards = JSON.parse(localStorage.getItem(key('cards')));
+    cards.b[0] = [1, 2, 3, 4, 0, 9];
+    localStorage.setItem(key('cards'), JSON.stringify(cards));
+  ")
+  reload_page(app)
+  info <- skeleton_info(app)
+  for (id in c("tbl", "txt", "cards")) {
+    expect_false(info[[id]]$loaded, info = id)
+    expect_false(info[[id]]$learned, info = id)
+  }
+  # The one that was not changed is still drawn.
+  expect_true(info$fail$learned)
+
+  wait_all_loaded(app)
+  expect_length(page_errors(app), 0)
+  expect_no_shiny_errors(app)
+})
