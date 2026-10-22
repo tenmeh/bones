@@ -358,6 +358,16 @@ table_types <- function() {
   c("dt", "reactable", "gt", "rhandsontable")
 }
 
+#' The shapes whose output may learn its shape from its content
+#'
+#' Text, tables, cards and values. Not the charts: their content is one
+#' canvas or one SVG, and the shape of a chart says more than one box.
+#' @keywords internal
+#' @noRd
+learnable_types <- function() {
+  c("text", "table", "cards", "value", table_types())
+}
+
 #' The names of all the skeleton shapes, in the order of the documentation
 #' @keywords internal
 #' @noRd

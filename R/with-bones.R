@@ -105,11 +105,19 @@
 #'   output id, and it is used only when the output has almost the same
 #'   width as when it was measured. For a plotly, echarts4r or highcharter
 #'   output, `remember` also stores the kind of the chart (see "Shape").
+#'   It also turns on `learn`.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
 #' @param skeleton Your own placeholder, in place of a built-in shape: a tag
 #'   or a tag list, made of [bones_block()] blocks and any layout around
 #'   them. See "Your own placeholder". Give `type` or `skeleton`, not both.
+#' @param learn `TRUE` stores the shape of the content in the browser of the
+#'   user, and the first skeleton of the next visit has that shape. Only
+#'   numbers are stored: the place and the size of each line of text, image
+#'   and frame. It applies only when you do not give `type`, `rows`, `cols`,
+#'   `lines`, `n` or `skeleton`, and not to charts. It needs `remember`.
+#'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
+#'   did not set it.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -150,7 +158,14 @@ withBones <- function(ui, # nolint: object_name_linter.
                       delay = NULL,
                       min_time = NULL,
                       remember = NULL,
-                      skeleton = NULL) {
+                      skeleton = NULL,
+                      learn = NULL) {
+
+  # Which arguments set the shape. rows and cols have defaults, so missing()
+  # is the only way to tell that the developer gave them. An output whose
+  # shape the developer set does not learn its shape.
+  shaped <- !missing(rows) || !missing(cols) || !missing(lines) || !missing(n) ||
+    !is.null(type) || !is.null(skeleton)
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -190,6 +205,10 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_ms(min_time, "min_time")
   remember <- remember %||% getOption("bones.remember", TRUE)
   check_flag(remember, "remember")
+  learn <- learn %||% getOption("bones.learn", TRUE)
+  check_flag(learn, "learn")
+  learnable <- isTRUE(remember) && isTRUE(learn) && !shaped &&
+    type %in% learnable_types()
 
   # --- Height to keep until the content arrives ---
   # Only an estimated height can be improved by the real one, so only an
@@ -240,6 +259,9 @@ withBones <- function(ui, # nolint: object_name_linter.
     # remember, store it for the next visit.
     `data-bones-detect` = na_to_null(detect),
     `data-bones-remember-kind` = if (!is.na(detect) && isTRUE(remember)) "true",
+    # Read by bones.js: store the boxes of the content, and draw them as
+    # the skeleton of the next visit.
+    `data-bones-learn` = if (learnable) "true",
     # htmltools writes an NA attribute as an attribute with no value. Give
     # NULL instead, so that no `data-bones-id` attribute is written.
     `data-bones-id` = na_to_null(find_output_id(ui)),
@@ -302,6 +324,7 @@ is_fill_item <- function(ui) {
 #'   arguments of [withBones()], in milliseconds.
 #' @param remember The default for the `remember` argument of
 #'   [withBones()].
+#' @param learn The default for the `learn` argument of [withBones()].
 #'
 #' @return The old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
@@ -322,7 +345,8 @@ bones_defaults <- function(animation = NULL,
                            stale = NULL,
                            delay = NULL,
                            min_time = NULL,
-                           remember = NULL) {
+                           remember = NULL,
+                           learn = NULL) {
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
@@ -336,6 +360,7 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(delay)) check_ms(delay, "delay")
   if (!is.null(min_time)) check_ms(min_time, "min_time")
   if (!is.null(remember)) check_flag(remember, "remember")
+  if (!is.null(learn)) check_flag(learn, "learn")
 
   # These values go into an inline style attribute. A value with a ";"
   # would end the declaration and start another one.
@@ -360,7 +385,8 @@ bones_defaults <- function(animation = NULL,
     bones.stale     = stale,
     bones.delay     = delay,
     bones.min_time  = min_time,
-    bones.remember  = remember
+    bones.remember  = remember,
+    bones.learn     = learn
   )
   new <- new[!vapply(new, is.null, logical(1))]
 
