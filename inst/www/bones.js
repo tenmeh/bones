@@ -63,7 +63,10 @@
     // widget has finished drawing.
     if (wrap._bonesSaveHeight) {
       wrap._bonesSaveHeight = false;
-      window.setTimeout(function () { saveHeight(wrap); }, 250);
+      window.setTimeout(function () {
+        saveHeight(wrap);
+        saveLayout(wrap);
+      }, 250);
     }
   }
 
@@ -141,6 +144,183 @@
     if (node.matches(".bones-wrap[data-bones-remember]")) restoreHeight(node);
     var inner = node.querySelectorAll(".bones-wrap[data-bones-remember]");
     for (var i = 0; i < inner.length; i++) restoreHeight(inner[i]);
+  }
+
+  /* --- Learn the shape of the content ------------------------------------
+   *
+   * The built-in skeleton is a guess from the type of the output. When the
+   * content has arrived, the boxes of its visible parts are stored in
+   * localStorage: one box for each line of text, one for each image or
+   * control, and one frame for each card. On the next visit, the skeleton is
+   * drawn from those boxes (see restoreLayout).
+   *
+   * Only a wrapper with data-bones-learn="true" does this. withBones() sets
+   * it only when the developer did not set the shape, and not for a chart.
+   * The key has the form of the height key. Only numbers are stored, never
+   * text: {v: 1, w: width, h: height, b: [[x, y, width, height, kind]]},
+   * with kind 0 for a bar and 1 for a frame.
+   *
+   * Nothing is stored when the content gives fewer than 2 boxes, or when one
+   * box covers most of it, such as a map or a canvas: the built-in shape is
+   * better than one large box. */
+  var LAYOUT_PREFIX = "bones:layout:";
+  var LAYOUT_VERSION = 1;
+  var MAX_BOXES = 150;
+  var MERGE_GAP = 8;        // px between two bars on one line that merge
+  var LINE_TOLERANCE = 2;   // px of difference that is still one line
+  var MIN_FRAME = 24;       // px: a smaller box is never a frame
+  var MAX_SHARE = 0.6;      // of the area: a larger box stops the record
+  var BAR = 0;
+  var FRAME = 1;
+  var TABLE_PARTS = /^(TABLE|THEAD|TBODY|TFOOT|TR|TH|TD)$/;
+
+  function learns(wrap) {
+    return wrap.getAttribute("data-bones-learn") === "true";
+  }
+
+  function layoutKey(wrap) {
+    var id = wrap.getAttribute("data-bones-id");
+    return id ? LAYOUT_PREFIX + window.location.pathname + ":" + id : null;
+  }
+
+  function isShown(el) {
+    return el.getClientRects().length > 0 &&
+      window.getComputedStyle(el).visibility !== "hidden";
+  }
+
+  function hasAlpha(color) {
+    return color && color !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(color);
+  }
+
+  /* A card or a value box: a border on all four sides, or a background of
+   * its own. Never a part of a table: a striped row is not a card. */
+  function isFrame(el) {
+    if (TABLE_PARTS.test(el.tagName)) return false;
+    var style = window.getComputedStyle(el);
+    var sides = ["Top", "Right", "Bottom", "Left"];
+    var bordered = true;
+    for (var i = 0; i < sides.length; i++) {
+      if (!(parseFloat(style["border" + sides[i] + "Width"]) > 0) ||
+          style["border" + sides[i] + "Style"] === "none") {
+        bordered = false;
+        break;
+      }
+    }
+    if (bordered) return true;
+    var bg = style.backgroundColor;
+    var parent = el.parentElement;
+    return hasAlpha(bg) && !!parent &&
+      bg !== window.getComputedStyle(parent).backgroundColor;
+  }
+
+  function insideButton(node, root) {
+    for (var el = node.parentElement; el && el !== root; el = el.parentElement) {
+      if (el.tagName === "BUTTON") return true;
+    }
+    return false;
+  }
+
+  /* The boxes of the content of `wrap`, relative to the content, or null
+   * when nothing should be stored. */
+  function recordLayout(wrap) {
+    var content = wrap.querySelector(":scope > .bones-content");
+    if (!content) return null;
+    var origin = content.getBoundingClientRect();
+    if (!(origin.width > 0 && origin.height > 0)) return null;
+    var raw = [];
+
+    function add(rect, kind) {
+      // Relative to the content, and cut to it.
+      var left = Math.max(rect.left - origin.left, 0);
+      var top = Math.max(rect.top - origin.top, 0);
+      var right = Math.min(rect.right - origin.left, origin.width);
+      var bottom = Math.min(rect.bottom - origin.top, origin.height);
+      var x = Math.round(left);
+      var y = Math.round(top);
+      var w = Math.round(right) - x;
+      var h = Math.round(bottom) - y;
+      if (w > 0 && h > 0) raw.push([x, y, w, h, kind]);
+    }
+
+    // Bars from text: one for each line that the text takes.
+    var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
+    var range = document.createRange();
+    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!/\S/.test(node.nodeValue)) continue;
+      var parent = node.parentElement;
+      if (!parent || !isShown(parent) || insideButton(node, content)) continue;
+      range.selectNodeContents(node);
+      var rects = range.getClientRects();
+      for (var r = 0; r < rects.length; r++) add(rects[r], BAR);
+    }
+
+    // Bars from elements with no text of their own.
+    var things = content.querySelectorAll("img, input, select, textarea, button, canvas, svg");
+    for (var t = 0; t < things.length; t++) {
+      var thing = things[t];
+      if (thing.tagName.toLowerCase() === "svg" && insideButton(thing, content)) continue;
+      if (isShown(thing)) add(thing.getBoundingClientRect(), BAR);
+    }
+
+    // Frames: cards and value boxes.
+    var all = content.querySelectorAll("*");
+    for (var e = 0; e < all.length; e++) {
+      var rect = all[e].getBoundingClientRect();
+      if (rect.width >= MIN_FRAME && rect.height >= MIN_FRAME && isFrame(all[e])) add(rect, FRAME);
+    }
+
+    raw.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+
+    // Merge the bars of one line that almost touch, such as the words of a
+    // cell that the browser gives as several rects.
+    var boxes = [];
+    var last = null;
+    for (var i = 0; i < raw.length; i++) {
+      var box = raw[i];
+      if (box[4] === BAR && last &&
+          Math.abs(box[1] - last[1]) <= LINE_TOLERANCE &&
+          Math.abs(box[3] - last[3]) <= LINE_TOLERANCE &&
+          box[0] - (last[0] + last[2]) < MERGE_GAP && box[0] >= last[0]) {
+        last[2] = Math.max(last[0] + last[2], box[0] + box[2]) - last[0];
+        continue;
+      }
+      boxes.push(box);
+      if (box[4] === BAR) last = box;
+    }
+
+    if (boxes.length < 2) return null;
+    var area = origin.width * origin.height;
+    for (var k = 0; k < boxes.length; k++) {
+      if (boxes[k][2] * boxes[k][3] > MAX_SHARE * area) return null;
+    }
+
+    // The first boxes from the top. Then the frames before the bars, so
+    // that a bar is drawn over its card.
+    boxes = boxes.slice(0, MAX_BOXES);
+    var frames = boxes.filter(function (b) { return b[4] === FRAME; });
+    var bars = boxes.filter(function (b) { return b[4] === BAR; });
+    return {
+      v: LAYOUT_VERSION,
+      w: Math.round(wrap.getBoundingClientRect().width),
+      h: Math.round(origin.height),
+      b: frames.concat(bars)
+    };
+  }
+
+  function saveLayout(wrap) {
+    if (!learns(wrap) || !wrap.classList.contains("bones-loaded")) return;
+    var key = layoutKey(wrap);
+    if (!key) return;
+    var record = recordLayout(wrap);
+    try {
+      if (record) {
+        window.localStorage.setItem(key, JSON.stringify(record));
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {
+      // No storage: the next visit draws the built-in shape.
+    }
   }
 
   /* --- The kind of a chart, from its value -----------------------------------
