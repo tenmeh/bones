@@ -31,6 +31,18 @@ first_visit <- function(app) {
   app$wait_for_js(paste(layout_count_js, "=== 4"), timeout = 15000)
 }
 
+# The stored layouts, parsed in the browser, named by output id. Parsing
+# there needs no JSON package in R.
+parse_layouts <- function(app) {
+  app$get_js("
+    var out = {};
+    Object.keys(localStorage).forEach(function (k) {
+      if (k.indexOf('bones:layout:') === 0) out[k.split(':').pop()] = JSON.parse(localStorage.getItem(k));
+    });
+    out;
+  ")
+}
+
 # The stored layouts, as JSON strings named by output id.
 stored_layouts <- function(app) {
   app$get_js("
@@ -48,11 +60,11 @@ test_that("a layout is stored for each output that learns", {
                           wait = FALSE, load_timeout = 45000L, timeout = 15000L)
   first_visit(app)
 
-  stored <- stored_layouts(app)
+  stored <- parse_layouts(app)
   expect_equal(sort(names(stored)), c("cards", "fail", "tbl", "txt"))
 
   for (id in names(stored)) {
-    record <- jsonlite::fromJSON(stored[[id]], simplifyVector = FALSE)
+    record <- stored[[id]]
     expect_equal(record$v, 1, info = id)
     expect_gt(record$w, 0)
     expect_gt(record$h, 0)
@@ -64,9 +76,8 @@ test_that("a layout is stored for each output that learns", {
     }
   }
 
-  tbl <- jsonlite::fromJSON(stored$tbl, simplifyVector = FALSE)
-  expect_gte(length(tbl$b), 13)   # 12 rows and the header
-  cards <- jsonlite::fromJSON(stored$cards, simplifyVector = FALSE)
+  expect_gte(length(stored$tbl$b), 13)   # 12 rows and the header
+  cards <- stored$cards
   expect_equal(sum(vapply(cards$b, function(box) box[[5]] == 1, logical(1))), 3)
 })
 
@@ -133,9 +144,6 @@ skeleton_info <- function(app) {
   ")
 }
 
-parse_layouts <- function(app) {
-  lapply(stored_layouts(app), jsonlite::fromJSON, simplifyVector = FALSE)
-}
 
 test_that("the next visit draws the learned shape", {
   testthat::skip_on_cran()
