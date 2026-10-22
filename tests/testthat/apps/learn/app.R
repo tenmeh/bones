@@ -1,4 +1,4 @@
-# A small application for test-app-smoke.R. It is not an example.
+# A small application for test-app-learn.R. It is not an example.
 #
 # Outputs for the learned shapes. Each output waits 1.5 seconds, so a test
 # can look at the skeleton before the content arrives.

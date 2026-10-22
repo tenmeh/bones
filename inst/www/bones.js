@@ -169,7 +169,8 @@
   var MERGE_GAP = 8;        // px between two bars on one line that merge
   var LINE_TOLERANCE = 2;   // px of difference that is still one line
   var MIN_FRAME = 24;       // px: a smaller box is never a frame
-  var MAX_SHARE = 0.6;      // of the area: a larger box stops the record
+  var MAX_SHARE = 0.6;      // of the area: a larger bar stops the record
+  var MAX_NODES = 2000;     // text nodes, and elements, that one record visits
   var BAR = 0;
   var FRAME = 1;
   var TABLE_PARTS = /^(TABLE|THEAD|TBODY|TFOOT|TR|TH|TD)$/;
@@ -186,6 +187,36 @@
   function isShown(el) {
     return el.getClientRects().length > 0 &&
       window.getComputedStyle(el).visibility !== "hidden";
+  }
+
+  /* The part of the screen where the content of `el` can show: the content
+   * box of the wrapper, made smaller by each element between them whose
+   * overflow is not visible, such as a box that scrolls. A row under the
+   * edge of a scroll box is thus not recorded. The result is kept on the
+   * element for one record (`stamp`), so each element is examined once. */
+  function clipOf(el, content, origin, stamp) {
+    if (!el || el === content) return origin;
+    if (el._bonesClipStamp === stamp) return el._bonesClip;
+    var clip = clipOf(el.parentElement, content, origin, stamp);
+    var style = window.getComputedStyle(el);
+    if (style.overflowX !== "visible" || style.overflowY !== "visible") {
+      var r = el.getBoundingClientRect();
+      clip = {
+        left: Math.max(clip.left, r.left),
+        top: Math.max(clip.top, r.top),
+        right: Math.min(clip.right, r.right),
+        bottom: Math.min(clip.bottom, r.bottom)
+      };
+    }
+    el._bonesClipStamp = stamp;
+    el._bonesClip = clip;
+    return clip;
+  }
+
+  /* An element of another skeleton, such as that of an inner withBones()
+   * that still loads. It is not content. */
+  function inSkeleton(el) {
+    return !!el.closest(".bones-skeleton");
   }
 
   function hasAlpha(color) {
@@ -220,6 +251,8 @@
     return false;
   }
 
+  var recordStamp = 0;
+
   /* The boxes of the content of `wrap`, relative to the content, or null
    * when nothing should be stored. */
   function recordLayout(wrap) {
@@ -227,14 +260,16 @@
     if (!content) return null;
     var origin = content.getBoundingClientRect();
     if (!(origin.width > 0 && origin.height > 0)) return null;
+    var stamp = ++recordStamp;
     var raw = [];
 
-    function add(rect, kind) {
-      // Relative to the content, and cut to it.
-      var left = Math.max(rect.left - origin.left, 0);
-      var top = Math.max(rect.top - origin.top, 0);
-      var right = Math.min(rect.right - origin.left, origin.width);
-      var bottom = Math.min(rect.bottom - origin.top, origin.height);
+    function add(rect, kind, el) {
+      // Cut the box to the part of the content where it can show.
+      var clip = clipOf(el, content, origin, stamp);
+      var left = Math.max(rect.left, clip.left) - origin.left;
+      var top = Math.max(rect.top, clip.top) - origin.top;
+      var right = Math.min(rect.right, clip.right) - origin.left;
+      var bottom = Math.min(rect.bottom, clip.bottom) - origin.top;
       var x = Math.round(left);
       var y = Math.round(top);
       var w = Math.round(right) - x;
@@ -242,31 +277,41 @@
       if (w > 0 && h > 0) raw.push([x, y, w, h, kind]);
     }
 
-    // Bars from text: one for each line that the text takes.
+    // Bars from text: one for each line that the text takes. The walk stops
+    // after MAX_NODES text nodes. Only the first boxes from the top are
+    // kept, so the end of a long table adds nothing, and the walk stays
+    // short after each load.
     var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
     var range = document.createRange();
-    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+    var visited = 0;
+    for (var node = walker.nextNode(); node && visited < MAX_NODES; node = walker.nextNode()) {
       if (!/\S/.test(node.nodeValue)) continue;
+      visited++;
       var parent = node.parentElement;
       if (!parent || !isShown(parent) || insideButton(node, content)) continue;
       range.selectNodeContents(node);
       var rects = range.getClientRects();
-      for (var r = 0; r < rects.length; r++) add(rects[r], BAR);
+      for (var r = 0; r < rects.length; r++) add(rects[r], BAR, parent);
     }
 
     // Bars from elements with no text of their own.
     var things = content.querySelectorAll("img, input, select, textarea, button, canvas, svg");
-    for (var t = 0; t < things.length; t++) {
+    for (var t = 0; t < things.length && t < MAX_NODES; t++) {
       var thing = things[t];
+      if (inSkeleton(thing)) continue;
       if (thing.tagName.toLowerCase() === "svg" && insideButton(thing, content)) continue;
-      if (isShown(thing)) add(thing.getBoundingClientRect(), BAR);
+      if (isShown(thing)) add(thing.getBoundingClientRect(), BAR, thing.parentElement);
     }
 
-    // Frames: cards and value boxes.
+    // Frames: cards and value boxes that show.
     var all = content.querySelectorAll("*");
-    for (var e = 0; e < all.length; e++) {
-      var rect = all[e].getBoundingClientRect();
-      if (rect.width >= MIN_FRAME && rect.height >= MIN_FRAME && isFrame(all[e])) add(rect, FRAME);
+    for (var e = 0; e < all.length && e < MAX_NODES; e++) {
+      var el = all[e];
+      var rect = el.getBoundingClientRect();
+      if (rect.width >= MIN_FRAME && rect.height >= MIN_FRAME && !inSkeleton(el) &&
+          isShown(el) && isFrame(el)) {
+        add(rect, FRAME, el.parentElement);
+      }
     }
 
     raw.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
@@ -289,9 +334,11 @@
     }
 
     if (boxes.length < 2) return null;
+    // One large bar, such as a canvas or a map, gives no useful shape. A
+    // large frame does: it is a card around the rest.
     var area = origin.width * origin.height;
     for (var k = 0; k < boxes.length; k++) {
-      if (boxes[k][2] * boxes[k][3] > MAX_SHARE * area) return null;
+      if (boxes[k][4] === BAR && boxes[k][2] * boxes[k][3] > MAX_SHARE * area) return null;
     }
 
     // The first boxes from the top. Then the frames before the bars, so
@@ -381,7 +428,9 @@
       skeleton.appendChild(el);
     }
     wrap.replaceChild(skeleton, old);
-    wrap.style.setProperty("--bones-reserve", record.h + "px");
+    // As for the remembered height: only a height that was an estimate is
+    // replaced. A height from `height`, or from the output, is exact.
+    if (remembers(wrap)) wrap.style.setProperty("--bones-reserve", record.h + "px");
   }
 
   /* --- The kind of a chart, from its value -----------------------------------

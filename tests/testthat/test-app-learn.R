@@ -115,11 +115,13 @@ test_that("an error does not change a stored layout", {
 
 # Reload, and wait until the wrappers are on the page. Their content takes
 # 1.5 seconds, so the skeletons can be read before it arrives.
-reload_page <- function(app) {
+reload_page <- function(app) reload_page_n(app, length(learn_ids))
+
+reload_page_n <- function(app, n) {
   app$run_js("location.reload();")
   Sys.sleep(0.4)
-  app$wait_for_js(sprintf("document.querySelectorAll('.bones-wrap').length === %d",
-                          length(learn_ids)), timeout = 30000)
+  app$wait_for_js(sprintf("document.querySelectorAll('.bones-wrap').length >= %d", n),
+                  timeout = 30000)
 }
 
 # For each wrapper: is its skeleton learned, how many boxes it has, the
@@ -296,4 +298,119 @@ test_that("a record that does not parse, or of another form, is ignored", {
   wait_all_loaded(app)
   expect_length(page_errors(app), 0)
   expect_no_shiny_errors(app)
+})
+
+# --- Harder cases, from the review (apps/learn-edge) --------------------------
+
+edge_ids <- c("single", "scroll", "exact", "outer", "big")
+
+# A first visit to apps/learn-edge. The outer output holds an inner output
+# that loads for 6 seconds, so wait for the five that are named above. The
+# time that bones.js takes to record the big table is kept in
+# window.bonesRecordMs: the time from bones-loaded to the store, less the
+# wait of 250ms.
+edge_first_visit <- function(app) {
+  on_new_page(app, "
+    window.bonesLoadedAt = {};
+    window.bonesRecordMs = {};
+    var setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      var id = k.split(':').pop();
+      if (k.indexOf('bones:layout:') === 0 && window.bonesLoadedAt[id] !== undefined) {
+        window.bonesRecordMs[id] = performance.now() - window.bonesLoadedAt[id] - 250;
+      }
+      return setItem.apply(this, arguments);
+    };
+    new MutationObserver(function (records) {
+      records.forEach(function (r) {
+        var w = r.target;
+        if (w.classList && w.classList.contains('bones-loaded') && w.getAttribute('data-bones-id') &&
+            window.bonesLoadedAt[w.getAttribute('data-bones-id')] === undefined) {
+          window.bonesLoadedAt[w.getAttribute('data-bones-id')] = performance.now();
+        }
+      });
+    }).observe(document, {attributes: true, attributeFilter: ['class'], subtree: true});
+  ")
+  app$run_js("try { localStorage.clear(); } catch (e) {}")
+  app$run_js("location.reload();")
+  Sys.sleep(0.5)
+  app$wait_for_js(sprintf(
+    "[%s].every(function (id) {
+       var w = document.querySelector('.bones-wrap[data-bones-id=\"' + id + '\"]');
+       return w && w.classList.contains('bones-loaded');
+     })", paste0("'", edge_ids, "'", collapse = ", ")
+  ), timeout = 30000)
+  Sys.sleep(1.5)
+}
+
+test_that("one card that fills the output still learns", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-single",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  single <- parse_layouts(app)$single
+  expect_false(is.null(single))
+  expect_equal(sum(vapply(single$b, function(b) b[[5]] == 1, logical(1))), 1)
+})
+
+test_that("only the lines that show in a scroll box are recorded", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-scroll-box",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  scroll <- parse_layouts(app)$scroll
+  # About five lines show in 100px, and one line is under the box. With all
+  # 30 lines, the count would be 31.
+  expect_lte(length(scroll$b), 10)
+  # No bar is between the bottom of the box and the line under it.
+  tops <- vapply(scroll$b, function(b) b[[2]], numeric(1))
+  expect_true(all(tops < 100 | tops >= max(tops) - 1))
+})
+
+test_that("a learned layout does not change an exact height", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-exact",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  expect_false(is.null(parse_layouts(app)$exact))
+
+  # The output is 50vh high. A window that is less high at the same width
+  # must keep 50vh, not the height of the last visit.
+  w0 <- app$get_js("window.innerWidth")
+  app$set_window_size(width = w0, height = 600, wait = FALSE)
+  reload_page_n(app, length(edge_ids))
+  kept <- app$get_js("
+    var w = document.querySelector('.bones-wrap[data-bones-id=\"exact\"]');
+    [w.classList.contains('bones-has-loaded'), Math.round(w.getBoundingClientRect().height),
+     Math.round(window.innerHeight / 2)]
+  ")
+  expect_false(kept[[1]])
+  expect_lte(abs(kept[[2]] - kept[[3]]), 2)
+})
+
+test_that("a skeleton that still loads inside the content is not recorded", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-nested",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  outer <- parse_layouts(app)$outer
+  expect_false(is.null(outer))
+  # The outer content has two lines of text and no card. The inner skeleton
+  # of three cards must not be in it.
+  expect_equal(sum(vapply(outer$b, function(b) b[[5]] == 1, logical(1))), 0)
+  expect_lte(length(outer$b), 3)
+})
+
+test_that("a big table is recorded quickly", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-big",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  big <- parse_layouts(app)$big
+  expect_false(is.null(big))
+  expect_lte(length(big$b), 150)
+  ms <- app$get_js("window.bonesRecordMs.big")
+  message("recording the big table took ", round(ms), " ms")
+  # It took about 100ms before the walk was limited.
+  expect_lt(ms, 50)
 })
