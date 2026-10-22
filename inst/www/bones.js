@@ -323,6 +323,67 @@
     }
   }
 
+  /* A stored record, or null when there is none, or when it does not have
+   * the form that this version writes. */
+  function readLayout(key) {
+    var record;
+    try {
+      record = JSON.parse(window.localStorage.getItem(key));
+    } catch (e) {
+      return null;
+    }
+    if (!record || record.v !== LAYOUT_VERSION ||
+        !(isFinite(record.w) && record.w > 0) || !(isFinite(record.h) && record.h > 0) ||
+        !Array.isArray(record.b) || record.b.length > MAX_BOXES) return null;
+    for (var i = 0; i < record.b.length; i++) {
+      var box = record.b[i];
+      if (!Array.isArray(box) || box.length !== 5) return null;
+      for (var j = 0; j < 5; j++) {
+        if (typeof box[j] !== "number" || !isFinite(box[j])) return null;
+      }
+      if (box[4] !== BAR && box[4] !== FRAME) return null;
+    }
+    return record;
+  }
+
+  /* Draw the stored layout in place of the built-in skeleton, once, before
+   * the first load. A layout recorded later in this visit is drawn on the
+   * next visit, so the shape does not change while the user looks at it.
+   * As for the height, a layout is used only at almost the same width. */
+  function restoreLayout(wrap) {
+    if (wrap._bonesLayoutRestored || !learns(wrap) ||
+        wrap.classList.contains("bones-has-loaded")) return;
+    var key = layoutKey(wrap);
+    if (!key) return;
+    var width = wrap.getBoundingClientRect().width;
+    // A wrapper in a hidden tab has no width yet. Try again when its output
+    // starts to load (see onInvalidated).
+    if (!(width > 0)) return;
+    wrap._bonesLayoutRestored = true;
+    var record = readLayout(key);
+    var old = wrap.querySelector(":scope > .bones-skeleton");
+    if (!record || !old || Math.abs(width - record.w) > 0.1 * record.w) return;
+
+    var skeleton = document.createElement("div");
+    for (var a = 0; a < old.attributes.length; a++) {
+      var attr = old.attributes[a];
+      if (attr.name !== "class") skeleton.setAttribute(attr.name, attr.value);
+    }
+    skeleton.className = "bones-skeleton bones-skeleton-learned";
+    for (var i = 0; i < record.b.length; i++) {
+      var box = record.b[i];
+      var el = document.createElement("div");
+      el.className = box[4] === FRAME ? "bones-learned-frame" : "bones-bar";
+      el.style.left = box[0] + "px";
+      el.style.top = box[1] + "px";
+      el.style.width = box[2] + "px";
+      el.style.height = box[3] + "px";
+      skeleton.appendChild(el);
+    }
+    wrap.replaceChild(skeleton, old);
+    wrap.style.setProperty("--bones-reserve", record.h + "px");
+  }
+
   /* --- The kind of a chart, from its value -----------------------------------
    *
    * A plotly, echarts4r or highcharter output can hold any kind of chart, so
@@ -587,6 +648,10 @@
     restoreIn(node);
     if (node.nodeType !== 1) return;
     keepTemplate(node);
+    // After the height: a drawn layout sets the height of its own record.
+    if (node.matches(".bones-wrap[data-bones-learn]")) restoreLayout(node);
+    var learning = node.querySelectorAll(".bones-wrap[data-bones-learn]");
+    for (var l = 0; l < learning.length; l++) restoreLayout(learning[l]);
     if (node.matches(".bones-wrap[data-bones-detect]")) restoreKind(node);
     var inner = node.querySelectorAll(".bones-wrap[data-bones-detect]");
     for (var i = 0; i < inner.length; i++) restoreKind(inner[i]);
@@ -671,6 +736,7 @@
 
     // A wrapper that was in a hidden tab can have a width now.
     restoreHeight(wrap);
+    restoreLayout(wrap);
 
     if (wrap.classList.contains("bones-loaded") && keepsStale(wrap)) {
       // The user is possibly reading this content, so it stays and dims.

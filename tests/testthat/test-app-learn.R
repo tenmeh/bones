@@ -91,3 +91,113 @@ test_that("an error does not change a stored layout", {
   Sys.sleep(1)
   expect_identical(stored_layouts(app)$fail, before)
 })
+
+# --- Drawing on the next visit ----------------------------------------------
+
+# Reload, and wait until the wrappers are on the page. Their content takes
+# 1.5 seconds, so the skeletons can be read before it arrives.
+reload_page <- function(app) {
+  app$run_js("location.reload();")
+  Sys.sleep(0.4)
+  app$wait_for_js(sprintf("document.querySelectorAll('.bones-wrap').length === %d",
+                          length(learn_ids)), timeout = 30000)
+}
+
+# For each wrapper: is its skeleton learned, how many boxes it has, the
+# place of the first box, and the height of the wrapper.
+skeleton_info <- function(app) {
+  app$get_js("
+    var out = {};
+    document.querySelectorAll('.bones-wrap').forEach(function (w) {
+      var s = w.querySelector(':scope > .bones-skeleton');
+      var learned = !!s && s.classList.contains('bones-skeleton-learned');
+      var first = learned ? s.firstElementChild : null;
+      out[w.getAttribute('data-bones-id')] = {
+        learned: learned,
+        loaded: w.classList.contains('bones-has-loaded'),
+        n: learned ? s.children.length : 0,
+        left: first ? first.style.left : '',
+        top: first ? first.style.top : '',
+        height: Math.round(w.getBoundingClientRect().height)
+      };
+    });
+    out;
+  ")
+}
+
+parse_layouts <- function(app) {
+  lapply(stored_layouts(app), jsonlite::fromJSON, simplifyVector = FALSE)
+}
+
+test_that("the next visit draws the learned shape", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-draw",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  first_visit(app)
+  records <- parse_layouts(app)
+
+  reload_page(app)
+  info <- skeleton_info(app)
+
+  for (id in c("tbl", "txt", "cards")) {
+    record <- records[[id]]
+    got <- info[[id]]
+    expect_false(got$loaded, info = id)
+    expect_true(got$learned, info = id)
+    expect_equal(got$n, length(record$b), info = id)
+    expect_equal(got$left, paste0(record$b[[1]][[1]], "px"), info = id)
+    expect_equal(got$top, paste0(record$b[[1]][[2]], "px"), info = id)
+    expect_lte(abs(got$height - record$h), 1)
+  }
+  for (id in c("chart", "fixed", "word", "canvas")) {
+    expect_false(info[[id]]$learned, info = id)
+  }
+  wait_all_loaded(app)
+  expect_no_shiny_errors(app)
+})
+
+test_that("a much narrower window draws the built-in shape", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-narrow",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  w0 <- app$get_js("window.innerWidth")
+  first_visit(app)
+
+  app$set_window_size(width = round(0.8 * w0), height = 900, wait = FALSE)
+  reload_page(app)
+  info <- skeleton_info(app)
+  expect_false(info$tbl$loaded)
+  expect_false(info$tbl$learned)
+})
+
+test_that("the newest layout wins", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-newest",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  first_visit(app)
+  before <- length(parse_layouts(app)$tbl$b)
+
+  app$run_js("document.getElementById('fewer').click();")
+  app$wait_for_js("document.querySelectorAll('#tbl tbody tr').length === 4", timeout = 15000)
+  Sys.sleep(0.8)
+
+  reload_page(app)
+  info <- skeleton_info(app)
+  expect_true(info$tbl$learned)
+  expect_lt(info$tbl$n, before)
+})
+
+test_that("a learned skeleton does not scroll the page sideways", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn"), name = "bones-learn-scroll",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  w0 <- app$get_js("window.innerWidth")
+  first_visit(app)
+
+  # Within 10%, so the layout is drawn at its old, wider width.
+  app$set_window_size(width = round(0.95 * w0), height = 900, wait = FALSE)
+  reload_page(app)
+  info <- skeleton_info(app)
+  expect_true(info$tbl$learned)
+  expect_true(app$get_js("document.documentElement.scrollWidth <= window.innerWidth"))
+})
