@@ -118,6 +118,28 @@ The browser also stores the real height of the content. On the next visit,
 the placeholder keeps that height in place of the estimate, so the page does
 not move at all. Turn this off with `remember = FALSE`.
 
+## Learned shapes
+
+On the first visit, the shape comes from the type of the output. After
+that, each output learns the shape of its content. When the content
+arrives, the browser stores the place and the size of each line of text,
+each image and each card. On the next visit, the skeleton has that shape:
+a table with a title and 12 rows gets a title and 12 rows of bars.
+
+- It applies only when you do not set the shape yourself: no `type`,
+  `rows`, `cols`, `lines`, `n` or `skeleton`. It does not apply to charts,
+  which keep their chart shapes.
+- A stored shape is used only when the output is within 10% of the width
+  at which it was stored. On a narrower screen, the built-in shape comes
+  back.
+- Only numbers are stored, in the browser of the user. No text from the
+  app is stored.
+- Turn it off for one output with `learn = FALSE`:
+
+```{r}
+withBones(uiOutput("summary"), learn = FALSE)
+```
+
 ## A fast load does not flicker
 
 The skeleton waits for 300 ms before it appears, so a load that ends sooner

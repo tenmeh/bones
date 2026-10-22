@@ -1,5 +1,14 @@
 # bones (development version)
 
+* An output learns the shape of its content. After a load, the browser
+  stores the place of each line of text, image and card. On the next visit,
+  the skeleton has that shape in place of a guess from the type of the
+  output. It is on by default. It applies only when you do not give `type`,
+  `rows`, `cols`, `lines`, `n` or `skeleton`, and not to charts. A stored
+  shape is used only at almost the same width, and it holds only numbers,
+  never text. Turn it off with `withBones(learn = FALSE)` or
+  `bones_defaults(learn = FALSE)`.
+
 # bones 0.1.1
 
 First release.
