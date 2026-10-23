@@ -13,7 +13,8 @@ bones_defaults(
   stale = NULL,
   delay = NULL,
   min_time = NULL,
-  remember = NULL
+  remember = NULL,
+  learn = NULL
 )
 }
 \arguments{
@@ -50,6 +51,8 @@ arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
 
 \item{remember}{The default for the \code{remember} argument of
 \code{\link[=withBones]{withBones()}}.}
+
+\item{learn}{The default for the \code{learn} argument of \code{\link[=withBones]{withBones()}}.}
 }
 \value{
 The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.

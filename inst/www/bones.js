@@ -63,7 +63,10 @@
     // widget has finished drawing.
     if (wrap._bonesSaveHeight) {
       wrap._bonesSaveHeight = false;
-      window.setTimeout(function () { saveHeight(wrap); }, 250);
+      window.setTimeout(function () {
+        saveHeight(wrap);
+        saveLayout(wrap);
+      }, 250);
     }
   }
 
@@ -141,6 +144,333 @@
     if (node.matches(".bones-wrap[data-bones-remember]")) restoreHeight(node);
     var inner = node.querySelectorAll(".bones-wrap[data-bones-remember]");
     for (var i = 0; i < inner.length; i++) restoreHeight(inner[i]);
+  }
+
+  /* --- Learn the shape of the content ------------------------------------
+   *
+   * The built-in skeleton is a guess from the type of the output. When the
+   * content has arrived, the boxes of its visible parts are stored in
+   * localStorage: one box for each line of text, one for each image or
+   * control, and one frame for each card. On the next visit, the skeleton is
+   * drawn from those boxes (see restoreLayout).
+   *
+   * Only a wrapper with data-bones-learn="true" does this. withBones() sets
+   * it only when the developer did not set the shape, and not for a chart.
+   * The key has the form of the height key. Only numbers are stored, never
+   * text: {v: 1, w: width, h: height, b: [[x, y, width, height, kind]]},
+   * with kind 0 for a bar and 1 for a frame.
+   *
+   * Nothing is stored when the content gives fewer than 2 boxes, or when one
+   * box covers most of it, such as a map or a canvas: the built-in shape is
+   * better than one large box. */
+  var LAYOUT_PREFIX = "bones:layout:";
+  var LAYOUT_VERSION = 1;
+  var MAX_BOXES = 150;
+  var MERGE_GAP = 8;        // px between two bars on one line that merge
+  var LINE_TOLERANCE = 2;   // px of difference that is still one line
+  var MIN_FRAME = 24;       // px: a smaller box is never a frame
+  var MAX_SHARE = 0.6;      // of the area: a larger bar stops the record
+  var MAX_NODES = 2000;     // text nodes, and elements, that one record visits
+  var BAR = 0;
+  var FRAME = 1;
+  var TABLE_PARTS = /^(TABLE|THEAD|TBODY|TFOOT|TR|TH|TD)$/;
+
+  function learns(wrap) {
+    return wrap.getAttribute("data-bones-learn") === "true";
+  }
+
+  function layoutKey(wrap) {
+    var id = wrap.getAttribute("data-bones-id");
+    return id ? LAYOUT_PREFIX + window.location.pathname + ":" + id : null;
+  }
+
+  function isShown(el) {
+    return el.getClientRects().length > 0 &&
+      window.getComputedStyle(el).visibility !== "hidden";
+  }
+
+  /* The part of the screen where the content of `el` can show: the content
+   * box of the wrapper, made smaller by each element between them whose
+   * overflow is not visible, such as a box that scrolls. A row under the
+   * edge of a scroll box is thus not recorded. The result is kept on the
+   * element for one record (`stamp`), so each element is examined once. */
+  function clipOf(el, content, origin, stamp) {
+    if (!el || el === content) return origin;
+    if (el._bonesClipStamp === stamp) return el._bonesClip;
+    var clip = clipOf(el.parentElement, content, origin, stamp);
+    var style = window.getComputedStyle(el);
+    if (style.overflowX !== "visible" || style.overflowY !== "visible") {
+      var r = el.getBoundingClientRect();
+      clip = {
+        left: Math.max(clip.left, r.left),
+        top: Math.max(clip.top, r.top),
+        right: Math.min(clip.right, r.right),
+        bottom: Math.min(clip.bottom, r.bottom)
+      };
+    }
+    el._bonesClipStamp = stamp;
+    el._bonesClip = clip;
+    return clip;
+  }
+
+  /* An element of another skeleton, such as that of an inner withBones()
+   * that still loads. It is not content. */
+  function inSkeleton(el) {
+    return !!el.closest(".bones-skeleton");
+  }
+
+  function hasAlpha(color) {
+    return color && color !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(color);
+  }
+
+  /* A card or a value box: a border on all four sides, or a background of
+   * its own. Never a part of a table: a striped row is not a card. */
+  function isFrame(el) {
+    if (TABLE_PARTS.test(el.tagName)) return false;
+    var style = window.getComputedStyle(el);
+    var sides = ["Top", "Right", "Bottom", "Left"];
+    var bordered = true;
+    for (var i = 0; i < sides.length; i++) {
+      if (!(parseFloat(style["border" + sides[i] + "Width"]) > 0) ||
+          style["border" + sides[i] + "Style"] === "none") {
+        bordered = false;
+        break;
+      }
+    }
+    if (bordered) return true;
+    var bg = style.backgroundColor;
+    var parent = el.parentElement;
+    return hasAlpha(bg) && !!parent &&
+      bg !== window.getComputedStyle(parent).backgroundColor;
+  }
+
+  function insideButton(node, root) {
+    for (var el = node.parentElement; el && el !== root; el = el.parentElement) {
+      if (el.tagName === "BUTTON") return true;
+    }
+    return false;
+  }
+
+  var recordStamp = 0;
+
+  /* The boxes of the content of `wrap`, relative to the content, or null
+   * when nothing should be stored. */
+  function recordLayout(wrap) {
+    var content = wrap.querySelector(":scope > .bones-content");
+    if (!content) return null;
+    var origin = content.getBoundingClientRect();
+    if (!(origin.width > 0 && origin.height > 0)) return null;
+    var stamp = ++recordStamp;
+    var raw = [];
+
+    function add(rect, kind, el) {
+      // Cut the box to the part of the content where it can show.
+      var clip = clipOf(el, content, origin, stamp);
+      var left = Math.max(rect.left, clip.left) - origin.left;
+      var top = Math.max(rect.top, clip.top) - origin.top;
+      var right = Math.min(rect.right, clip.right) - origin.left;
+      var bottom = Math.min(rect.bottom, clip.bottom) - origin.top;
+      var x = Math.round(left);
+      var y = Math.round(top);
+      var w = Math.round(right) - x;
+      var h = Math.round(bottom) - y;
+      if (w > 0 && h > 0) raw.push([x, y, w, h, kind]);
+    }
+
+    // Bars from text: one for each line that the text takes. The walk stops
+    // after MAX_NODES text nodes. Only the first boxes from the top are
+    // kept, so the end of a long table adds nothing, and the walk stays
+    // short after each load.
+    var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
+    var range = document.createRange();
+    var visited = 0;
+    for (var node = walker.nextNode(); node && visited < MAX_NODES; node = walker.nextNode()) {
+      if (!/\S/.test(node.nodeValue)) continue;
+      visited++;
+      var parent = node.parentElement;
+      if (!parent || !isShown(parent) || insideButton(node, content)) continue;
+      range.selectNodeContents(node);
+      var rects = range.getClientRects();
+      for (var r = 0; r < rects.length; r++) add(rects[r], BAR, parent);
+    }
+
+    // Bars from elements with no text of their own.
+    var things = content.querySelectorAll("img, input, select, textarea, button, canvas, svg");
+    for (var t = 0; t < things.length && t < MAX_NODES; t++) {
+      var thing = things[t];
+      if (inSkeleton(thing)) continue;
+      if (thing.tagName.toLowerCase() === "svg" && insideButton(thing, content)) continue;
+      if (isShown(thing)) add(thing.getBoundingClientRect(), BAR, thing.parentElement);
+    }
+
+    // Frames: cards and value boxes that show.
+    var all = content.querySelectorAll("*");
+    for (var e = 0; e < all.length && e < MAX_NODES; e++) {
+      var el = all[e];
+      var rect = el.getBoundingClientRect();
+      if (rect.width >= MIN_FRAME && rect.height >= MIN_FRAME && !inSkeleton(el) &&
+          isShown(el) && isFrame(el)) {
+        add(rect, FRAME, el.parentElement);
+      }
+    }
+
+    raw.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+
+    // Merge the bars of one line that almost touch, such as the words of a
+    // cell that the browser gives as several rects.
+    var boxes = [];
+    var last = null;
+    for (var i = 0; i < raw.length; i++) {
+      var box = raw[i];
+      if (box[4] === BAR && last &&
+          Math.abs(box[1] - last[1]) <= LINE_TOLERANCE &&
+          Math.abs(box[3] - last[3]) <= LINE_TOLERANCE &&
+          box[0] - (last[0] + last[2]) < MERGE_GAP && box[0] >= last[0]) {
+        last[2] = Math.max(last[0] + last[2], box[0] + box[2]) - last[0];
+        continue;
+      }
+      boxes.push(box);
+      if (box[4] === BAR) last = box;
+    }
+
+    if (boxes.length < 2) return null;
+    // One large bar, such as a canvas or a map, gives no useful shape. A
+    // large frame does: it is a card around the rest.
+    var area = origin.width * origin.height;
+    for (var k = 0; k < boxes.length; k++) {
+      if (boxes[k][4] === BAR && boxes[k][2] * boxes[k][3] > MAX_SHARE * area) return null;
+    }
+
+    // The first boxes from the top. Then the frames before the bars, so
+    // that a bar is drawn over its card.
+    boxes = boxes.slice(0, MAX_BOXES);
+    var frames = boxes.filter(function (b) { return b[4] === FRAME; });
+    var bars = boxes.filter(function (b) { return b[4] === BAR; });
+    return {
+      v: LAYOUT_VERSION,
+      w: Math.round(wrap.getBoundingClientRect().width),
+      h: Math.round(origin.height),
+      b: frames.concat(bars)
+    };
+  }
+
+  function saveLayout(wrap) {
+    if (!learns(wrap) || !wrap.classList.contains("bones-loaded")) return;
+    var key = layoutKey(wrap);
+    if (!key) return;
+    var record = recordLayout(wrap);
+    try {
+      if (record) {
+        window.localStorage.setItem(key, JSON.stringify(record));
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {
+      // No storage: the next visit draws the built-in shape.
+    }
+  }
+
+  /* A stored record, or null when there is none, or when it does not have
+   * the form that this version writes. */
+  function readLayout(key) {
+    var record;
+    try {
+      record = JSON.parse(window.localStorage.getItem(key));
+    } catch (e) {
+      return null;
+    }
+    if (!record || record.v !== LAYOUT_VERSION ||
+        !(isFinite(record.w) && record.w > 0) || !(isFinite(record.h) && record.h > 0) ||
+        !Array.isArray(record.b) || record.b.length > MAX_BOXES) return null;
+    for (var i = 0; i < record.b.length; i++) {
+      var box = record.b[i];
+      if (!Array.isArray(box) || box.length !== 5) return null;
+      for (var j = 0; j < 5; j++) {
+        if (typeof box[j] !== "number" || !isFinite(box[j])) return null;
+      }
+      if (box[4] !== BAR && box[4] !== FRAME) return null;
+    }
+    return record;
+  }
+
+  /* Watch the width of a wrapper whose layout could not be drawn yet, and
+   * try again when it changes. The watch ends when the layout is drawn, or
+   * when the content has arrived. A browser with no ResizeObserver keeps
+   * the built-in shape. */
+  var widthWatcher = window.ResizeObserver ? new ResizeObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      var wrap = entries[i].target;
+      if (wrap.classList.contains("bones-has-loaded")) {
+        widthWatcher.unobserve(wrap);
+      } else {
+        restoreLayout(wrap);
+      }
+    }
+  }) : null;
+
+  function watchWidth(wrap) {
+    if (widthWatcher && !wrap._bonesWatched) {
+      wrap._bonesWatched = true;
+      widthWatcher.observe(wrap);
+    }
+  }
+
+  /* Draw the stored layout in place of the built-in skeleton, once, before
+   * the first load. A layout recorded later in this visit is drawn on the
+   * next visit, so the shape does not change while the user looks at it.
+   * As for the height, a layout is used only at almost the same width. */
+  function restoreLayout(wrap) {
+    if (wrap._bonesLayoutRestored || !learns(wrap) ||
+        wrap.classList.contains("bones-has-loaded")) return;
+    var key = layoutKey(wrap);
+    if (!key) return;
+    var width = wrap.getBoundingClientRect().width;
+    // A wrapper in a hidden tab has no width yet. Try again when its width
+    // changes (see watchWidth).
+    if (!(width > 0)) {
+      watchWidth(wrap);
+      return;
+    }
+    // While the page loads, the parser can give this script the wrapper
+    // before its skeleton. Try again when the skeleton comes (restoreAll
+    // runs for each node that is added, and at DOMContentLoaded).
+    var old = wrap.querySelector(":scope > .bones-skeleton");
+    if (!old) return;
+    var record = readLayout(key);
+    if (!record) {
+      wrap._bonesLayoutRestored = true;
+      return;
+    }
+    // A layout can still change its widths while the page loads: the
+    // columns of bslib's layout_columns() are equal at first. A width that
+    // does not match yet is tried again when the width changes.
+    if (Math.abs(width - record.w) > 0.1 * record.w) {
+      watchWidth(wrap);
+      return;
+    }
+    wrap._bonesLayoutRestored = true;
+    if (widthWatcher) widthWatcher.unobserve(wrap);
+
+    var skeleton = document.createElement("div");
+    for (var a = 0; a < old.attributes.length; a++) {
+      var attr = old.attributes[a];
+      if (attr.name !== "class") skeleton.setAttribute(attr.name, attr.value);
+    }
+    skeleton.className = "bones-skeleton bones-skeleton-learned";
+    for (var i = 0; i < record.b.length; i++) {
+      var box = record.b[i];
+      var el = document.createElement("div");
+      el.className = box[4] === FRAME ? "bones-learned-frame" : "bones-bar";
+      el.style.left = box[0] + "px";
+      el.style.top = box[1] + "px";
+      el.style.width = box[2] + "px";
+      el.style.height = box[3] + "px";
+      skeleton.appendChild(el);
+    }
+    wrap.replaceChild(skeleton, old);
+    // As for the remembered height: only a height that was an estimate is
+    // replaced. A height from `height`, or from the output, is exact.
+    if (remembers(wrap)) wrap.style.setProperty("--bones-reserve", record.h + "px");
   }
 
   /* --- The kind of a chart, from its value -----------------------------------
@@ -407,6 +737,10 @@
     restoreIn(node);
     if (node.nodeType !== 1) return;
     keepTemplate(node);
+    // After the height: a drawn layout sets the height of its own record.
+    if (node.matches(".bones-wrap[data-bones-learn]")) restoreLayout(node);
+    var learning = node.querySelectorAll(".bones-wrap[data-bones-learn]");
+    for (var l = 0; l < learning.length; l++) restoreLayout(learning[l]);
     if (node.matches(".bones-wrap[data-bones-detect]")) restoreKind(node);
     var inner = node.querySelectorAll(".bones-wrap[data-bones-detect]");
     for (var i = 0; i < inner.length; i++) restoreKind(inner[i]);
@@ -491,6 +825,7 @@
 
     // A wrapper that was in a hidden tab can have a width now.
     restoreHeight(wrap);
+    restoreLayout(wrap);
 
     if (wrap.classList.contains("bones-loaded") && keepsStale(wrap)) {
       // The user is possibly reading this content, so it stays and dims.
