@@ -393,6 +393,28 @@
     return record;
   }
 
+  /* Watch the width of a wrapper whose layout could not be drawn yet, and
+   * try again when it changes. The watch ends when the layout is drawn, or
+   * when the content has arrived. A browser with no ResizeObserver keeps
+   * the built-in shape. */
+  var widthWatcher = window.ResizeObserver ? new ResizeObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      var wrap = entries[i].target;
+      if (wrap.classList.contains("bones-has-loaded")) {
+        widthWatcher.unobserve(wrap);
+      } else {
+        restoreLayout(wrap);
+      }
+    }
+  }) : null;
+
+  function watchWidth(wrap) {
+    if (widthWatcher && !wrap._bonesWatched) {
+      wrap._bonesWatched = true;
+      widthWatcher.observe(wrap);
+    }
+  }
+
   /* Draw the stored layout in place of the built-in skeleton, once, before
    * the first load. A layout recorded later in this visit is drawn on the
    * next visit, so the shape does not change while the user looks at it.
@@ -403,13 +425,31 @@
     var key = layoutKey(wrap);
     if (!key) return;
     var width = wrap.getBoundingClientRect().width;
-    // A wrapper in a hidden tab has no width yet. Try again when its output
-    // starts to load (see onInvalidated).
-    if (!(width > 0)) return;
-    wrap._bonesLayoutRestored = true;
-    var record = readLayout(key);
+    // A wrapper in a hidden tab has no width yet. Try again when its width
+    // changes (see watchWidth).
+    if (!(width > 0)) {
+      watchWidth(wrap);
+      return;
+    }
+    // While the page loads, the parser can give this script the wrapper
+    // before its skeleton. Try again when the skeleton comes (restoreAll
+    // runs for each node that is added, and at DOMContentLoaded).
     var old = wrap.querySelector(":scope > .bones-skeleton");
-    if (!record || !old || Math.abs(width - record.w) > 0.1 * record.w) return;
+    if (!old) return;
+    var record = readLayout(key);
+    if (!record) {
+      wrap._bonesLayoutRestored = true;
+      return;
+    }
+    // A layout can still change its widths while the page loads: the
+    // columns of bslib's layout_columns() are equal at first. A width that
+    // does not match yet is tried again when the width changes.
+    if (Math.abs(width - record.w) > 0.1 * record.w) {
+      watchWidth(wrap);
+      return;
+    }
+    wrap._bonesLayoutRestored = true;
+    if (widthWatcher) widthWatcher.unobserve(wrap);
 
     var skeleton = document.createElement("div");
     for (var a = 0; a < old.attributes.length; a++) {

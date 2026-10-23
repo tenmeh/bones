@@ -418,3 +418,42 @@ test_that("a big table is recorded, and its time is reported", {
   message("recording the big table took ", round(ms), " ms")
   expect_true(is.numeric(ms))
 })
+
+test_that("outputs in bslib cards draw their learned shape on the next visit", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("bslib")
+  app <- local_app_driver(test_path("apps", "learn-cards"), name = "bones-learn-cards",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  ids <- c("kpis", "ae", "notes")
+  all_loaded <- "document.querySelectorAll('.bones-wrap.bones-loaded').length === 3"
+
+  # A first visit: let any load of the first page end, then clear the
+  # storage, so that nothing from it is left.
+  app$wait_for_js(all_loaded, timeout = 30000)
+  Sys.sleep(1)
+  app$run_js("localStorage.clear();")
+  reload_page_n(app, 3)
+  app$wait_for_js(all_loaded, timeout = 30000)
+  app$wait_for_js(paste(layout_count_js, "=== 3"), timeout = 15000)
+
+  for (i in 1:3) {
+    reload_page_n(app, 3)
+    # The columns of the cards get their widths a moment after the page
+    # loads. Wait until each skeleton is learned, or its content is there.
+    app$wait_for_js("Array.from(document.querySelectorAll('.bones-wrap')).every(function (w) {
+      return w.classList.contains('bones-has-loaded') ||
+        w.querySelector(':scope > .bones-skeleton').classList.contains('bones-skeleton-learned');
+    })", timeout = 30000)
+    learned <- app$get_js("
+      Array.from(document.querySelectorAll('.bones-wrap')).map(function (w) {
+        var s = w.querySelector(':scope > .bones-skeleton');
+        return [w.getAttribute('data-bones-id'), w.classList.contains('bones-has-loaded'),
+                !!s && s.classList.contains('bones-skeleton-learned')];
+      })
+    ")
+    for (x in learned) {
+      expect_false(x[[2]], info = x[[1]])
+      expect_true(x[[3]], info = paste(x[[1]], "visit", i))
+    }
+  }
+})
