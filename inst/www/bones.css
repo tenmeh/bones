@@ -242,6 +242,29 @@
   border-radius: 50%;
 }
 
+/* --- learned shape ------------------------------------------------------- */
+
+/* A skeleton drawn from the boxes of the content of the last visit. It keeps
+   the place of every skeleton, on top of the content, but not its flex
+   layout and its padding: each box has its own place, in px. The overflow
+   of .bones-wrap > .bones-skeleton cuts a box that is wider than the
+   wrapper, so a narrower window does not scroll sideways. */
+.bones-skeleton-learned {
+  display: block;
+  padding: 0;
+}
+
+.bones-skeleton-learned > .bones-bar,
+.bones-learned-frame {
+  position: absolute;
+}
+
+.bones-learned-frame {
+  box-sizing: border-box;
+  border: 1px solid var(--bones-color);
+  border-radius: var(--bones-radius);
+}
+
 /* --- table --------------------------------------------------------------- */
 
 .bones-row {

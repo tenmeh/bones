@@ -18,7 +18,8 @@ withBones(
   min_time = NULL,
   remember = NULL,
   skeleton = NULL,
-  fallback = NULL
+  fallback = NULL,
+  learn = NULL
 )
 }
 \arguments{
@@ -72,6 +73,7 @@ output itself, is exact already. The height is kept per page and per
 output id, and it is used only when the output has almost the same
 width as when it was measured. For a plotly, echarts4r or highcharter
 output, \code{remember} also stores the kind of the chart (see "Shape").
+It also turns on \code{learn}.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
 
@@ -84,6 +86,14 @@ them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.
 \code{FALSE} keeps the error text of Shiny. Silent \code{req()} errors and
 \code{validate()} messages keep their usual behaviour. After a good load,
 the old content stays dimmed with the panel as a banner.}
+
+\item{learn}{\code{TRUE} stores the shape of the content in the browser of the
+user, and the first skeleton of the next visit has that shape. Only
+numbers are stored: the place and the size of each line of text, image
+and frame. It applies only when you do not give \code{type}, \code{rows}, \code{cols},
+\code{lines}, \code{n} or \code{skeleton}, and not to charts. It needs \code{remember}.
+\code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
+did not set it.}
 }
 \value{
 \code{ui}, in a placeholder container.
