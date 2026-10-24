@@ -16,10 +16,10 @@
 #' @return An [htmltools::tag] with `role="alert"`.
 #'
 #' @examples
-#' bones_fallback()
-#' bones_fallback("The chart could not be loaded.")
+#' bones_error()
+#' bones_error("The chart could not be loaded.")
 #' @export
-bones_fallback <- function(message = NULL, detail = FALSE) {
+bones_error <- function(message = NULL, detail = FALSE) {
   check_flag(detail, "detail")
   message <- message %||% "This content could not be loaded."
   if (!is.character(message) || length(message) != 1L || is.na(message)) {

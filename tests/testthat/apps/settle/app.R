@@ -11,9 +11,9 @@ library(bones)
 
 ui <- fluidPage(
   radioButtons("mode", "Mode", c("value", "silent", "error")),
-  withBones(textOutput("first"), fallback = FALSE),
-  withBones(textOutput("second"), fallback = FALSE),
-  withBones(textOutput("third"), stale = FALSE, fallback = FALSE),
+  withBones(textOutput("first"), error = FALSE),
+  withBones(textOutput("second"), error = FALSE),
+  withBones(textOutput("third"), stale = FALSE, error = FALSE),
   # The uiOutput() does not change. Only the output inside it does. Its
   # wrapper must thus stay as it is.
   withBones(uiOutput("outer"), type = "text"),

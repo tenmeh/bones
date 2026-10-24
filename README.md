@@ -296,11 +296,11 @@ colours from `bones_defaults()`.
 `withBones()` shows a calm panel when an output fails on its first load.
 After a good load, it keeps the old content dimmed with a banner.
 Silent `req()` errors and `validate()` messages keep their usual behaviour.
-Error panels are on by default. Use `bones_defaults(fallback = FALSE)` to
+Error panels are on by default. Use `bones_defaults(error = FALSE)` to
 keep the error text of Shiny.
 
-Give `fallback = bones_fallback("The chart could not be loaded.")` to set
-the message, or supply your own tag or tag list. `bones_fallback(detail = TRUE)`
+Give `error = bones_error("The chart could not be loaded.")` to set
+the message, or supply your own tag or tag list. `bones_error(detail = TRUE)`
 shows error detail for development. Leave it off for end users: raw errors
 can contain file paths, SQL, or private data when `shiny.sanitize.errors = FALSE`.
 Messages from `safeError()` still show when detail is off.

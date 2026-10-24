@@ -150,7 +150,7 @@ reference:
   - title: Error states
     desc: A calm panel for a failed output.
     contents:
-      - bones_fallback
+      - bones_error
 
   - title: Placeholders on their own
     desc: >

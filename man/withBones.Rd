@@ -18,7 +18,7 @@ withBones(
   min_time = NULL,
   remember = NULL,
   skeleton = NULL,
-  fallback = NULL,
+  error = NULL,
   learn = NULL
 )
 }
@@ -81,8 +81,8 @@ did not set it.}
 or a tag list, made of \code{\link[=bones_block]{bones_block()}} blocks and any layout around
 them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.}
 
-\item{fallback}{A panel for a failed output: a tag or a tag list.
-\code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or \code{\link[=bones_fallback]{bones_fallback()}} if unset.
+\item{error}{A panel for a failed output: a tag or a tag list.
+\code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or \code{\link[=bones_error]{bones_error()}} if unset.
 \code{FALSE} keeps the error text of Shiny. Silent \code{req()} errors and
 \code{validate()} messages keep their usual behaviour. After a good load,
 the old content stays dimmed with the panel as a banner.}

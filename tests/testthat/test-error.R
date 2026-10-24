@@ -1,4 +1,4 @@
-test_that("the default fallback is last and has an alert role", {
+test_that("the default error panel is last and has an alert role", {
   w <- withBones(fake_output("shiny-text-output"))
   html <- as.character(w)
   expect_match(html, 'data-bones-error="true"')
@@ -9,22 +9,22 @@ test_that("the default fallback is last and has an alert role", {
   expect_false(grepl("bones-error-detail", html, fixed = TRUE))
 })
 
-test_that("fallback can be disabled or set for the session", {
+test_that("the error panel can be turned off or set for the session", {
   output <- fake_output("shiny-text-output")
-  html <- as.character(withBones(output, fallback = FALSE))
+  html <- as.character(withBones(output, error = FALSE))
   expect_false(grepl("bones-error", html, fixed = TRUE))
-  old <- bones_defaults(fallback = FALSE)
+  old <- bones_defaults(error = FALSE)
   on.exit(options(old))
   expect_false(grepl("bones-error", as.character(withBones(output)), fixed = TRUE))
-  panel <- bones_fallback("Custom message")
-  bones_defaults(fallback = panel)
+  panel <- bones_error("Custom message")
+  bones_defaults(error = panel)
   expect_identical(tail(withBones(output)$children, 1L)[[1]], panel)
-  expect_false(grepl("bones-error", as.character(withBones(output, fallback = FALSE)), fixed = TRUE))
+  expect_false(grepl("bones-error", as.character(withBones(output, error = FALSE)), fixed = TRUE))
 })
 
-test_that("custom fallback tags are kept inside the panel", {
+test_that("custom tags are kept inside the error panel", {
   custom <- htmltools::tagList(htmltools::tags$p("Custom"), htmltools::tags$button("Help"))
-  w <- withBones(fake_output("shiny-text-output"), fallback = custom)
+  w <- withBones(fake_output("shiny-text-output"), error = custom)
   panel <- tail(w$children, 1L)[[1]]
   expect_equal(panel$attribs$class, "bones-error")
   expect_equal(panel$attribs$role, "alert")
@@ -34,50 +34,50 @@ test_that("custom fallback tags are kept inside the panel", {
 test_that("existing error panels are kept with any class whitespace", {
   for (class in c("bones-error", "foo  bones-error", "foo\tbones-error", "foo\nbones-error")) {
     custom <- htmltools::tags$div(class = class, "Custom")
-    w <- withBones(fake_output("shiny-text-output"), fallback = custom)
+    w <- withBones(fake_output("shiny-text-output"), error = custom)
     expect_identical(tail(w$children, 1L)[[1]], custom)
   }
 })
 
-test_that("a plain fallback tag gets an error panel around it", {
+test_that("a plain tag in error gets an error panel around it", {
   custom <- htmltools::tags$div("Custom")
-  w <- withBones(fake_output("shiny-text-output"), fallback = custom)
+  w <- withBones(fake_output("shiny-text-output"), error = custom)
   panel <- tail(w$children, 1L)[[1]]
   expect_equal(panel$attribs$class, "bones-error")
   expect_equal(panel$attribs$role, "alert")
   expect_identical(panel$children[[1]], custom)
 })
 
-test_that("bones_fallback has optional detail and escapes text", {
-  panel <- bones_fallback("<message>", detail = TRUE)
+test_that("bones_error has optional detail and escapes text", {
+  panel <- bones_error("<message>", detail = TRUE)
   expect_equal(panel$attribs$class, "bones-error")
   expect_equal(panel$attribs$role, "alert")
   expect_match(as.character(panel), "&lt;message&gt;", fixed = TRUE)
   expect_match(as.character(panel), "bones-error-message", fixed = TRUE)
   expect_match(as.character(panel), "bones-error-detail", fixed = TRUE)
-  expect_match(as.character(bones_fallback()), "This content could not be loaded.", fixed = TRUE)
-  expect_match(as.character(bones_fallback("")), "bones-error-message", fixed = TRUE)
+  expect_match(as.character(bones_error()), "This content could not be loaded.", fixed = TRUE)
+  expect_match(as.character(bones_error("")), "bones-error-message", fixed = TRUE)
 })
 
-test_that("bones_fallback always has an empty safe error slot", {
+test_that("bones_error always has an empty safe error slot", {
   for (detail in c(FALSE, TRUE)) {
-    panel <- bones_fallback(detail = detail)
+    panel <- bones_error(detail = detail)
     safe <- panel$children[[2]]
     expect_equal(safe$attribs$class, "bones-error-safe")
     expect_length(safe$children, 0L)
   }
 })
 
-test_that("fallback arguments reject invalid values", {
+test_that("the error arguments reject invalid values", {
   for (bad in list(TRUE, NA, "text", 1, list(), c(FALSE, FALSE))) {
-    expect_error(withBones(fake_output("shiny-text-output"), fallback = bad), "`fallback`")
-    expect_error(bones_defaults(fallback = bad), "`fallback`")
+    expect_error(withBones(fake_output("shiny-text-output"), error = bad), "`error`")
+    expect_error(bones_defaults(error = bad), "`error`")
   }
   for (bad in list(NA_character_, c("a", "b"), 1, character())) {
-    expect_error(bones_fallback(message = bad), "`message`")
+    expect_error(bones_error(message = bad), "`message`")
   }
   for (bad in list(NA, 1, c(TRUE, FALSE))) {
-    expect_error(bones_fallback(detail = bad), "`detail`")
+    expect_error(bones_error(detail = bad), "`detail`")
   }
 })
 

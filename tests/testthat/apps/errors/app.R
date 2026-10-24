@@ -21,9 +21,9 @@ ui <- fluidPage(
     htmltools::tagAppendAttributes(textOutput("no_stale"), style = "min-height: 160px;"),
     stale = FALSE, delay = 0, min_time = 0
   ),
-  withBones(textOutput("detail"), fallback = bones_fallback(detail = TRUE)),
+  withBones(textOutput("detail"), error = bones_error(detail = TRUE)),
   withBones(textOutput("safe_error"), delay = 0, min_time = 0),
-  withBones(textOutput("disabled"), fallback = FALSE, delay = 0, min_time = 0)
+  withBones(textOutput("disabled"), error = FALSE, delay = 0, min_time = 0)
 )
 
 server <- function(input, output, session) {
