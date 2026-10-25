@@ -15,7 +15,7 @@ test_that("bones_block() refuses a bad size or shape", {
   expect_error(bones_block(NULL), "`width` must be a CSS width", fixed = TRUE)
   expect_error(bones_block(height = NULL), "`height` must be a CSS height", fixed = TRUE)
   expect_error(bones_block(c("1px", "2px")), "`width` must be a single CSS length", fixed = TRUE)
-  expect_error(bones_block(shape = "star"), "should be one of")
+  expect_error(bones_block(shape = "star"), "`shape` must be one of", fixed = TRUE)
 })
 
 test_that("withBones() puts your own placeholder in place of the built-in shape", {
@@ -73,7 +73,8 @@ test_that("each animation is accepted, and gives its class", {
     html <- as.character(withBones(fake_output("shiny-plot-output"), animation = anim))
     expect_match(html, paste0("bones-anim-", anim), fixed = TRUE, info = anim)
   }
-  expect_error(withBones(fake_output("shiny-plot-output"), animation = "spin"), "should be one of")
+  expect_error(withBones(fake_output("shiny-plot-output"), animation = "spin"),
+               "`animation` must be one of", fixed = TRUE)
 
   old <- bones_defaults(animation = "cascade")
   on.exit(options(old))

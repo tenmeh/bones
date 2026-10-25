@@ -59,7 +59,7 @@ test_that("an explicit height is applied", {
 })
 
 test_that("an unknown type is rejected", {
-  expect_error(bones_skeleton("banana"), "arg")
+  expect_error(bones_skeleton("banana"), "`type` must be one of", fixed = TRUE)
 })
 
 test_that("the default height increases with the content", {

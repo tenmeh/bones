@@ -39,7 +39,7 @@ test_that("an argument to withBones() is stronger than the default", {
 })
 
 test_that("bad values are rejected", {
-  expect_error(bones_defaults(animation = "disco"), "arg")
+  expect_error(bones_defaults(animation = "disco"), "`animation` must be one of", fixed = TRUE)
   expect_error(bones_defaults(speed = -1), "positive")
   expect_error(bones_defaults(speed = 0), "positive")
   expect_error(bones_defaults(speed = c(1, 2)), "positive")

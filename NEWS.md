@@ -1,5 +1,8 @@
 # bones (development version)
 
+* A bad `type`, `animation` or `shape` now gives a clear error with a hint
+  for a near miss. Only exact names are accepted: a short form such as
+  `type = "pi"` is now an error that says `Did you mean "pie"?` (#24).
 * An output learns the shape of its content. After a load, the browser
   stores the place of each line of text, image and card. On the next visit,
   the skeleton has that shape in place of a guess from the type of the
