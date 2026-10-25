@@ -106,7 +106,7 @@ test_that("an error does not change a stored layout", {
   before <- stored_layouts(app)$fail
   expect_false(is.null(before))
   app$run_js("document.getElementById('break_it').click();")
-  app$wait_for_js("document.querySelector('#box-fail .shiny-output-error') !== null", timeout = 15000)
+  app$wait_for_js("document.querySelector('#box-fail .bones-wrap.bones-errored') !== null", timeout = 15000)
   Sys.sleep(1)
   expect_identical(stored_layouts(app)$fail, before)
 })

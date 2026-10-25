@@ -14,6 +14,7 @@ bones_defaults(
   delay = NULL,
   min_time = NULL,
   remember = NULL,
+  error = NULL,
   learn = NULL
 )
 }
@@ -51,6 +52,9 @@ arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
 
 \item{remember}{The default for the \code{remember} argument of
 \code{\link[=withBones]{withBones()}}.}
+
+\item{error}{The default for the \code{error} argument of \code{\link[=withBones]{withBones()}}.
+\code{NULL} leaves the option unchanged. Use \code{FALSE} for the error text of Shiny.}
 
 \item{learn}{The default for the \code{learn} argument of \code{\link[=withBones]{withBones()}}.}
 }
