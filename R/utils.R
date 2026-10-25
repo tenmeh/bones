@@ -45,6 +45,43 @@ check_count <- function(x, name) {
   invisible(x)
 }
 
+#' Stop unless `x` is exactly one of the choices
+#'
+#' @param x The value to check.
+#' @param choices The valid strings.
+#' @param name The name of the argument, for the message.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+check_choice <- function(x, choices, name) {
+  valid <- paste(sprintf('"%s"', choices), collapse = ", ")
+  if (!is.character(x) || length(x) != 1L || is.na(x)) {
+    stop(sprintf("`%s` must be a single string, one of %s.", name, valid),
+         call. = FALSE)
+  }
+
+  # Exact matching means a new shape cannot change what an old short name means.
+  if (!x %in% choices) {
+    msg <- sprintf('`%s` must be one of %s. You gave "%s".', name, valid, x)
+    prefixes <- choices[startsWith(choices, x)]
+    hint <- NULL
+    if (length(prefixes) == 1L) {
+      hint <- prefixes
+    } else {
+      distances <- utils::adist(x, choices, ignore.case = TRUE)
+      nearest <- which.min(distances)
+      if (length(nearest) == 1L && distances[nearest] <= 2L) {
+        hint <- choices[nearest]
+      }
+    }
+    if (!is.null(hint)) {
+      msg <- paste(msg, sprintf('Did you mean "%s"?', hint))
+    }
+    stop(msg, call. = FALSE)
+  }
+  invisible(x)
+}
+
 #' Make `x` a CSS length, or stop
 #'
 #' Uses htmltools::validateCssUnit(), so a height works as it does in

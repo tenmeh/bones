@@ -106,6 +106,6 @@ test_that("the SVG shapes animate and respect reduced motion", {
 })
 
 test_that("an unknown type still lists the choices", {
-  expect_error(bones_skeleton("donut"), "should be one of")
-  expect_error(withBones(fake_output("shiny-plot-output"), type = "donut"), "should be one of")
+  expect_error(bones_skeleton("donut"), "`type` must be one of", fixed = TRUE)
+  expect_error(withBones(fake_output("shiny-plot-output"), type = "donut"), "`type` must be one of", fixed = TRUE)
 })

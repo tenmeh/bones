@@ -107,8 +107,9 @@ test_that("NULL input is rejected", {
 })
 
 test_that("a bad type or animation is rejected", {
-  expect_error(withBones(fake_output("shiny-plot-output"), type = "banana"), "arg")
-  expect_error(withBones(fake_output("shiny-plot-output"), animation = "disco"), "arg")
+  expect_error(withBones(fake_output("shiny-plot-output"), type = "banana"), "`type` must be one of", fixed = TRUE)
+  expect_error(withBones(fake_output("shiny-plot-output"), animation = "disco"),
+               "`animation` must be one of", fixed = TRUE)
 })
 
 test_that("the wrapper brings the dependency", {

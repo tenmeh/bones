@@ -48,7 +48,8 @@ bones_block <- function(width = "100%", height = "0.75rem", shape = c("rect", "c
   height <- as_css_length(height, "height")
   if (is.null(width)) stop("`width` must be a CSS width, not NULL.", call. = FALSE)
   if (is.null(height)) stop("`height` must be a CSS height, not NULL.", call. = FALSE)
-  shape <- match.arg(shape)
+  if (missing(shape)) shape <- "rect"
+  check_choice(shape, c("rect", "circle"), "shape")
 
   # The same element as the bars of the built-in shapes, so it takes their
   # colours and their animation.

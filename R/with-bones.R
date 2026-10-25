@@ -198,11 +198,11 @@ withBones <- function(ui, # nolint: object_name_linter.
     # Your own placeholder wins too: its shape must not change.
     if (is.null(skeleton)) detect <- detect_widget(ui)
   } else {
-    type <- match.arg(type, skeleton_types())
+    check_choice(type, skeleton_types(), "type")
   }
 
   animation <- animation %||% getOption("bones.animation", "wave")
-  animation <- match.arg(animation, animation_types())
+  check_choice(animation, animation_types(), "animation")
   stale <- stale %||% getOption("bones.stale", TRUE)
   check_flag(stale, "stale")
   delay <- delay %||% getOption("bones.delay", 300)
@@ -366,7 +366,7 @@ bones_defaults <- function(animation = NULL,
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
-    animation <- match.arg(animation, animation_types())
+    check_choice(animation, animation_types(), "animation")
   }
   if (!is.null(speed) &&
         (!is.numeric(speed) || length(speed) != 1L || is.na(speed) || speed <= 0)) {

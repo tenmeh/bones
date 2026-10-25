@@ -53,7 +53,7 @@ bones_skeleton <- function(type = "text",
                            n = 3L,
                            height = NULL) {
   # --- Validate inputs ---
-  type <- match.arg(type, skeleton_types())
+  check_choice(type, skeleton_types(), "type")
   check_count(rows, "rows")
   check_count(cols, "cols")
   check_count(lines, "lines")
@@ -67,7 +67,8 @@ bones_skeleton <- function(type = "text",
 
   # With no wrapper, the skeleton itself must carry what a wrapper carries:
   # the animation class and the colours from bones_defaults().
-  animation <- match.arg(getOption("bones.animation", "wave"), animation_types())
+  animation <- getOption("bones.animation", "wave")
+  check_choice(animation, animation_types(), "animation")
 
   htmltools::attachDependencies(
     skeleton_tag(type, rows = rows, cols = cols, lines = lines, n = n,
