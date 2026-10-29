@@ -327,6 +327,12 @@ The browser tests in `tests/testthat/test-app-smoke.R` need a headless
 Chrome. They skip on CRAN, and when no browser can start. Set
 `NOT_CRAN=true` to run them.
 
+## Support
+
+`bones` is free and open source, and I work on it in my own time. If it
+helps you or your team, you can
+[sponsor my work on GitHub](https://github.com/sponsors/tenmeh).
+
 ## License
 
 MIT
