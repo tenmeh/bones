@@ -19,3 +19,6 @@ docs/
 
 # Tooling
 .claude/
+
+# Design notes, kept outside this repo
+dev/
