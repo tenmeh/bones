@@ -951,3 +951,29 @@ test_that("safe error messages show without raw error detail", {
     "document.querySelector('[data-bones-id=first_error] .bones-error-safe').textContent"
   ), "")
 })
+
+test_that("an app driver stays usable when it could not read its worker id", {
+  testthat::skip_on_cran()
+
+  app <- local_app_driver(
+    test_path("apps", "learn"),
+    name         = "bones-worker-id",
+    wait         = FALSE,
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  private <- app$.__enclos_env__$private
+
+  # The state that the read leaves when it fails: every log entry stops.
+  private$shiny_worker_id <- NULL
+  expect_error(app$log_message("no worker id"), "differing number of rows")
+
+  repair_worker_id(app)
+  expect_identical(private$shiny_worker_id, NA_character_)
+  expect_no_error(app$log_message("worker id repaired"))
+
+  # A real id is left alone.
+  private$shiny_worker_id <- "worker-1"
+  repair_worker_id(app)
+  expect_identical(private$shiny_worker_id, "worker-1")
+})

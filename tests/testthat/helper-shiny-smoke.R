@@ -130,7 +130,25 @@ local_app_driver <- function(app_dir, ...) {
     },
     envir = parent.frame()
   )
+  repair_worker_id(app)
   app
+}
+
+#' Keep an `AppDriver` usable when it could not read its worker id.
+#'
+#' `AppDriver$new()` reads the id from the browser and, if that read fails,
+#' stores `NULL`. Each later log entry then stops with "arguments imply
+#' differing number of rows: 0, 1", which has nothing to do with the app under
+#' test. `NA` is what shinytest2 itself stores for an app with no worker id.
+#'
+#' @param app A live `AppDriver`.
+#' @return The application, invisibly.
+repair_worker_id <- function(app) {
+  private <- app$.__enclos_env__$private
+  if (length(private$shiny_worker_id) == 0L) {
+    private$shiny_worker_id <- NA_character_
+  }
+  invisible(app)
 }
 
 #' Wait until each bones wrapper shows its content.
