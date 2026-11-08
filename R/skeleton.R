@@ -128,7 +128,7 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
     # calculates, so a screen reader already tells the user. A second
     # message from the placeholder would only repeat it.
     `aria-hidden` = "true",
-    style = style_attr(c(
+    `data-bones-style` = style_attr(c(
       if (!is.null(height)) sprintf("height: %s;", height),
       style
     )),
@@ -149,7 +149,7 @@ bar <- function(width = "100%", height = NULL, class = NULL) {
   )
   htmltools::tags$div(
     class = paste(c("bones-bar", class), collapse = " "),
-    style = paste(styles, collapse = " ")
+    `data-bones-style` = paste(styles, collapse = " ")
   )
 }
 
@@ -298,7 +298,7 @@ skel_gt <- function(rows, cols) {
         class = "bones-gt-spanner",
         # The spanner covers all the data columns, which a static rule cannot
         # know, so the width is set here.
-        style = sprintf("flex: %d 1 0;", cols),
+        `data-bones-style` = sprintf("flex: %d 1 0;", cols),
         bar(width = "40%", class = "bones-bar-strong")
       )
     ),
@@ -318,7 +318,7 @@ skel_rhandsontable <- function(rows, cols) {
 
   htmltools::tags$div(
     class = "bones-hot",
-    style = sprintf("grid-template-columns: 2.5rem repeat(%d, 1fr);", cols),
+    `data-bones-style` = sprintf("grid-template-columns: 2.5rem repeat(%d, 1fr);", cols),
     htmltools::tags$div(class = "bones-hot-corner"),
     lapply(seq_len(cols), function(j) {
       htmltools::tags$div(class = "bones-hot-colhead", bar(width = "1rem"))
@@ -428,7 +428,7 @@ columns <- function(heights) {
   lapply(heights, function(h) {
     htmltools::tags$div(
       class = "bones-bar bones-bar-column",
-      style = sprintf("height: %d%%;", h)
+      `data-bones-style` = sprintf("height: %d%%;", h)
     )
   })
 }
@@ -513,7 +513,7 @@ skel_scatter <- function() {
     lapply(seq_along(x), function(i) {
       htmltools::tags$div(
         class = "bones-bar bones-dot",
-        style = sprintf("left: %g%%; bottom: %g%%;", x[i], round(y[i], 1))
+        `data-bones-style` = sprintf("left: %g%%; bottom: %g%%;", x[i], round(y[i], 1))
       )
     }),
     class = "bones-plot-area-free"
@@ -551,11 +551,11 @@ skel_heatmap <- function(n_rows = 6L, n_cols = 10L) {
   strength <- (sin(cells$col * 0.8) + cos(cells$row * 1.1) + 2) / 4
   htmltools::tags$div(
     class = "bones-heatmap",
-    style = sprintf("grid-template-columns: repeat(%d, 1fr);", n_cols),
+    `data-bones-style` = sprintf("grid-template-columns: repeat(%d, 1fr);", n_cols),
     lapply(strength, function(s) {
       htmltools::tags$div(
         class = "bones-bar bones-heat-cell",
-        style = sprintf("opacity: %.2f;", 0.25 + 0.75 * s)
+        `data-bones-style` = sprintf("opacity: %.2f;", 0.25 + 0.75 * s)
       )
     })
   )
@@ -593,7 +593,7 @@ skel_map <- function() {
     lapply(pins, function(p) {
       htmltools::tags$div(
         class = "bones-bar bones-pin",
-        style = sprintf("left: %g%%; top: %g%%;", p[1], p[2])
+        `data-bones-style` = sprintf("left: %g%%; top: %g%%;", p[1], p[2])
       )
     })
   )
@@ -648,7 +648,7 @@ skel_timeline <- function() {
       lapply(items, function(it) {
         htmltools::tags$div(
           class = "bones-bar bones-timeline-item",
-          style = sprintf("left: %g%%; top: %g%%; width: %g%%;", it[2], 6 + (it[1] - 1) * 24, it[3])
+          `data-bones-style` = sprintf("left: %g%%; top: %g%%; width: %g%%;", it[2], 6 + (it[1] - 1) * 24, it[3])
         )
       })
     ),
@@ -675,7 +675,7 @@ skel_wordcloud <- function() {
     lapply(words, function(w) {
       htmltools::tags$div(
         class = paste(c("bones-bar", "bones-word", if (w[2] >= 1.6) "bones-bar-strong"), collapse = " "),
-        style = sprintf("width: %grem; height: %grem;", w[1], w[2])
+        `data-bones-style` = sprintf("width: %grem; height: %grem;", w[1], w[2])
       )
     })
   )

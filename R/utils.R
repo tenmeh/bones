@@ -14,11 +14,16 @@ na_to_null <- function(x) {
   if (length(x) == 0L || is.na(x[1])) NULL else x[1]
 }
 
-#' Join CSS declarations into one style attribute
+#' Join CSS declarations for one `data-bones-style` attribute
+#'
+#' bones writes no `style` attribute. A strict Content-Security-Policy
+#' (`style-src` with no `'unsafe-inline'`) blocks those, and the skeleton
+#' would then lose its sizes. bones.js reads `data-bones-style` and sets each
+#' declaration with the CSSOM, which such a policy allows.
 #'
 #' @param declarations A character vector, such as `"height: 10px;"`.
 #' @return A string, or `NULL` when there are no declarations, so that
-#'   htmltools does not write an empty `style` attribute.
+#'   htmltools does not write an empty attribute.
 #' @keywords internal
 #' @noRd
 style_attr <- function(declarations) {

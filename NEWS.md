@@ -1,5 +1,12 @@
 # bones (development version)
 
+* bones works under a strict Content-Security-Policy, such as
+  `style-src 'self'` with no `'unsafe-inline'`. It writes no `style`
+  attribute any more, which such a policy blocks. The sizes, positions and
+  colours of a skeleton go in a `data-bones-style` attribute, and a script in
+  bones sets them in the browser. The look does not change. A `style` attribute
+  that Shiny or a widget writes on the output itself, such as the height of
+  `plotOutput()`, is not from bones and is left as it is.
 * A bad `type`, `animation` or `shape` now gives a clear error with a hint
   for a near miss. Only exact names are accepted: a short form such as
   `type = "pi"` is now an error that says `Did you mean "pie"?` (#24).
