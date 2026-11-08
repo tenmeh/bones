@@ -280,7 +280,7 @@ withBones <- function(ui, # nolint: object_name_linter.
     # A custom property, not a min-height. bones.css applies it only
     # until the content arrives. A min-height that stayed would leave a
     # gap under content that is shorter than the estimate.
-    style = paste(c(
+    `data-bones-style` = paste(c(
       sprintf("--bones-reserve: %s;", height),
       sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
       css_vars()

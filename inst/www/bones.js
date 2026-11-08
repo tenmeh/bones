@@ -20,6 +20,51 @@
  * with jQuery and not with addEventListener. jQuery.trigger() does not call
  * native listeners for custom event types.
  */
+/* --- Sizes and positions, with no style attribute -------------------------
+ *
+ * The R code writes no style attribute: a strict Content-Security-Policy
+ * (style-src with no 'unsafe-inline') blocks those. It writes the same
+ * declarations in data-bones-style, and this part sets each one with the
+ * CSSOM, which such a policy allows.
+ *
+ * It needs no jQuery, so a skeleton outside Shiny gets its sizes too. It
+ * runs as soon as the parser adds an element, before the page is painted,
+ * so the look is the same as with a style attribute. */
+(function () {
+  "use strict";
+
+  function applyStyle(el) {
+    if (el._bonesStyled) return;
+    el._bonesStyled = true;
+    var parts = el.getAttribute("data-bones-style").split(";");
+    for (var i = 0; i < parts.length; i++) {
+      var at = parts[i].indexOf(":");
+      if (at < 1) continue;
+      var name = parts[i].slice(0, at).trim();
+      var value = parts[i].slice(at + 1).trim();
+      if (name && value) el.style.setProperty(name, value);
+    }
+  }
+
+  function applyAll(node) {
+    if (node.nodeType !== 1) return;
+    if (node.hasAttribute("data-bones-style")) applyStyle(node);
+    var styled = node.querySelectorAll("[data-bones-style]");
+    for (var i = 0; i < styled.length; i++) applyStyle(styled[i]);
+  }
+
+  applyAll(document.documentElement);
+  new MutationObserver(function (records) {
+    for (var r = 0; r < records.length; r++) {
+      var added = records[r].addedNodes;
+      for (var a = 0; a < added.length; a++) applyAll(added[a]);
+    }
+  }).observe(document.documentElement, {childList: true, subtree: true});
+  document.addEventListener("DOMContentLoaded", function () {
+    applyAll(document.documentElement);
+  });
+})();
+
 (function () {
   "use strict";
 
