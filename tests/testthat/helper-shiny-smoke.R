@@ -104,6 +104,12 @@ expect_no_shiny_errors <- function(app, allow_dom_errors = NULL) {
 #' @param ... More arguments for `shinytest2::AppDriver$new()`.
 #' @return A live `AppDriver`.
 local_app_driver <- function(app_dir, ...) {
+  # CI runs the browser tests in a job of their own. The R CMD check jobs set
+  # this variable, so a slow browser cannot fail a check of the package.
+  testthat::skip_if(
+    identical(Sys.getenv("BONES_BROWSER_TESTS"), "false"),
+    "Browser tests are off (BONES_BROWSER_TESTS=false)."
+  )
   testthat::skip_if_not_installed("shinytest2")
   testthat::skip_if_not_installed("withr")
 

@@ -323,9 +323,11 @@ devtools::test()
 devtools::check()
 ```
 
-The browser tests in `tests/testthat/test-app-smoke.R` need a headless
-Chrome. They skip on CRAN, and when no browser can start. Set
-`NOT_CRAN=true` to run them.
+The browser tests (`tests/testthat/test-app-*.R` and
+`test-error-payload.R`) need a headless Chrome. They skip on CRAN, and when
+no browser can start. Set `NOT_CRAN=true` to run them. Set
+`BONES_BROWSER_TESTS=false` to skip them. The R CMD check jobs in CI do
+this, and a separate job runs the browser tests.
 
 ## Support
 
