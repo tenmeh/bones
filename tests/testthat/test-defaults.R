@@ -147,3 +147,16 @@ test_that("NULL forwarded by bones_auto still uses session defaults", {
     bones_auto(ui)
   )
 })
+
+test_that("the defaults in the signature match the built-in defaults", {
+  # The signature repeats the values so the help page shows them.
+  withr::local_options(bones.animation = NULL, bones.stale = NULL,
+                       bones.delay = NULL, bones.min_time = NULL,
+                       bones.remember = NULL, bones.error = NULL,
+                       bones.learn = NULL)
+  f <- formals(withBones)
+  builtin <- builtin_defaults()
+  for (name in c("animation", "stale", "delay", "min_time", "remember", "error", "learn")) {
+    expect_equal(eval(f[[name]], asNamespace("bones")), builtin[[name]], info = name)
+  }
+})

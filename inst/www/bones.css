@@ -123,7 +123,8 @@
   gap: 0.4rem;
 }
 
-.bones-wrap.bones-errored > .bones-skeleton {
+/* A held wrapper keeps its skeleton. */
+.bones-wrap.bones-errored:not(.bones-held) > .bones-skeleton {
   display: none;
 }
 
@@ -178,7 +179,7 @@
   outline-offset: 2px;
 }
 
-.bones-wrap.bones-loaded > .bones-skeleton {
+.bones-wrap.bones-loaded:not(.bones-held) > .bones-skeleton {
   display: none;
 }
 
@@ -236,9 +237,9 @@
 }
 
 /* A hold bypasses the appearance animation, including its hidden first
-   frame. Keep the content and any error banner in flow to preserve size. */
+   frame. Keep the content and any error banner in flow to preserve size.
+   Each skeleton keeps its own display: the rules that hide it skip a hold. */
 .bones-wrap.bones-held > .bones-skeleton {
-  display: flex;
   visibility: visible;
   animation: none;
 }
@@ -247,6 +248,8 @@
   animation: bones-pulse var(--bones-speed) ease-in-out infinite;
 }
 
+/* The has-loaded selector matches the specificity of the errored banner
+   rule, which shows old content, so a hold over a banner still hides it. */
 .bones-wrap.bones-held.bones-has-loaded > .bones-content,
 .bones-wrap.bones-held > .bones-content,
 .bones-wrap.bones-held > .bones-error {

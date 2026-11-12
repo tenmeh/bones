@@ -75,7 +75,7 @@ bones_skeleton <- function(type = "text",
 
   # With no wrapper, the skeleton itself must carry what a wrapper carries:
   # the animation class and the colours from bones_defaults().
-  animation <- getOption("bones.animation", "wave")
+  animation <- bones_option("animation")
   check_choice(animation, animation_types(), "animation")
 
   htmltools::attachDependencies(

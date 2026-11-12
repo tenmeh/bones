@@ -139,6 +139,45 @@ check_flag <- function(x, name) {
   invisible(x)
 }
 
+#' Stop unless `x` is a character vector of input ids
+#'
+#' @param x The value to check.
+#' @param name The name of the argument, for the message.
+#' @param single `TRUE` if only one id is allowed.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+check_ids <- function(x, name, single = FALSE) {
+  ok <- is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(trimws(x)))
+  if (single && !(ok && length(x) == 1L)) {
+    stop(sprintf("`%s` must be a single non-empty input id or NULL.", name), call. = FALSE)
+  }
+  if (!ok) {
+    stop(sprintf("`%s` must be a non-empty character vector of input ids or NULL.", name),
+         call. = FALSE)
+  }
+  invisible(x)
+}
+
+#' The built-in defaults of the options that bones_defaults() sets
+#'
+#' The one list of these values. The signature of withBones() repeats some
+#' of them so that its help page shows them; a test keeps the two the same.
+#' @keywords internal
+#' @noRd
+builtin_defaults <- function() {
+  list(animation = "wave", color = NULL, highlight = NULL, radius = NULL,
+       speed = 1.4, stale = TRUE, delay = 300, min_time = 500,
+       remember = TRUE, error = bones_error(), learn = TRUE)
+}
+
+#' The value of one bones option, or its built-in default
+#' @keywords internal
+#' @noRd
+bones_option <- function(name) {
+  getOption(paste0("bones.", name), builtin_defaults()[[name]])
+}
+
 #' Stop unless `x` is FALSE, a tag, or a tag list
 #'
 #' @param x The value to check.

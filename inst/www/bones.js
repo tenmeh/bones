@@ -117,8 +117,11 @@
   function holdWrap(wrap, automatic, retry) {
     // Repeated triggers do not restart min_time or lose a pending retry.
     if (!wrap._bonesHold) {
+      // A load that waits only for min_time has finished. End it first, so
+      // a release restores the loaded state and not the loading state.
+      if (wrap._bonesTimer) markLoaded(wrap);
       wrap._bonesHold = {
-        automatic: automatic, started: false,
+        automatic: automatic, started: false, sawBusy: false,
         classes: Array.from(wrap.classList)
       };
       wrap._bonesShownAt = now();
@@ -154,13 +157,44 @@
     window.Shiny.setInputValue(id, Date.now(), {priority: "event"});
   });
 
+  function holdIds(wrap) {
+    // Parsed once: this runs on every input change, keystrokes included.
+    if (!wrap._bonesHoldIds) {
+      wrap._bonesHoldIds = wrap.getAttribute("data-bones-hold").split(" ").map(decodeURIComponent);
+    }
+    return wrap._bonesHoldIds;
+  }
+
   $(document).on("shiny:inputchanged", function (e) {
     var wraps = document.querySelectorAll(".bones-wrap[data-bones-hold]");
     for (var i = 0; i < wraps.length; i++) {
-      var ids = wraps[i].getAttribute("data-bones-hold").split(" ").map(decodeURIComponent);
-      if (ids.indexOf(e.name) >= 0) holdWrap(wraps[i], true, false);
+      if (holdIds(wraps[i]).indexOf(e.name) >= 0) holdWrap(wraps[i], true, false);
     }
   });
+
+  /* An idle event can belong to a server cycle that started before the
+   * input changed. Only an idle after a busy that came after the hold can
+   * say that the input did not recalculate this output. */
+  $(document).on("shiny:busy", function () {
+    var wraps = document.querySelectorAll(".bones-wrap.bones-held");
+    for (var i = 0; i < wraps.length; i++) {
+      if (wraps[i]._bonesHold) wraps[i]._bonesHold.sawBusy = true;
+    }
+  });
+
+  // If no busy comes at all, release the hold a little later, when Shiny is
+  // still not busy and the output did not start.
+  function releaseLater(wrap) {
+    var hold = wrap._bonesHold;
+    if (hold.fallback) return;
+    hold.fallback = window.setTimeout(function () {
+      hold.fallback = null;
+      if (wrap._bonesHold !== hold || hold.started || hold.finished ||
+          document.documentElement.classList.contains("shiny-busy")) return;
+      releaseHold(wrap);
+      sweep();
+    }, 1000);
+  }
 
   function markLoaded(wrap) {
     clearHold(wrap);
@@ -1104,9 +1138,14 @@
       var output = outputOf(wrap);
       if (wrap._bonesHold) {
         var hold = wrap._bonesHold;
-        if (hold.automatic && !hold.started && !hold.finished) releaseHold(wrap);
+        if (hold.automatic && !hold.started && !hold.finished) {
+          if (!hold.sawBusy) {
+            releaseLater(wrap);
+            continue;
+          }
+          releaseHold(wrap);
         // Explicit holds survive idle. A value/error owns their completion.
-        else if (!hold.automatic || hold.finished) continue;
+        } else if (!hold.automatic || hold.finished) continue;
       }
       if (!output || output.classList.contains("recalculating") ||
           wrap.classList.contains("bones-errored") || wrap._bonesErrorPending) continue;

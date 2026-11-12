@@ -226,27 +226,20 @@ withBones <- function(ui, # nolint: object_name_linter.
     check_choice(type, skeleton_types(), "type")
   }
 
-  animation <- animation %||% getOption("bones.animation", "wave")
+  animation <- animation %||% bones_option("animation")
   check_choice(animation, animation_types(), "animation")
-  stale <- stale %||% getOption("bones.stale", TRUE)
+  stale <- stale %||% bones_option("stale")
   check_flag(stale, "stale")
-  delay <- delay %||% getOption("bones.delay", 300)
+  delay <- delay %||% bones_option("delay")
   check_ms(delay, "delay")
-  min_time <- min_time %||% getOption("bones.min_time", 500)
+  min_time <- min_time %||% bones_option("min_time")
   check_ms(min_time, "min_time")
-  remember <- remember %||% getOption("bones.remember", TRUE)
+  remember <- remember %||% bones_option("remember")
   check_flag(remember, "remember")
-  error <- error %||% getOption("bones.error", bones_error())
+  error <- error %||% bones_option("error")
   check_error(error)
-  is_ids <- function(x) {
-    is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(trimws(x)))
-  }
-  if (!is.null(retry) && !(is_ids(retry) && length(retry) == 1L)) {
-    stop("`retry` must be a single non-empty input id or NULL.", call. = FALSE)
-  }
-  if (!is.null(hold) && !is_ids(hold)) {
-    stop("`hold` must be a non-empty character vector of input ids or NULL.", call. = FALSE)
-  }
+  if (!is.null(retry)) check_ids(retry, "retry", single = TRUE)
+  if (!is.null(hold)) check_ids(hold, "hold")
   if (!is.null(retry) && identical(error, FALSE)) {
     stop("`retry` cannot be used with `error = FALSE`.", call. = FALSE)
   }
@@ -258,7 +251,7 @@ withBones <- function(ui, # nolint: object_name_linter.
       type = "button", class = "bones-retry", "Try again"
     ))
   }
-  learn <- learn %||% getOption("bones.learn", TRUE)
+  learn <- learn %||% bones_option("learn")
   check_flag(learn, "learn")
   if (custom_learn && !isTRUE(remember)) {
     warning("`learn = TRUE` with `skeleton` needs `remember = TRUE`. The skeleton does not learn.",
@@ -443,19 +436,9 @@ bones_defaults <- function(animation = NULL,
                            error = NULL,
                            learn = NULL) {
   if (nargs() == 0L) {
-    return(list(
-      animation = getOption("bones.animation", "wave"),
-      color = getOption("bones.color"),
-      highlight = getOption("bones.highlight"),
-      radius = getOption("bones.radius"),
-      speed = getOption("bones.speed", 1.4),
-      stale = getOption("bones.stale", TRUE),
-      delay = getOption("bones.delay", 300),
-      min_time = getOption("bones.min_time", 500),
-      remember = getOption("bones.remember", TRUE),
-      error = getOption("bones.error", bones_error()),
-      learn = getOption("bones.learn", TRUE)
-    ))
+    current <- lapply(names(builtin_defaults()), bones_option)
+    names(current) <- names(builtin_defaults())
+    return(current)
   }
 
   # --- Validate inputs ---
