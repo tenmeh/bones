@@ -208,11 +208,35 @@ each id through `ns()`. `bones_auto()` accepts both `retry` and `hold`.
 If this output does not start calculating, the hold releases when Shiny is
 idle. A delay that crosses an idle event therefore needs an explicit hold.
 
-App JavaScript can call `Bones.hold("result", true)` to start a hold and
-`Bones.hold("result", false)` to release it. The first argument can also be
-the output element or its wrapper element (or either element's id).
-An explicit hold survives idle events until released or the next load
-finishes. An unknown id does nothing.
+App JavaScript can call `Bones.hold("result")` to start a hold and
+`Bones.release("result")` to end it. The argument can also be the output
+element or its wrapper element. An explicit hold survives idle events until
+it is released or the next load finishes. An unknown id does nothing.
+
+Use this when the output changes after Shiny is idle, for example after
+`later::later()` or a poll. Shiny is idle in the gap, so `hold` would let
+the skeleton go. Start the hold in the browser when the button is clicked:
+
+```{r, eval=FALSE}
+ui <- fluidPage(
+  actionButton("refresh", "Refresh"),
+  withBones(textOutput("result")),
+  tags$script(HTML(
+    "$(document).on('click', '#refresh', function () { Bones.hold('result'); });"
+  ))
+)
+server <- function(input, output, session) {
+  value <- reactiveVal("Ready")
+  observeEvent(input$refresh, {
+    n <- input$refresh
+    # The server is idle while it waits. The hold keeps the skeleton.
+    later::later(function() value(paste("Refresh", n)), 2)
+  })
+  output$result <- renderText(value())
+}
+```
+
+The hold ends when `result` gets its new value.
 
 A hold hides the content but keeps its space. It shows the current skeleton,
 including a learned shape, at once. It overrides `stale` and `delay`.
@@ -241,6 +265,14 @@ the bslib theme, made faint. A skeleton thus takes the tint of a branded
 theme, and turns light in a dark theme, with no configuration. With no
 Bootstrap 5 theme, the colours are neutral greys. Users who ask their system
 to reduce motion get no animation.
+
+To change one output only, give `speed` or `color` to `withBones()`:
+
+```{r, eval=FALSE}
+withBones(plotOutput("chart"), animation = "pulse", speed = 0.8, color = "#dbeafe")
+```
+
+`bones_animations()` lists the animations, and `bones_shapes()` the shapes.
 
 ## A placeholder with no output
 

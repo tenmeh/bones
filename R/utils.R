@@ -139,6 +139,31 @@ check_flag <- function(x, name) {
   invisible(x)
 }
 
+#' Stop unless `x` is a positive number of seconds
+#' @keywords internal
+#' @noRd
+check_speed <- function(x, name = "speed") {
+  if (!is.numeric(x) || length(x) != 1L || is.na(x) || x <= 0) {
+    stop(sprintf("`%s` must be a single positive number of seconds.", name), call. = FALSE)
+  }
+  invisible(x)
+}
+
+#' Stop unless `x` is one CSS value that is safe in a declaration
+#'
+#' The value goes into a CSS declaration. A value with a ";" would end the
+#' declaration and start another one.
+#' @keywords internal
+#' @noRd
+check_css_value <- function(x, name) {
+  if (!is.character(x) || length(x) != 1L || is.na(x) ||
+        !nzchar(x) || grepl("[;{}]", x)) {
+    stop(sprintf("`%s` must be a single CSS value, with no \";\", \"{\" or \"}\".", name),
+         call. = FALSE)
+  }
+  invisible(x)
+}
+
 #' Stop unless `x` is a character vector of input ids
 #'
 #' @param x The value to check.

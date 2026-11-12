@@ -34,5 +34,27 @@ bones_shapes <- function(group = NULL) {
 # The shapes as Markdown code, for the help pages: `"text"`, `"table"`, ...
 # roxygen runs it inline, so the lists in the docs cannot drift from the code.
 shapes_md <- function(group = NULL) {
-  paste0("`\"", bones_shapes(group), "\"`", collapse = ", ")
+  md_choices(bones_shapes(group))
+}
+
+# Values as Markdown code, joined with commas.
+md_choices <- function(x) {
+  paste0("`\"", x, "\"`", collapse = ", ")
+}
+
+
+#' List the valid animations
+#'
+#' Returns the names that the `animation` argument of [withBones()],
+#' [bones_skeleton()] and [bones_defaults()] accepts:
+#' `r md_choices(bones_animations())`.
+#' See [bones_defaults()] for what each one does.
+#'
+#' @return A character vector.
+#' @seealso [bones_shapes()], [bones_defaults()]
+#' @examples
+#' bones_animations()
+#' @export
+bones_animations <- function() {
+  animation_types()
 }

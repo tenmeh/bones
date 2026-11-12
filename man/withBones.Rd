@@ -21,7 +21,9 @@ withBones(
   error = getOption("bones.error", bones_error()),
   learn = getOption("bones.learn", TRUE),
   retry = NULL,
-  hold = NULL
+  hold = NULL,
+  speed = getOption("bones.speed"),
+  color = getOption("bones.color")
 )
 }
 \arguments{
@@ -113,9 +115,15 @@ or \code{NULL}. Use \code{ns()} for ids inside modules, for both arguments.
 A hold hides content but keeps its space, overrides \code{stale} and \code{delay},
 and respects \code{min_time} when the load finishes. If this output does not
 start calculating, the hold releases when Shiny is idle.
-In JavaScript, \code{Bones.hold(el, true)} holds until the next finished load
-or \code{Bones.hold(el, false)}, even across idle events. \code{el} can be the
+In JavaScript, \code{Bones.hold(el)} holds until the next finished load or
+until \code{Bones.release(el)}, even across idle events. \code{el} can be the
 wrapper, the output element, or its id string.}
+
+\item{speed}{The time of one animation cycle for this output, in
+seconds. \code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or 1.4 seconds if unset.}
+
+\item{color}{The colour of this placeholder, as a CSS colour. \code{NULL}
+uses \code{\link[=bones_defaults]{bones_defaults()}}, or the theme of the page if unset.}
 }
 \value{
 \code{ui}, in a placeholder container.

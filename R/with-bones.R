@@ -142,9 +142,13 @@
 #'   A hold hides content but keeps its space, overrides `stale` and `delay`,
 #'   and respects `min_time` when the load finishes. If this output does not
 #'   start calculating, the hold releases when Shiny is idle.
-#'   In JavaScript, `Bones.hold(el, true)` holds until the next finished load
-#'   or `Bones.hold(el, false)`, even across idle events. `el` can be the
+#'   In JavaScript, `Bones.hold(el)` holds until the next finished load or
+#'   until `Bones.release(el)`, even across idle events. `el` can be the
 #'   wrapper, the output element, or its id string.
+#' @param speed The time of one animation cycle for this output, in
+#'   seconds. `NULL` uses [bones_defaults()], or 1.4 seconds if unset.
+#' @param color The colour of this placeholder, as a CSS colour. `NULL`
+#'   uses [bones_defaults()], or the theme of the page if unset.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -189,7 +193,9 @@ withBones <- function(ui, # nolint: object_name_linter.
                       error = getOption("bones.error", bones_error()),
                       learn = getOption("bones.learn", TRUE),
                       retry = NULL,
-                      hold = NULL) {
+                      hold = NULL,
+                      speed = getOption("bones.speed"),
+                      color = getOption("bones.color")) {
 
   # Which arguments set the shape. rows and cols have defaults, so missing()
   # is the only way to tell that the developer gave them. An output whose
@@ -238,6 +244,8 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_flag(remember, "remember")
   error <- error %||% bones_option("error")
   check_error(error)
+  if (!is.null(speed)) check_speed(speed)
+  if (!is.null(color)) check_css_value(color, "color")
   if (!is.null(retry)) check_ids(retry, "retry", single = TRUE)
   if (!is.null(hold)) check_ids(hold, "hold")
   if (!is.null(retry) && identical(error, FALSE)) {
@@ -350,7 +358,7 @@ withBones <- function(ui, # nolint: object_name_linter.
     `data-bones-style` = paste(c(
       sprintf("--bones-reserve: %s;", height),
       sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
-      css_vars()
+      css_vars(color = color, speed = speed)
     ), collapse = " "),
     skeleton,
     if (!is.na(detect)) kind_templates(),
@@ -445,10 +453,7 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(animation)) {
     check_choice(animation, animation_types(), "animation")
   }
-  if (!is.null(speed) &&
-        (!is.numeric(speed) || length(speed) != 1L || is.na(speed) || speed <= 0)) {
-    stop("`speed` must be a single positive number of seconds.", call. = FALSE)
-  }
+  if (!is.null(speed)) check_speed(speed)
   if (!is.null(stale)) check_flag(stale, "stale")
   if (!is.null(delay)) check_ms(delay, "delay")
   if (!is.null(min_time)) check_ms(min_time, "min_time")
@@ -456,18 +461,9 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(error)) check_error(error)
   if (!is.null(learn)) check_flag(learn, "learn")
 
-  # These values go into an inline style attribute. A value with a ";"
-  # would end the declaration and start another one.
-  css_values <- list(color = color, highlight = highlight, radius = radius)
-  for (name in names(css_values)) {
-    value <- css_values[[name]]
-    if (is.null(value)) next
-    if (!is.character(value) || length(value) != 1L || is.na(value) ||
-          !nzchar(value) || grepl("[;{}]", value)) {
-      stop(sprintf("`%s` must be a single CSS value, with no \";\", \"{\" or \"}\".", name),
-           call. = FALSE)
-    }
-  }
+  if (!is.null(color)) check_css_value(color, "color")
+  if (!is.null(highlight)) check_css_value(highlight, "highlight")
+  if (!is.null(radius)) check_css_value(radius, "radius")
 
   # --- Set only the options that were given ---
   new <- list(
@@ -492,15 +488,13 @@ bones_defaults <- function(animation = NULL,
 #' Make the colour and shape options into inline CSS custom properties
 #' @keywords internal
 #' @noRd
-css_vars <- function() {
+css_vars <- function(color = getOption("bones.color"),
+                     speed = getOption("bones.speed")) {
   pairs <- list(
-    `--bones-color`     = getOption("bones.color"),
+    `--bones-color`     = color,
     `--bones-highlight` = getOption("bones.highlight"),
     `--bones-radius`    = getOption("bones.radius"),
-    `--bones-speed`     = {
-      s <- getOption("bones.speed")
-      if (is.null(s)) NULL else sprintf("%ss", s)
-    }
+    `--bones-speed`     = if (!is.null(speed)) sprintf("%ss", format(speed, scientific = FALSE))
   )
   pairs <- pairs[!vapply(pairs, is.null, logical(1))]
   if (length(pairs) == 0L) return(character(0))

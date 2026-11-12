@@ -159,6 +159,7 @@ reference:
     contents:
       - bones_skeleton
       - bones_shapes
+      - bones_animations
 
   - title: Look and feel
     desc: Colours, corner radius, animation and speed, for the whole session.

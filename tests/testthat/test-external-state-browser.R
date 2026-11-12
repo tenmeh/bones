@@ -131,20 +131,20 @@ test_that("explicit holds accept ids and elements and survive idle", {
   install_hold_sampler(app)
   app$wait_for_js("stateFor('value').content === 'visible'")
   for (el in c("'value'", "document.getElementById('value')", "wrapFor('value')")) {
-    app$run_js(sprintf("Bones.hold(%s, true);", el))
+    app$run_js(sprintf("Bones.hold(%s);", el))
     expect_equal(app$get_js("stateFor('value').skeleton"), TRUE)
     app$run_js("document.getElementById('unused').click();")
     app$wait_for_idle()
     expect_equal(app$get_js("stateFor('value').held"), TRUE)
-    app$run_js(sprintf("Bones.hold(%s, false);", el))
+    app$run_js(sprintf("Bones.release(%s);", el))
     expect_equal(app$get_js("stateFor('value').content"), "visible")
     expect_equal(app$get_js("stateFor('value').held"), FALSE)
   }
-  app$run_js("Bones.hold('value', true); document.getElementById('refresh').click();")
+  app$run_js("Bones.hold('value'); document.getElementById('refresh').click();")
   app$wait_for_idle()
   app$wait_for_js("!stateFor('value').held")
   expect_equal(app$get_value(output = "value"), "Value 1")
-  app$run_js("Bones.hold('value', true); document.getElementById('fail').click();")
+  app$run_js("Bones.hold('value'); document.getElementById('fail').click();")
   app$wait_for_idle()
   app$wait_for_js("stateFor('value').errored && !stateFor('value').held")
   expect_equal(app$get_js("stateFor('value').skeleton"), FALSE)
@@ -166,14 +166,14 @@ test_that("holds keep learned records and count min_time from the hold", {
       b: [[0, 0, 30, 10, 0]]});
     localStorage.setItem(layoutKey, savedLayout);
     jQuery(document.getElementById('value')).trigger({type: 'shiny:value', value: 'Value 0'});
-    Bones.hold('value', true);
+    Bones.hold('value');
     window.layoutSaveDone = false;
     setTimeout(function () { window.layoutSaveDone = true; }, 350);
   ")
   app$wait_for_js("window.layoutSaveDone")
   expect_equal(app$get_js("localStorage.getItem(layoutKey)"), app$get_js("savedLayout"))
   app$run_js("
-    Bones.hold('value', false);
+    Bones.release('value');
     var w = wrapFor('value');
     w.setAttribute('data-bones-min-time', '400');
     window.holdElapsed = null;
@@ -185,7 +185,7 @@ test_that("holds keep learned records and count min_time from the hold", {
       }
     });
     observer.observe(w, {attributes: true, attributeFilter: ['class']});
-    Bones.hold('value', true);
+    Bones.hold('value');
     jQuery(document.getElementById('value')).trigger({type: 'shiny:value', value: 'Value 0'});
     window.heldAfterValue = stateFor('value').held;
   ")

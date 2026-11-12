@@ -141,12 +141,22 @@
   }
 
   window.Bones = window.Bones || {};
-  window.Bones.hold = function (el, active) {
+  // The wrapper for an id, an output element or a wrapper element.
+  function wrapFor(el) {
     if (typeof el === "string") el = document.getElementById(el);
-    var wrap = el && (el.classList.contains("bones-wrap") ? el : wrapOf(el));
-    if (!wrap) return;
-    if (active) holdWrap(wrap, false, false);
-    else releaseHold(wrap);
+    return el && (el.classList.contains("bones-wrap") ? el : wrapOf(el));
+  }
+
+  // Show the skeleton now, until the next finished load or a release.
+  window.Bones.hold = function (el) {
+    var wrap = wrapFor(el);
+    if (wrap) holdWrap(wrap, false, false);
+  };
+
+  // Give the wrapper back to bones.
+  window.Bones.release = function (el) {
+    var wrap = wrapFor(el);
+    if (wrap) releaseHold(wrap);
   };
 
   $(document).on("click", ".bones-retry", function () {

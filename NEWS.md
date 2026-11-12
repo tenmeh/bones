@@ -1,9 +1,11 @@
 # bones (development version)
 
+* `withBones()` gains `speed` and `color`, for one output. `bones_defaults()`
+  still sets them for the whole session.
+* `bones_animations()` lists the valid animations.
 * `withBones(retry = "id")` adds a Try again button to the error panel (#20).
 * `withBones(hold = "refresh")` shows the skeleton when an input changes.
-  JavaScript can also use `Bones.hold(el, true)` and `Bones.hold(el, false)`
-  (#44).
+  JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
 
 * `withBones()` reserves the natural height of a custom skeleton when no
   `height` is given. An explicit `learn = TRUE` replaces it with the learned
