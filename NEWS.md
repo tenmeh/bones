@@ -1,5 +1,8 @@
 # bones (development version)
 
+* With `stale = FALSE`, old content stays visible until the skeleton appears.
+  Fast recalculations no longer flash a blank box (#42).
+
 * bones works under a strict Content-Security-Policy, such as
   `style-src 'self'` with no `'unsafe-inline'`. It writes no `style`
   attribute any more, which such a policy blocks. The sizes, positions and

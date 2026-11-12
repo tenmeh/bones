@@ -166,6 +166,14 @@
   visibility: visible;
 }
 
+/* Keep the old content until the skeleton appears. A fast recalculation
+   cancels this animation before it can hide the content. Errors retain
+   their own banner and dimmed content, without a delay. */
+.bones-wrap.bones-has-loaded:not(.bones-loaded):not(.bones-errored) > .bones-content {
+  visibility: visible;
+  animation: bones-disappear 1ms step-start var(--bones-delay) forwards;
+}
+
 /* The output calculates again, and the old content stays on the screen. */
 .bones-wrap.bones-stale > .bones-content {
   opacity: 0.45;
@@ -200,6 +208,11 @@
 @keyframes bones-appear {
   from { visibility: hidden; }
   to   { visibility: visible; }
+}
+
+@keyframes bones-disappear {
+  from { visibility: visible; }
+  to   { visibility: hidden; }
 }
 
 /* Shiny also dims an output while it calculates. Inside a stale wrapper,
@@ -856,6 +869,12 @@
      the content for a moment. */
   .bones-wrap.bones-stale > .bones-content {
     transition: opacity 0s linear var(--bones-delay);
+  }
+
+  /* The content still waits for the skeleton. This changes visibility
+     only, so it also applies when motion is reduced. */
+  .bones-wrap.bones-has-loaded:not(.bones-loaded):not(.bones-errored) > .bones-content {
+    animation: bones-disappear 1ms step-start var(--bones-delay) forwards;
   }
 
   /* The skeleton still waits for the delay, but does not pulse. */
