@@ -163,6 +163,63 @@ To show the skeleton again on each load, set `stale = FALSE`:
 withBones(plotOutput("chart"), stale = FALSE)
 ```
 
+## Retry a failed output
+
+Give `retry` an input id. The error panel adds a "Try again" button after
+its content, including with a custom `bones_error()` panel. The output must
+read that input so a click runs it again:
+
+```{r, eval=FALSE}
+withBones(plotOutput("chart"), retry = "chart_retry")
+output$chart <- renderPlot({
+  input$chart_retry
+  make_chart(data())
+})
+```
+
+Use `ns("chart")` and `ns("chart_retry")` in a module UI. Read
+`input$chart_retry` in its server. Several outputs can share one retry id.
+`retry = NULL` adds no button. `retry` with `error = FALSE` gives an error.
+If the output does not start calculating, the next Shiny idle event restores
+the error panel.
+
+## Show a skeleton before an output starts
+
+Give `hold` one or more input ids. The skeleton appears as soon as an input
+changes, even if the app waits before it updates the output:
+
+```{r, eval=FALSE}
+ui <- fluidPage(
+  actionButton("refresh", "Refresh"),
+  withBones(textOutput("result"), hold = "refresh")
+)
+server <- function(input, output, session) {
+  value <- reactiveVal("Ready")
+  observeEvent(input$refresh, {
+    Sys.sleep(1) # Stand-in for work before the output is invalidated.
+    value(paste("Refresh", input$refresh))
+  })
+  output$result <- renderText(value())
+}
+```
+
+Use `hold = c("refresh", "filter")` for several inputs. In modules, pass
+each id through `ns()`. `bones_auto()` accepts both `retry` and `hold`.
+If this output does not start calculating, the hold releases when Shiny is
+idle. A delay that crosses an idle event therefore needs an explicit hold.
+
+App JavaScript can call `Bones.hold("result", true)` to start a hold and
+`Bones.hold("result", false)` to release it. The first argument can also be
+the output element or its wrapper element (or either element's id).
+An explicit hold survives idle events until released or the next load
+finishes. An unknown id does nothing.
+
+A hold hides the content but keeps its space. It shows the current skeleton,
+including a learned shape, at once. It overrides `stale` and `delay`.
+After a value, `min_time` is measured from the start of the hold. An error
+clears the hold and shows the error panel at once. An explicit release or
+idle recovery does not wait for `min_time`.
+
 ## Set the look for the whole app
 
 `bones_defaults()` sets the animation, the colours and the speed for the

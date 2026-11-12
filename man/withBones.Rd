@@ -19,7 +19,9 @@ withBones(
   remember = getOption("bones.remember", TRUE),
   skeleton = NULL,
   error = getOption("bones.error", bones_error()),
-  learn = getOption("bones.learn", TRUE)
+  learn = getOption("bones.learn", TRUE),
+  retry = NULL,
+  hold = NULL
 )
 }
 \arguments{
@@ -101,6 +103,19 @@ It needs \code{remember = TRUE}. A custom skeleton gives a warning if
 learning is requested with \code{remember = FALSE} or for a chart.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
+
+\item{retry}{A single non-empty input id, or \code{NULL} for no retry button.
+Adds "Try again" after the error panel content. The output must read
+this input to run again. Cannot be used with \code{error = FALSE}.}
+
+\item{hold}{Input ids that show the skeleton at once when they change,
+or \code{NULL}. Use \code{ns()} for ids inside modules, for both arguments.
+A hold hides content but keeps its space, overrides \code{stale} and \code{delay},
+and respects \code{min_time} when the load finishes. If this output does not
+start calculating, the hold releases when Shiny is idle.
+In JavaScript, \code{Bones.hold(el, true)} holds until the next finished load
+or \code{Bones.hold(el, false)}, even across idle events. \code{el} can be the
+wrapper, the output element, or its id string.}
 }
 \value{
 \code{ui}, in a placeholder container.

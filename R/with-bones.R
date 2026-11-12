@@ -134,6 +134,17 @@
 #'   learning is requested with `remember = FALSE` or for a chart.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
+#' @param retry A single non-empty input id, or `NULL` for no retry button.
+#'   Adds "Try again" after the error panel content. The output must read
+#'   this input to run again. Cannot be used with `error = FALSE`.
+#' @param hold Input ids that show the skeleton at once when they change,
+#'   or `NULL`. Use `ns()` for ids inside modules, for both arguments.
+#'   A hold hides content but keeps its space, overrides `stale` and `delay`,
+#'   and respects `min_time` when the load finishes. If this output does not
+#'   start calculating, the hold releases when Shiny is idle.
+#'   In JavaScript, `Bones.hold(el, true)` holds until the next finished load
+#'   or `Bones.hold(el, false)`, even across idle events. `el` can be the
+#'   wrapper, the output element, or its id string.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -176,7 +187,9 @@ withBones <- function(ui, # nolint: object_name_linter.
                       remember = getOption("bones.remember", TRUE),
                       skeleton = NULL,
                       error = getOption("bones.error", bones_error()),
-                      learn = getOption("bones.learn", TRUE)) {
+                      learn = getOption("bones.learn", TRUE),
+                      retry = NULL,
+                      hold = NULL) {
 
   # Which arguments set the shape. rows and cols have defaults, so missing()
   # is the only way to tell that the developer gave them. An output whose
@@ -225,8 +238,25 @@ withBones <- function(ui, # nolint: object_name_linter.
   check_flag(remember, "remember")
   error <- error %||% getOption("bones.error", bones_error())
   check_error(error)
+  is_ids <- function(x) {
+    is.character(x) && length(x) > 0L && !anyNA(x) && all(nzchar(trimws(x)))
+  }
+  if (!is.null(retry) && !(is_ids(retry) && length(retry) == 1L)) {
+    stop("`retry` must be a single non-empty input id or NULL.", call. = FALSE)
+  }
+  if (!is.null(hold) && !is_ids(hold)) {
+    stop("`hold` must be a non-empty character vector of input ids or NULL.", call. = FALSE)
+  }
+  if (!is.null(retry) && identical(error, FALSE)) {
+    stop("`retry` cannot be used with `error = FALSE`.", call. = FALSE)
+  }
   if (!identical(error, FALSE) && !is_error_panel(error)) {
     error <- htmltools::tags$div(class = "bones-error", role = "alert", error)
+  }
+  if (!is.null(retry)) {
+    error <- htmltools::tagAppendChild(error, htmltools::tags$button(
+      type = "button", class = "bones-retry", "Try again"
+    ))
   }
   learn <- learn %||% getOption("bones.learn", TRUE)
   check_flag(learn, "learn")
@@ -300,6 +330,13 @@ withBones <- function(ui, # nolint: object_name_linter.
     `data-bones-type` = if (custom) "custom" else type,
     `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
     `data-bones-error` = if (!identical(error, FALSE)) "true",
+    `data-bones-retry` = retry,
+    # Encode each id separately so spaces and punctuation survive unchanged.
+    `data-bones-hold` = if (!is.null(hold)) paste(
+      vapply(enc2utf8(hold), utils::URLencode, character(1),
+             reserved = TRUE, repeated = TRUE),
+      collapse = " "
+    ),
     `data-bones-min-time` = format(min_time, scientific = FALSE),
     # Read by bones.js: store the real height, and use it next time.
     `data-bones-remember` = if (estimated && isTRUE(remember)) "true",

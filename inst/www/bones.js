@@ -1,6 +1,6 @@
 /* bones - content-shaped loading placeholders for Shiny outputs
  *
- * This script sets one of five states on each wrapper element, with classes:
+ * This script sets load states and a hold overlay on each wrapper, with classes:
  *
  *   (no class)     First load. The skeleton shows. The content is hidden,
  *                  but it has its box.
@@ -10,6 +10,9 @@
  *   bones-loading  The output calculates again and the stale option is off.
  *                  The skeleton shows again.
  *   bones-errored  A failure. A panel shows, or a banner over old content.
+ *   bones-held     An immediate skeleton over any state. Content keeps its
+ *                  box. A finished load clears the hold. Input-driven holds
+ *                  also release at idle if this output did not recalculate.
  *
  * One more class records the history, not the state:
  *
@@ -90,7 +93,77 @@
     return wrap.getAttribute("data-bones-stale") === "true";
   }
 
+  function clearHold(wrap) {
+    wrap.classList.remove("bones-held");
+    wrap._bonesHold = null;
+  }
+
+  function releaseHold(wrap) {
+    var hold = wrap._bonesHold;
+    if (!hold) return;
+    clearHold(wrap);
+    if (hold.finished && !wrap._bonesErrorPending) {
+      markLoaded(wrap);
+      return;
+    }
+    if (!hold.started && !hold.finished) {
+      wrap._bonesShownAt = undefined;
+      ["bones-loaded", "bones-loading", "bones-stale", "bones-errored"].forEach(function (name) {
+        wrap.classList.toggle(name, hold.classes.indexOf(name) >= 0);
+      });
+    }
+  }
+
+  function holdWrap(wrap, automatic, retry) {
+    // Repeated triggers do not restart min_time or lose a pending retry.
+    if (!wrap._bonesHold) {
+      wrap._bonesHold = {
+        automatic: automatic, started: false,
+        classes: Array.from(wrap.classList)
+      };
+      wrap._bonesShownAt = now();
+    } else if (!automatic) {
+      wrap._bonesHold.automatic = false;
+    }
+    wrap._bonesHold.finished = false;
+    if (wrap._bonesTimer) {
+      window.clearTimeout(wrap._bonesTimer);
+      wrap._bonesTimer = null;
+    }
+    wrap.classList.add("bones-held");
+    if (retry) {
+      wrap.classList.remove("bones-errored");
+      wrap.classList.add("bones-loading");
+    }
+  }
+
+  window.Bones = window.Bones || {};
+  window.Bones.hold = function (el, active) {
+    if (typeof el === "string") el = document.getElementById(el);
+    var wrap = el && (el.classList.contains("bones-wrap") ? el : wrapOf(el));
+    if (!wrap) return;
+    if (active) holdWrap(wrap, false, false);
+    else releaseHold(wrap);
+  };
+
+  $(document).on("click", ".bones-retry", function () {
+    var wrap = this.closest(".bones-wrap");
+    var id = wrap && wrap.getAttribute("data-bones-retry");
+    if (!id || !window.Shiny || !window.Shiny.setInputValue) return;
+    holdWrap(wrap, true, true);
+    window.Shiny.setInputValue(id, Date.now(), {priority: "event"});
+  });
+
+  $(document).on("shiny:inputchanged", function (e) {
+    var wraps = document.querySelectorAll(".bones-wrap[data-bones-hold]");
+    for (var i = 0; i < wraps.length; i++) {
+      var ids = wraps[i].getAttribute("data-bones-hold").split(" ").map(decodeURIComponent);
+      if (ids.indexOf(e.name) >= 0) holdWrap(wraps[i], true, false);
+    }
+  });
+
   function markLoaded(wrap) {
+    clearHold(wrap);
     if (wrap._bonesTimer) {
       window.clearTimeout(wrap._bonesTimer);
       wrap._bonesTimer = null;
@@ -124,6 +197,7 @@
   }
 
   function markErrored(wrap, error) {
+    clearHold(wrap);
     if (wrap._bonesTimer) {
       window.clearTimeout(wrap._bonesTimer);
       wrap._bonesTimer = null;
@@ -451,7 +525,9 @@
   }
 
   function saveLayout(wrap) {
-    if (!learns(wrap) || !wrap.classList.contains("bones-loaded")) return;
+    // A save from the previous value can run after an external hold starts.
+    // Hidden content is not an empty layout: keep the learned record.
+    if (!learns(wrap) || !wrap.classList.contains("bones-loaded") || wrap._bonesHold) return;
     var key = layoutKey(wrap);
     if (!key) return;
     var record = recordLayout(wrap);
@@ -898,13 +974,13 @@
   document.addEventListener("animationstart", function (e) {
     if (e.animationName !== "bones-appear") return;
     var wrap = e.target.parentElement;
-    if (wrap && wrap.classList.contains("bones-wrap")) wrap._bonesShownAt = now();
+    if (wrap && wrap.classList.contains("bones-wrap") && !wrap._bonesHold) wrap._bonesShownAt = now();
   }, true);
 
   document.addEventListener("transitionstart", function (e) {
     if (e.propertyName !== "opacity" || !e.target.classList.contains("bones-content")) return;
     var wrap = e.target.parentElement;
-    if (wrap && wrap.classList.contains("bones-stale")) wrap._bonesShownAt = now();
+    if (wrap && wrap.classList.contains("bones-stale") && !wrap._bonesHold) wrap._bonesShownAt = now();
   }, true);
 
   function onInvalidated(e) {
@@ -912,6 +988,7 @@
     if (!wrap) return;
     wrap.classList.remove("bones-errored");
     wrap._bonesErrorPending = null;
+    if (wrap._bonesHold) wrap._bonesHold.finished = false;
 
     // A new load starts. An end that waited for min_time is not the end of
     // this load. The skeleton or the dimming stays on, so the time that it
@@ -939,6 +1016,7 @@
   function onSettled(e) {
     var wrap = wrapOf(e.target);
     if (!wrap) return;
+    if (wrap._bonesHold) wrap._bonesHold.finished = true;
     if (e.type === "shiny:error" && wrap.getAttribute("data-bones-error") === "true") {
       // Both req() and validate() send "validation" in the payload.
       // Their output classes arrive later, and req() adds none.
@@ -1001,6 +1079,10 @@
    * comes before the value, and would show the old content for a moment when
    * the stale option is off. */
   $(document).on("shiny:outputinvalidated", onInvalidated);
+  $(document).on("shiny:recalculating", function (e) {
+    var wrap = wrapOf(e.target);
+    if (wrap && wrap._bonesHold) wrap._bonesHold.started = true;
+  });
   $(document).on("shiny:value shiny:error", onSettled);
 
   /* A safety net for two cases. The events above do not cover them.
@@ -1020,6 +1102,12 @@
     for (var i = 0; i < wraps.length; i++) {
       var wrap = wraps[i];
       var output = outputOf(wrap);
+      if (wrap._bonesHold) {
+        var hold = wrap._bonesHold;
+        if (hold.automatic && !hold.started && !hold.finished) releaseHold(wrap);
+        // Explicit holds survive idle. A value/error owns their completion.
+        else if (!hold.automatic || hold.finished) continue;
+      }
       if (!output || output.classList.contains("recalculating") ||
           wrap.classList.contains("bones-errored") || wrap._bonesErrorPending) continue;
 
