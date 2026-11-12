@@ -149,6 +149,11 @@
 
   // Show the skeleton now, until the next finished load or a release.
   window.Bones.hold = function (el) {
+    // An early design took a true/false flag. Say so, so that
+    // Bones.hold(el, false) does not hold in silence.
+    if (arguments.length > 1 && window.console) {
+      console.warn("Bones.hold() takes one argument. Use Bones.release(el) to end a hold.");
+    }
     var wrap = wrapFor(el);
     if (wrap) holdWrap(wrap, false, false);
   };

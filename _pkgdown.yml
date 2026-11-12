@@ -162,7 +162,7 @@ reference:
       - bones_animations
 
   - title: Look and feel
-    desc: Colours, corner radius, animation and speed, for the whole session.
+    desc: Colours, corner radius, animation and speed. withBones() sets speed and colour for one output.
     contents:
       - bones_defaults
 
