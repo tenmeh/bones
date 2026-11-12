@@ -66,12 +66,10 @@
 #' the content arrives, the content sets the height.
 #'
 #' @param ui A Shiny output, such as `plotOutput("chart")`.
-#' @param type The shape of the skeleton: `"text"`, `"table"`, `"plot"`,
-#'   `"cards"`, `"value"`, a chart shape (`"bar"`, `"line"`, `"scatter"`,
-#'   `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`, `"network"`,
-#'   `"timeline"`, `"wordcloud"`), or a table package shape (`"dt"`,
-#'   `"reactable"`, `"gt"`, `"rhandsontable"`). `NULL` (the default) gets the
-#'   shape from `ui`.
+#' @param type The shape of the skeleton:
+#'   `r shapes_md()`.
+#'   `NULL` (the default) gets the shape from `ui`.
+#'   Use [bones_shapes()] to list shapes by group.
 #' @param rows,cols The number of body rows and columns, when `type` is
 #'   `"table"` or a table package shape.
 #' @param lines The number of lines, when `type` is `"text"`.

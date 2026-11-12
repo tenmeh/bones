@@ -1,5 +1,10 @@
 # bones (development version)
 
+* `bones_auto()` gives a short error and a hint for a misspelt argument
+  name (#29).
+* `bones_shapes()` lists all valid shapes, or the shapes in the basic,
+  chart or table group (#26).
+
 * With `stale = FALSE`, old content stays visible until the skeleton appears.
   Fast recalculations no longer flash a blank box (#42).
 

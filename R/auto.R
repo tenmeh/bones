@@ -73,6 +73,18 @@ bones_auto <- function(ui, ..., exclude = NULL) {
 
   # Check the arguments for withBones() once, here, so a bad one gives one
   # message and not one message for each output.
+  valid_names <- union(names(formals(withBones)), names(formals(bones_auto)))
+  valid_names <- setdiff(valid_names, "...")
+  unknown <- setdiff(names(args), valid_names)
+  if (length(unknown) > 0L) {
+    name <- unknown[[1L]]
+    msg <- sprintf("`%s` is not an argument of bones_auto() or withBones().", name)
+    hint <- choice_hint(name, valid_names)
+    if (!is.null(hint)) {
+      msg <- paste(msg, sprintf("Did you mean `%s`?", hint))
+    }
+    stop(msg, call. = FALSE)
+  }
   do.call(withBones, c(list(htmltools::tags$div()), args))
 
   wrap_outputs(ui, args, exclude)

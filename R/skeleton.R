@@ -10,9 +10,9 @@
 #'
 #' # Chart shapes
 #'
-#' A chart has a shape for each common kind: `"bar"`, `"line"`,
-#' `"scatter"`, `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`,
-#' `"network"`, `"timeline"` and `"wordcloud"`. `"plot"` is the same as
+#' The chart shapes are
+#' `r shapes_md("chart")`.
+#' `"plot"` is the same as
 #' `"bar"`. [withBones()] finds the shape of a map, network, timeline or
 #' word cloud widget from its output. `plotOutput()` cannot say which kind it will
 #' hold, because `renderPlot()` decides that later, on the server. So you
@@ -20,12 +20,14 @@
 #'
 #' # Table shapes
 #'
-#' A table from a table package has a shape that copies that package:
-#' `"dt"`, `"reactable"`, `"gt"` and `"rhandsontable"`. [withBones()] finds
-#' it from the output by itself.
+#' The table shapes are
+#' `r shapes_md("table")`.
+#' A table from a table package has a shape that copies that package.
+#' [withBones()] finds it from the output by itself.
 #'
-#' @param type The shape: `"text"`, `"table"`, `"plot"`, `"cards"`,
-#'   `"value"`, or one of the chart or table shapes above.
+#' @param type The shape:
+#'   `r shapes_md()`.
+#'   Use [bones_shapes()] to list shapes by group.
 #' @param rows The number of body rows, for `type = "table"` and the table
 #'   package shapes.
 #' @param cols The number of columns, for `type = "table"` and the table

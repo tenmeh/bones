@@ -25,12 +25,10 @@ withBones(
 \arguments{
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
-\item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
-\code{"cards"}, \code{"value"}, a chart shape (\code{"bar"}, \code{"line"}, \code{"scatter"},
-\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"},
-\code{"timeline"}, \code{"wordcloud"}), or a table package shape (\code{"dt"},
-\code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the default) gets the
-shape from \code{ui}.}
+\item{type}{The shape of the skeleton:
+\code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"}, \code{"value"}, \code{"bar"}, \code{"line"}, \code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"}, \code{"timeline"}, \code{"wordcloud"}, \code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}.
+\code{NULL} (the default) gets the shape from \code{ui}.
+Use \code{\link[=bones_shapes]{bones_shapes()}} to list shapes by group.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
 \code{"table"} or a table package shape.}

@@ -68,23 +68,26 @@ check_choice <- function(x, choices, name) {
   # Exact matching means a new shape cannot change what an old short name means.
   if (!x %in% choices) {
     msg <- sprintf('`%s` must be one of %s. You gave "%s".', name, valid, x)
-    prefixes <- choices[startsWith(choices, x)]
-    hint <- NULL
-    if (length(prefixes) == 1L) {
-      hint <- prefixes
-    } else {
-      distances <- utils::adist(x, choices, ignore.case = TRUE)
-      nearest <- which.min(distances)
-      if (length(nearest) == 1L && distances[nearest] <= 2L) {
-        hint <- choices[nearest]
-      }
-    }
+    hint <- choice_hint(x, choices)
     if (!is.null(hint)) {
       msg <- paste(msg, sprintf('Did you mean "%s"?', hint))
     }
     stop(msg, call. = FALSE)
   }
   invisible(x)
+}
+
+# Share the same near-match rule for values and argument names.
+choice_hint <- function(x, choices) {
+  prefixes <- choices[startsWith(choices, x)]
+  if (length(prefixes) == 1L) return(prefixes)
+
+  distances <- utils::adist(x, choices, ignore.case = TRUE)
+  nearest <- which.min(distances)
+  if (length(nearest) == 1L && distances[nearest] <= 2L) {
+    return(choices[nearest])
+  }
+  NULL
 }
 
 #' Make `x` a CSS length, or stop

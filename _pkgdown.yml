@@ -158,6 +158,7 @@ reference:
       renderUI() while data loads.
     contents:
       - bones_skeleton
+      - bones_shapes
 
   - title: Look and feel
     desc: Colours, corner radius, animation and speed, for the whole session.
