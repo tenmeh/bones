@@ -166,7 +166,9 @@ withBones(plotOutput("chart"), stale = FALSE)
 ## Set the look for the whole app
 
 `bones_defaults()` sets the animation, the colours and the speed for the
-session. An argument to `withBones()` is stronger than a default:
+session. Call it before you build the UI, for example in `global.R`.
+The options are read when the UI is built.
+An argument to `withBones()` is stronger than a default:
 
 ```{r}
 bones_defaults(

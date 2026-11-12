@@ -13,6 +13,10 @@
 #' `textOutput()` gets lines of text. Use `type` to set a different shape.
 #' You must do this for `uiOutput()`, because its content is not known
 #' before it arrives.
+#' If you give `rows`, `cols`, `lines` or `n` to a shape that does not use
+#' it, a warning names the unused argument. The shape known in R decides
+#' this, before any chart kind is found in the browser. None of these
+#' arguments apply to a custom `skeleton`.
 #'
 #' A `plotOutput()` gets the shape of a bar chart. If the chart is of
 #' another kind, give that kind: `"line"`, `"scatter"`, `"area"`,
@@ -156,14 +160,14 @@ withBones <- function(ui, # nolint: object_name_linter.
                       lines = 3L,
                       n = 3L,
                       height = NULL,
-                      animation = NULL,
-                      stale = NULL,
-                      delay = NULL,
-                      min_time = NULL,
-                      remember = NULL,
+                      animation = getOption("bones.animation", "wave"),
+                      stale = getOption("bones.stale", TRUE),
+                      delay = getOption("bones.delay", 300),
+                      min_time = getOption("bones.min_time", 500),
+                      remember = getOption("bones.remember", TRUE),
                       skeleton = NULL,
-                      error = NULL,
-                      learn = NULL) {
+                      error = getOption("bones.error", bones_error()),
+                      learn = getOption("bones.learn", TRUE)) {
 
   # Which arguments set the shape. rows and cols have defaults, so missing()
   # is the only way to tell that the developer gave them. An output whose
@@ -219,6 +223,13 @@ withBones <- function(ui, # nolint: object_name_linter.
   learnable <- isTRUE(remember) && isTRUE(learn) && !shaped &&
     type %in% learnable_types()
 
+  if (!isTRUE(getOption("bones.quiet_shape_args"))) {
+    warn_unused_shape_args(type, c(
+      rows = !missing(rows), cols = !missing(cols),
+      lines = !missing(lines), n = !missing(n)
+    ), custom = !is.null(skeleton))
+  }
+
   # --- Height to keep until the content arrives ---
   # Only an estimated height can be improved by the real one, so only an
   # estimate is marked for bones.js to remember.
@@ -226,7 +237,11 @@ withBones <- function(ui, # nolint: object_name_linter.
   if (is.null(height)) {
     height <- find_inline_height(ui)
     if (is.na(height)) {
-      height <- default_height(type, rows = rows, lines = lines, n = n)
+      height <- if (!is.null(skeleton)) {
+        default_height(type)
+      } else {
+        default_height(type, rows = rows, lines = lines, n = n)
+      }
       estimated <- TRUE
     }
   }
@@ -310,6 +325,8 @@ is_fill_item <- function(ui) {
 #' Sets the defaults that [withBones()] uses for the rest of the session.
 #' An argument that is `NULL` does not change its default. An argument that
 #' you give to [withBones()] is stronger than a default from here.
+#' Call it before you build the UI, for example in `global.R`.
+#' The options are read when the UI is built.
 #'
 #' @param animation How the placeholder moves:
 #'   * `"wave"`: a band of light moves along each bar.
@@ -339,7 +356,10 @@ is_fill_item <- function(ui) {
 #'   `NULL` leaves the option unchanged. Use `FALSE` for the error text of Shiny.
 #' @param learn The default for the `learn` argument of [withBones()].
 #'
-#' @return The old values, invisibly, in the form that [options()] uses.
+#' @return With no arguments, a named list of current values. Unset options
+#'   use the built-in defaults. `NULL` for `color`, `highlight` and `radius`
+#'   means that the stylesheet uses the page theme.
+#'   With arguments, the old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
 #'   `bones_defaults()`: `NULL` there means "do not change", so an option
 #'   that had no value before would keep the new value.
@@ -361,6 +381,21 @@ bones_defaults <- function(animation = NULL,
                            remember = NULL,
                            error = NULL,
                            learn = NULL) {
+  if (nargs() == 0L) {
+    return(list(
+      animation = getOption("bones.animation", "wave"),
+      color = getOption("bones.color"),
+      highlight = getOption("bones.highlight"),
+      radius = getOption("bones.radius"),
+      speed = getOption("bones.speed", 1.4),
+      stale = getOption("bones.stale", TRUE),
+      delay = getOption("bones.delay", 300),
+      min_time = getOption("bones.min_time", 500),
+      remember = getOption("bones.remember", TRUE),
+      error = getOption("bones.error", bones_error()),
+      learn = getOption("bones.learn", TRUE)
+    ))
+  }
 
   # --- Validate inputs ---
   if (!is.null(animation)) {

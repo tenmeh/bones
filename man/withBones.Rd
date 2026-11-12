@@ -12,14 +12,14 @@ withBones(
   lines = 3L,
   n = 3L,
   height = NULL,
-  animation = NULL,
-  stale = NULL,
-  delay = NULL,
-  min_time = NULL,
-  remember = NULL,
+  animation = getOption("bones.animation", "wave"),
+  stale = getOption("bones.stale", TRUE),
+  delay = getOption("bones.delay", 300),
+  min_time = getOption("bones.min_time", 500),
+  remember = getOption("bones.remember", TRUE),
   skeleton = NULL,
-  error = NULL,
-  learn = NULL
+  error = getOption("bones.error", bones_error()),
+  learn = getOption("bones.learn", TRUE)
 )
 }
 \arguments{
@@ -109,6 +109,10 @@ shape of a chart, \code{tableOutput()} gets rows and columns, and
 \code{textOutput()} gets lines of text. Use \code{type} to set a different shape.
 You must do this for \code{uiOutput()}, because its content is not known
 before it arrives.
+If you give \code{rows}, \code{cols}, \code{lines} or \code{n} to a shape that does not use
+it, a warning names the unused argument. The shape known in R decides
+this, before any chart kind is found in the browser. None of these
+arguments apply to a custom \code{skeleton}.
 
 A \code{plotOutput()} gets the shape of a bar chart. If the chart is of
 another kind, give that kind: \code{"line"}, \code{"scatter"}, \code{"area"},

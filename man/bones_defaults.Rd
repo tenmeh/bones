@@ -59,7 +59,10 @@ arguments of \code{\link[=withBones]{withBones()}}, in milliseconds.}
 \item{learn}{The default for the \code{learn} argument of \code{\link[=withBones]{withBones()}}.}
 }
 \value{
-The old values, invisibly, in the form that \code{\link[=options]{options()}} uses.
+With no arguments, a named list of current values. Unset options
+use the built-in defaults. \code{NULL} for \code{color}, \code{highlight} and \code{radius}
+means that the stylesheet uses the page theme.
+With arguments, the old values, invisibly, in the form that \code{\link[=options]{options()}} uses.
 Give them to \code{options()} to restore them. Do not give them to
 \code{bones_defaults()}: \code{NULL} there means "do not change", so an option
 that had no value before would keep the new value.
@@ -68,6 +71,8 @@ that had no value before would keep the new value.
 Sets the defaults that \code{\link[=withBones]{withBones()}} uses for the rest of the session.
 An argument that is \code{NULL} does not change its default. An argument that
 you give to \code{\link[=withBones]{withBones()}} is stronger than a default from here.
+Call it before you build the UI, for example in \code{global.R}.
+The options are read when the UI is built.
 }
 \examples{
 old <- bones_defaults(animation = "pulse", radius = "0.5rem")

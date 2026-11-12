@@ -1,5 +1,12 @@
 # bones (development version)
 
+* `withBones()` and `bones_skeleton()` warn about unused shape arguments.
+  A new warning may appear in code that passed an unused argument.
+  `bones_auto()` does not give these warnings (#25).
+* `withBones()` shows session options in its defaults. `bones_defaults()`
+  with no arguments returns current values. Call it before you build the
+  UI, when the options are read (#28).
+
 * `bones_auto()` gives a short error and a hint for a misspelt argument
   name (#29).
 * `bones_shapes()` lists all valid shapes, or the shapes in the basic,

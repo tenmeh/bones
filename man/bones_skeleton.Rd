@@ -45,6 +45,8 @@ shape while you design a page.
 }
 \details{
 The skeleton uses the animation and the colours from \code{\link[=bones_defaults]{bones_defaults()}}.
+If you give \code{rows}, \code{cols}, \code{lines} or \code{n} to a shape that does not use
+it, a warning names the unused argument.
 }
 \section{Chart shapes}{
 The chart shapes are
