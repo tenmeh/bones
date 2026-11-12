@@ -250,6 +250,13 @@
   gap: 0.5rem;
 }
 
+/* Measure the natural content height without the wrapper's absolute inset. */
+.bones-wrap > .bones-skeleton-custom.bones-measuring {
+  position: relative;
+  inset: auto;
+  height: auto;
+}
+
 /* bones_block(shape = "circle"), such as an avatar. */
 .bones-block-circle {
   border-radius: 50%;

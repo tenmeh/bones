@@ -40,7 +40,9 @@ Use \code{\link[=bones_shapes]{bones_shapes()}} to list shapes by group.}
 
 \item{height}{A CSS height for the placeholder, or a number of pixels, as
 in Shiny. \code{NULL} uses the height of the output. If the output has no
-height, \code{NULL} uses a default for the type.}
+height, \code{NULL} uses a default for the type. With \code{skeleton} and an
+output that has no height, \code{NULL} uses the natural height of your
+skeleton in the browser. A height that you give always wins.}
 
 \item{animation}{\code{"wave"}, \code{"pulse"}, \code{"cascade"}, \code{"sweep"} or
 \code{"none"}. See \code{\link[=bones_defaults]{bones_defaults()}} for what each one does. \code{NULL} uses the
@@ -71,13 +73,16 @@ output itself, is exact already. The height is kept per page and per
 output id, and it is used only when the output has almost the same
 width as when it was measured. For a plotly, echarts4r or highcharter
 output, \code{remember} also stores the kind of the chart (see "Shape").
-It also turns on \code{learn}.
+It also allows \code{learn}. With \code{skeleton}, its measured height is an
+estimate too. \code{remember = FALSE} disables learning, even if \code{learn = TRUE}.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
 
 \item{skeleton}{Your own placeholder, in place of a built-in shape: a tag
 or a tag list, made of \code{\link[=bones_block]{bones_block()}} blocks and any layout around
-them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.}
+them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.
+It keeps its own look by default. Give \code{learn = TRUE} explicitly to
+use it only until the browser has learned the content for a later visit.}
 
 \item{error}{A panel for a failed output: a tag or a tag list.
 \code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or \code{\link[=bones_error]{bones_error()}} if unset.
@@ -89,7 +94,11 @@ the old content stays dimmed with the panel as a banner.}
 user, and the first skeleton of the next visit has that shape. Only
 numbers are stored: the place and the size of each line of text, image
 and frame. It applies only when you do not give \code{type}, \code{rows}, \code{cols},
-\code{lines}, \code{n} or \code{skeleton}, and not to charts. It needs \code{remember}.
+\code{lines} or \code{n}, and not to charts. With \code{skeleton}, only an explicit
+\code{learn = TRUE} enables learning; a session default does not. Unused
+shape arguments do not prevent a custom skeleton from learning.
+It needs \code{remember = TRUE}. A custom skeleton gives a warning if
+learning is requested with \code{remember = FALSE} or for a chart.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
 }

@@ -1,5 +1,10 @@
 # bones (development version)
 
+* `withBones()` reserves the natural height of a custom skeleton when no
+  `height` is given. An explicit `learn = TRUE` replaces it with the learned
+  content shape on later visits. Custom skeletons keep their look by default
+  (#43).
+
 * `withBones()` and `bones_skeleton()` warn about unused shape arguments.
   A new warning may appear in code that passed an unused argument.
   `bones_auto()` does not give these warnings (#25).

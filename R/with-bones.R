@@ -81,7 +81,9 @@
 #'   `"value"`.
 #' @param height A CSS height for the placeholder, or a number of pixels, as
 #'   in Shiny. `NULL` uses the height of the output. If the output has no
-#'   height, `NULL` uses a default for the type.
+#'   height, `NULL` uses a default for the type. With `skeleton` and an
+#'   output that has no height, `NULL` uses the natural height of your
+#'   skeleton in the browser. A height that you give always wins.
 #' @param animation `"wave"`, `"pulse"`, `"cascade"`, `"sweep"` or
 #'   `"none"`. See [bones_defaults()] for what each one does. `NULL` uses the
 #'   value from [bones_defaults()].
@@ -107,12 +109,15 @@
 #'   output id, and it is used only when the output has almost the same
 #'   width as when it was measured. For a plotly, echarts4r or highcharter
 #'   output, `remember` also stores the kind of the chart (see "Shape").
-#'   It also turns on `learn`.
+#'   It also allows `learn`. With `skeleton`, its measured height is an
+#'   estimate too. `remember = FALSE` disables learning, even if `learn = TRUE`.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
 #' @param skeleton Your own placeholder, in place of a built-in shape: a tag
 #'   or a tag list, made of [bones_block()] blocks and any layout around
 #'   them. See "Your own placeholder". Give `type` or `skeleton`, not both.
+#'   It keeps its own look by default. Give `learn = TRUE` explicitly to
+#'   use it only until the browser has learned the content for a later visit.
 #' @param error A panel for a failed output: a tag or a tag list.
 #'   `NULL` uses [bones_defaults()], or [bones_error()] if unset.
 #'   `FALSE` keeps the error text of Shiny. Silent `req()` errors and
@@ -122,7 +127,11 @@
 #'   user, and the first skeleton of the next visit has that shape. Only
 #'   numbers are stored: the place and the size of each line of text, image
 #'   and frame. It applies only when you do not give `type`, `rows`, `cols`,
-#'   `lines`, `n` or `skeleton`, and not to charts. It needs `remember`.
+#'   `lines` or `n`, and not to charts. With `skeleton`, only an explicit
+#'   `learn = TRUE` enables learning; a session default does not. Unused
+#'   shape arguments do not prevent a custom skeleton from learning.
+#'   It needs `remember = TRUE`. A custom skeleton gives a warning if
+#'   learning is requested with `remember = FALSE` or for a chart.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
 #'
@@ -174,6 +183,7 @@ withBones <- function(ui, # nolint: object_name_linter.
   # shape the developer set does not learn its shape.
   shaped <- !missing(rows) || !missing(cols) || !missing(lines) || !missing(n) ||
     !is.null(type) || !is.null(skeleton)
+  custom_learn <- !is.null(skeleton) && !missing(learn) && isTRUE(learn)
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -220,7 +230,17 @@ withBones <- function(ui, # nolint: object_name_linter.
   }
   learn <- learn %||% getOption("bones.learn", TRUE)
   check_flag(learn, "learn")
-  learnable <- isTRUE(remember) && isTRUE(learn) && !shaped &&
+  if (custom_learn && !isTRUE(remember)) {
+    warning("`learn = TRUE` with `skeleton` needs `remember = TRUE`. The skeleton does not learn.",
+            call. = FALSE)
+  }
+  if (custom_learn && !type %in% learnable_types()) {
+    warning(sprintf(paste(
+      "`learn = TRUE` has no effect: a \"%s\" output cannot learn its shape.",
+      "The custom skeleton keeps its shape."
+    ), type), call. = FALSE)
+  }
+  learnable <- isTRUE(remember) && isTRUE(learn) && (!shaped || custom_learn) &&
     type %in% learnable_types()
 
   if (!isTRUE(getOption("bones.quiet_shape_args"))) {
@@ -234,8 +254,12 @@ withBones <- function(ui, # nolint: object_name_linter.
   # Only an estimated height can be improved by the real one, so only an
   # estimate is marked for bones.js to remember.
   estimated <- FALSE
+  # A custom skeleton with no height to go on is measured in the browser.
+  # The height of the output itself, when it has one, still wins.
+  measure_custom <- FALSE
   if (is.null(height)) {
     height <- find_inline_height(ui)
+    measure_custom <- !is.null(skeleton) && is.na(height)
     if (is.na(height)) {
       height <- if (!is.null(skeleton)) {
         default_height(type)
@@ -247,8 +271,7 @@ withBones <- function(ui, # nolint: object_name_linter.
   }
 
   # No height here. Inside the wrapper, the skeleton fills the wrapper. The
-  # height of the output, or the default for the shape of the output, still
-  # sets the space, also for your own placeholder.
+  # browser measures a custom skeleton before restoring a remembered height.
   custom <- !is.null(skeleton)
   skeleton <- if (custom) {
     custom_skeleton_tag(skeleton)
@@ -280,6 +303,7 @@ withBones <- function(ui, # nolint: object_name_linter.
     `data-bones-min-time` = format(min_time, scientific = FALSE),
     # Read by bones.js: store the real height, and use it next time.
     `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
+    `data-bones-measure-custom` = if (measure_custom) "true",
     # Read by bones.js: find the chart kind from the value, and with
     # remember, store it for the next visit.
     `data-bones-detect` = na_to_null(detect),

@@ -197,7 +197,24 @@
     }
   }
 
+  function measureCustom(wrap) {
+    if (wrap._bonesCustomMeasured || wrap._bonesHeightRestored ||
+        wrap.classList.contains("bones-has-loaded") ||
+        wrap.getAttribute("data-bones-measure-custom") !== "true") return;
+    var skeleton = wrap.querySelector(":scope > .bones-skeleton-custom");
+    // Wait for the parser to finish the skeleton and for a hidden tab to show.
+    if (!skeleton || !wrap.querySelector(":scope > .bones-content") ||
+        !(wrap.getBoundingClientRect().width > 0)) return;
+    // In flow, flex children cannot shrink to the type's guessed height.
+    skeleton.classList.add("bones-measuring");
+    var height = Math.ceil(Math.max(skeleton.getBoundingClientRect().height, skeleton.scrollHeight));
+    skeleton.classList.remove("bones-measuring");
+    wrap._bonesCustomMeasured = true;
+    if (height > 0) wrap.style.setProperty("--bones-reserve", height + "px");
+  }
+
   function restoreHeight(wrap) {
+    measureCustom(wrap);
     if (wrap._bonesRestored || !remembers(wrap) ||
         wrap.classList.contains("bones-has-loaded")) return;
     var key = heightKey(wrap);
@@ -210,13 +227,18 @@
     var saved = readHeight(key);
     if (saved && Math.abs(width - saved.w) <= 0.1 * saved.w) {
       wrap.style.setProperty("--bones-reserve", saved.h + "px");
+      wrap._bonesHeightRestored = true;
     }
   }
 
   function restoreIn(node) {
     if (node.nodeType !== 1) return;
-    if (node.matches(".bones-wrap[data-bones-remember]")) restoreHeight(node);
-    var inner = node.querySelectorAll(".bones-wrap[data-bones-remember]");
+    var selector = ".bones-wrap[data-bones-remember], .bones-wrap[data-bones-measure-custom]";
+    if (node.matches(selector)) restoreHeight(node);
+    // A parser or renderUI can add the children after the wrapper itself.
+    var parent = node.parentElement && node.parentElement.closest(selector);
+    if (parent) restoreHeight(parent);
+    var inner = node.querySelectorAll(selector);
     for (var i = 0; i < inner.length; i++) restoreHeight(inner[i]);
   }
 
