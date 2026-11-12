@@ -18,6 +18,10 @@ jobs:
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
+    # R-devel changes often, and a break there is not always ours. It reports
+    # a failure, but it does not stop a merge or turn main red.
+    continue-on-error: ${{ matrix.config.r == 'devel' }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -36,10 +40,13 @@ jobs:
       # CRAN incoming check at submission time, with
       # devtools::check(remote = TRUE).
       _R_CHECK_CRAN_INCOMING_: false
-      # The AppDriver smoke test calls skip_on_cran(). The check machines of
-      # CRAN do not always have a headless Chrome. This variable makes the
-      # test run here. Without it, the test skips on each system.
+      # Run the tests that call skip_on_cran(), as a developer would.
       NOT_CRAN: true
+      # The browser tests run in the "browser tests" job below, on one
+      # system. A headless browser on a slow runner can time out for reasons
+      # that have no relation to the package. Such a timeout must not fail
+      # the check of the package on five systems.
+      BONES_BROWSER_TESTS: false
 
     steps:
       - uses: actions/checkout@v4
@@ -69,3 +76,33 @@ jobs:
           # CRAN accepts no NOTEs. This check thus accepts none.
           error-on: '"note"'
           upload-snapshots: true
+
+  browser:
+    # The shinytest2 tests: the real apps in a headless Chrome. One system is
+    # enough, because the browser is the same Chrome on each system.
+    runs-on: ubuntu-latest
+    name: browser tests
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::pkgload
+          needs: check
+
+      - name: Run the tests, with the browser tests
+        shell: Rscript {0}
+        run: |
+          testthat::test_local(
+            reporter = testthat::ProgressReporter$new(show_praise = FALSE),
+            stop_on_failure = TRUE
+          )
