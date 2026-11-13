@@ -126,28 +126,30 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
 # These calls build the shapes and define which count arguments they use.
 # Keep heatmap's fixed dimensions: rows and cols do not reach that builder.
 shape_calls <- function() {
-  as.list(alist(
-    text = skel_text(lines),
-    table = skel_table(rows, cols),
-    dt = skel_dt(rows, cols),
-    reactable = skel_reactable(rows, cols),
-    gt = skel_gt(rows, cols),
-    rhandsontable = skel_rhandsontable(rows, cols),
-    plot = skel_bar(),
-    bar = skel_bar(),
-    histogram = skel_histogram(),
-    line = skel_line(),
-    area = skel_area(),
-    scatter = skel_scatter(),
-    pie = skel_pie(),
-    heatmap = skel_heatmap(),
-    map = skel_map(),
-    network = skel_network(),
-    timeline = skel_timeline(),
-    wordcloud = skel_wordcloud(),
-    cards = skel_cards(n),
-    value = skel_value(n)
-  ))
+  # quote(), not alist(): R CMD check knows that quote() does not evaluate,
+  # so the count arguments are not reported as undefined globals.
+  list(
+    text = quote(skel_text(lines)),
+    table = quote(skel_table(rows, cols)),
+    dt = quote(skel_dt(rows, cols)),
+    reactable = quote(skel_reactable(rows, cols)),
+    gt = quote(skel_gt(rows, cols)),
+    rhandsontable = quote(skel_rhandsontable(rows, cols)),
+    plot = quote(skel_bar()),
+    bar = quote(skel_bar()),
+    histogram = quote(skel_histogram()),
+    line = quote(skel_line()),
+    area = quote(skel_area()),
+    scatter = quote(skel_scatter()),
+    pie = quote(skel_pie()),
+    heatmap = quote(skel_heatmap()),
+    map = quote(skel_map()),
+    network = quote(skel_network()),
+    timeline = quote(skel_timeline()),
+    wordcloud = quote(skel_wordcloud()),
+    cards = quote(skel_cards(n)),
+    value = quote(skel_value(n))
+  )
 }
 
 shape_arguments <- function() {
