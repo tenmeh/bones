@@ -304,7 +304,7 @@ test_that("a record that does not parse, or of another form, is ignored", {
 
 # --- Harder cases, from the review (apps/learn-edge) --------------------------
 
-edge_ids <- c("single", "scroll", "exact", "outer", "big")
+edge_ids <- c("single", "scroll", "exact", "outer", "big", "roles", "button", "clear", "hidden", "flaky")
 
 # A first visit to apps/learn-edge. The outer output holds an inner output
 # that loads for 6 seconds, so wait for the five that are named above. The
@@ -417,6 +417,62 @@ test_that("a big table is recorded, and its time is reported", {
   # own it took about 110ms before the walk was limited, and 20ms after.
   message("recording the big table took ", round(ms), " ms")
   expect_true(is.numeric(ms))
+})
+
+frame_count <- function(layout) sum(vapply(layout$b, function(b) b[[5]] == 1, logical(1)))
+
+test_that("rows with roles, buttons and clear backgrounds are not frames", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-frames",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  layouts <- parse_layouts(app)
+
+  # Striped rows of a table made of divs, as reactable makes. A striped row
+  # is not a card.
+  expect_false(is.null(layouts$roles))
+  expect_equal(frame_count(layouts$roles), 0)
+
+  # A button is a bar. It is not also a frame at the same place.
+  expect_false(is.null(layouts$button))
+  expect_equal(frame_count(layouts$button), 0)
+
+  # A background of color(srgb 1 0 0 / 0) is transparent.
+  expect_false(is.null(layouts$clear))
+  expect_equal(frame_count(layouts$clear), 0)
+})
+
+test_that("a load that cannot be measured, or that ends in a silent req(), keeps the record", {
+  testthat::skip_on_cran()
+  app <- local_app_driver(test_path("apps", "learn-edge"), name = "bones-learn-keep",
+                          wait = FALSE, load_timeout = 45000L, timeout = 15000L)
+  edge_first_visit(app)
+  before <- stored_layouts(app)
+  expect_false(is.null(before$hidden))
+  expect_false(is.null(before$flaky))
+
+  # A render while the output is hidden: the content has no size, so there
+  # is nothing to measure. The record of the last visible load stays.
+  app$run_js("document.getElementById('box-hidden').style.display = 'none';")
+  app$run_js("document.getElementById('again').click();")
+  app$wait_for_js(
+    "document.querySelector('.bones-wrap[data-bones-id=\"hidden\"]').classList.contains('bones-stale')",
+    timeout = 10000
+  )
+  app$wait_for_js(
+    "!document.querySelector('.bones-wrap[data-bones-id=\"hidden\"]').classList.contains('bones-stale')",
+    timeout = 15000
+  )
+  Sys.sleep(0.8)
+
+  # A quick value that waits for min_time, then a silent req() before that
+  # wait ends. The empty output of the req() is not a layout.
+  app$run_js("document.getElementById('flaky').click();")
+  Sys.sleep(5)
+
+  after <- stored_layouts(app)
+  expect_identical(after$hidden, before$hidden)
+  expect_identical(after$flaky, before$flaky)
 })
 
 test_that("outputs in bslib cards draw their learned shape on the next visit", {
