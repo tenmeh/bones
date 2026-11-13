@@ -1,52 +1,22 @@
-# bones (development version)
+# bones 0.2.0
 
-* `withBones()` gains `speed` and `color`, for one output. `bones_defaults()`
-  still sets them for the whole session.
-* `bones_animations()` lists the valid animations.
-* The colours can be set in CSS, with or without Bootstrap. `--bones-color`,
-  `--bones-radius` and the other properties now work on `:root` and on a
-  container. Two new properties, `--bones-text` and `--bones-surface`, set
-  the colours that the others are made from. With no Bootstrap 5 theme, the
-  skeleton takes the text colour of the page, not a fixed grey.
-* `withBones(retry = "id")` adds a Try again button to the error panel (#20).
-* `withBones(hold = "refresh")` shows the skeleton when an input changes.
-  JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
+## Breaking changes
 
-* Learned shapes are more robust. A render while the output is hidden, or
-  a silent `req()` while a value waits for `min_time`, no longer deletes
-  the stored shape. Striped rows of a reactable table, buttons, and boxes
-  with a clear `color()` background are no longer drawn as cards.
-
-* `withBones()` reserves the natural height of a custom skeleton when no
-  `height` is given. An explicit `learn = TRUE` replaces it with the learned
-  content shape on later visits. Custom skeletons keep their look by default
-  (#43).
-
-* `withBones()` and `bones_skeleton()` warn about unused shape arguments.
-  A new warning may appear in code that passed an unused argument.
-  `bones_auto()` does not give these warnings (#25).
-* `withBones()` shows session options in its defaults. `bones_defaults()`
-  with no arguments returns current values. Call it before you build the
-  UI, when the options are read (#28).
-
-* `bones_auto()` gives a short error and a hint for a misspelt argument
-  name (#29).
-* `bones_shapes()` lists all valid shapes, or the shapes in the basic,
-  chart or table group (#26).
-
-* With `stale = FALSE`, old content stays visible until the skeleton appears.
-  Fast recalculations no longer flash a blank box (#42).
-
-* bones works under a strict Content-Security-Policy, such as
-  `style-src 'self'` with no `'unsafe-inline'`. It writes no `style`
-  attribute any more, which such a policy blocks. The sizes, positions and
-  colours of a skeleton go in a `data-bones-style` attribute, and a script in
-  bones sets them in the browser. The look does not change. A `style` attribute
-  that Shiny or a widget writes on the output itself, such as the height of
-  `plotOutput()`, is not from bones and is left as it is.
+* `withBones()` now shows a calm panel when an output fails. After a good
+  load, it keeps the old content dimmed with a banner. This is on by default
+  and changes the error display on upgrade. Use
+  `bones_defaults(error = FALSE)` to keep the error text of Shiny.
+  Silent `req()` errors and `validate()` messages keep their usual behaviour
+  (#19).
 * A bad `type`, `animation` or `shape` now gives a clear error with a hint
   for a near miss. Only exact names are accepted: a short form such as
   `type = "pi"` is now an error that says `Did you mean "pie"?` (#24).
+* `withBones()` and `bones_skeleton()` warn about unused shape arguments.
+  A new warning may appear in code that passed an unused argument.
+  `bones_auto()` does not give these warnings (#25).
+
+## New features
+
 * An output learns the shape of its content. After a load, the browser
   stores the place of each line of text, image and card. On the next visit,
   the skeleton has that shape in place of a guess from the type of the
@@ -55,15 +25,43 @@
   shape is used only at almost the same width, and it holds only numbers,
   never text. Turn it off with `withBones(learn = FALSE)` or
   `bones_defaults(learn = FALSE)`.
-* `withBones()` now shows a calm panel when an output fails. After a good
-  load, it keeps the old content dimmed with a banner. This is on by default
-  and changes the error display on upgrade. Use
-  `bones_defaults(error = FALSE)` to keep the error text of Shiny.
-  Silent `req()` errors and `validate()` messages keep their usual behaviour
-  (#19).
 * `bones_error()` builds an error panel with a custom message. Error detail
   is off by default; use it only for development. Messages from `safeError()`
   still show when detail is off (#19).
+* `withBones(retry = "id")` adds a Try again button to the error panel (#20).
+* `withBones(hold = "refresh")` shows the skeleton when an input changes.
+  JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
+* `withBones()` gains `speed` and `color`, for one output. `bones_defaults()`
+  still sets them for the whole session.
+* The colours can be set in CSS, with or without Bootstrap. `--bones-color`,
+  `--bones-radius` and the other properties now work on `:root` and on a
+  container. Two new properties, `--bones-text` and `--bones-surface`, set
+  the colours that the others are made from. With no Bootstrap 5 theme, the
+  skeleton takes the text colour of the page, not a fixed grey.
+* `bones_shapes()` lists all valid shapes, or the shapes in the basic,
+  chart or table group (#26). `bones_animations()` lists the valid
+  animations.
+* bones works under a strict Content-Security-Policy, such as
+  `style-src 'self'` with no `'unsafe-inline'`. It writes no `style`
+  attribute any more, which such a policy blocks. The sizes, positions and
+  colours of a skeleton go in a `data-bones-style` attribute, and a script in
+  bones sets them in the browser. The look does not change. A `style` attribute
+  that Shiny or a widget writes on the output itself, such as the height of
+  `plotOutput()`, is not from bones and is left as it is.
+
+## Minor improvements and bug fixes
+
+* `withBones()` reserves the natural height of a custom skeleton when no
+  `height` is given. An explicit `learn = TRUE` replaces it with the learned
+  content shape on later visits. Custom skeletons keep their look by default
+  (#43).
+* `withBones()` shows session options in its defaults. `bones_defaults()`
+  with no arguments returns current values. Call it before you build the
+  UI, when the options are read (#28).
+* `bones_auto()` gives a short error and a hint for a misspelt argument
+  name (#29).
+* With `stale = FALSE`, old content stays visible until the skeleton appears.
+  Fast recalculations no longer flash a blank box (#42).
 
 # bones 0.1.1
 

@@ -1,39 +1,36 @@
 # CRAN comments
 
-## Resubmission
+## Update
 
-This is a resubmission of a new package. The first submission was 0.1.0.
-In this version I have:
+This is an update of bones 0.1.1, which is on CRAN. It is version 0.2.0.
+There were no releases in between.
 
-* Written the package name 'shiny' in single quotes, in lower case, in
-  the Title and the Description, and in the package help page that is
-  made from them.
-* Reset par() in the demo app in inst/examples/demo/server.R. The plot
-  code saves the old values and gives them back with on.exit(). This was
-  the only place in the examples, demos and inst folder that changed
-  par(), options() or the working directory. The example of
-  bones_defaults() already restores options().
+Main changes (all in NEWS.md):
+
+* New features: outputs learn the shape of their content, an error panel
+  with an optional retry button, a way to show the placeholder on demand,
+  per-output speed and colour, colours set from CSS, and two functions
+  that list the valid shapes and animations.
+* Three small breaking changes, each in NEWS.md: the error panel is on by
+  default, names of types and animations must match exactly, and unused
+  shape arguments now give a warning.
 
 ## Test environments
 
 * local Windows 11, R 4.6.1 (release): R CMD check --as-cran on the built
   tarball, with _R_CHECK_CRAN_INCOMING_REMOTE_=TRUE and the PDF manual
+* win-builder, Windows Server 2022, R-devel (2026-11-12 r90881): the
+  tarball that is submitted, Status OK
 * GitHub Actions, R CMD check --as-cran: macOS (release), Windows
   (release), Ubuntu (devel, release, oldrel-1)
 
-The tarball was checked locally with the current release of R, not
-R-devel, because this machine has only the release version. R-devel is
-covered by the Ubuntu (devel) job above, which also runs
-R CMD check --as-cran.
-
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-* Maintainer: 'Tanmay Chanda <tanmaychanda96@gmail.com>'
-  New submission
+## Reverse dependencies
 
-The only note is the standard note for a first submission.
+There are no reverse dependencies on CRAN.
 
 ## Notes for the reviewer
 
@@ -47,5 +44,6 @@ The only note is the standard note for a first submission.
   is not available.
 * The package writes nothing outside tempdir(), opens no connections, and
   starts no processes. In the browser, the JavaScript can store the height
-  of an output in localStorage, so that the page does not move on the next
-  visit. The option remember = FALSE turns this off.
+  and the layout of an output in localStorage, so that the page does not
+  move on the next visit. This stores only sizes and positions, never text.
+  The option remember = FALSE turns it off.
