@@ -19,10 +19,10 @@ Main changes (all in NEWS.md):
 
 * local Windows 11, R 4.6.1 (release): R CMD check --as-cran on the built
   tarball, with _R_CHECK_CRAN_INCOMING_REMOTE_=TRUE and the PDF manual
+* win-builder, Windows Server 2022, R-devel (2026-11-12 r90881): the same
+  tarball, Status OK
 * GitHub Actions, R CMD check --as-cran: macOS (release), Windows
   (release), Ubuntu (devel, release, oldrel-1)
-
-R-devel is covered by the Ubuntu (devel) job above.
 
 ## R CMD check results
 
