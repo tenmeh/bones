@@ -402,7 +402,9 @@ is_fill_item <- function(ui) {
 #'   Users who ask their system to reduce motion always get `"none"`.
 #' @param color The colour of the placeholder, as a CSS colour. By default
 #'   it comes from the theme of the page: the text colour of the bslib
-#'   theme, made faint. A colour given here is stronger than the theme.
+#'   theme, made faint. A colour given here is stronger than the theme, and
+#'   than the CSS custom property `--bones-color` set by the app. The
+#'   "Get started" article lists the custom properties for theming in CSS.
 #' @param highlight The colour of the band of light in the `"wave"`
 #'   animation, and of the header row of a table. By default it comes from
 #'   the theme, as `color` does.

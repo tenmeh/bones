@@ -263,8 +263,47 @@ bones_defaults(
 The default colours come from the theme of the page: the text colour of
 the bslib theme, made faint. A skeleton thus takes the tint of a branded
 theme, and turns light in a dark theme, with no configuration. With no
-Bootstrap 5 theme, the colours are neutral greys. Users who ask their system
-to reduce motion get no animation.
+Bootstrap 5 theme, the colours come from the text colour where the
+skeleton is. Users who ask their system to reduce motion get no animation.
+
+### Set the colours in CSS
+
+An app with its own CSS, with or without Bootstrap, can set the colours
+with CSS custom properties. Set them on `:root` for the whole page, or on
+a container for one part of it:
+
+```css
+:root {
+  --bones-text: #1d3557;      /* the other colours are made from this one */
+  --bones-surface: #ffffff;   /* the page background: the sweep band, the error panel */
+  --bones-radius: 6px;
+}
+
+.dark-panel {
+  --bones-text: #f1faee;
+  --bones-surface: #1d3557;
+}
+```
+
+| Property | Sets | Default |
+|---|---|---|
+| `--bones-text` | The colour that the others are made from | The Bootstrap text colour, else the text colour |
+| `--bones-surface` | The page background | The Bootstrap background, else white |
+| `--bones-color` | The bars | `--bones-text` at 10% |
+| `--bones-highlight` | Borders and the moving part of the animation | `--bones-text` at 19% |
+| `--bones-stripe` | The stripes and headers of a table, and the background of a map | `--bones-text` at 4% |
+| `--bones-sweep` | The band of the sweep animation | `--bones-surface` at 55% |
+| `--bones-radius` | The rounding of the bars | 75% of the Bootstrap rounding |
+| `--bones-speed` | The length of one animation cycle | `1.4s` |
+
+`bones_defaults()` and the `color` and `speed` arguments of `withBones()`
+write the same properties on each output. They are stronger than a value
+from your CSS. The delay before a skeleton appears is set in R only, with
+the `delay` argument or `bones_defaults()`.
+
+On a dark page with no Bootstrap, set `--bones-surface` to a light colour,
+or set `--bones-sweep`. Otherwise the sweep band is the dark page
+colour, and it looks like a shadow.
 
 To change one output only, give `speed` or `color` to `withBones()`:
 

@@ -34,7 +34,9 @@ Users who ask their system to reduce motion always get \code{"none"}.}
 
 \item{color}{The colour of the placeholder, as a CSS colour. By default
 it comes from the theme of the page: the text colour of the bslib
-theme, made faint. A colour given here is stronger than the theme.}
+theme, made faint. A colour given here is stronger than the theme, and
+than the CSS custom property \code{--bones-color} set by the app. The
+"Get started" article lists the custom properties for theming in CSS.}
 
 \item{highlight}{The colour of the band of light in the \code{"wave"}
 animation, and of the header row of a table. By default it comes from

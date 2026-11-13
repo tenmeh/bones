@@ -125,30 +125,46 @@ test_that("the skeleton inside a wrapper gets no style of its own", {
   expect_false(grepl('class="bones-skeleton[^"]*"[^>]*style=', html))
 })
 
-test_that("the default colours are on the wrapper and the lone skeleton, not :root", {
+bones_css_text <- function() {
+  paste(
+    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
+    collapse = "\n"
+  )
+}
+
+test_that("the working colours are on the wrapper and the lone skeleton, not :root", {
   # On :root the colours are resolved one time, so a dark part of a light
   # page would get light colours. On each element they follow the theme of
   # that part of the page.
-  css <- paste(
-    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
-    collapse = "\n"
-  )
-  expect_false(grepl(":root\\s*\\{[^}]*--bones-color:", css))
+  css <- bones_css_text()
+  expect_false(grepl(":root\\s*\\{[^}]*--_bones-color:", css))
   expect_match(
     css,
-    "\\.bones-wrap,\\s*\\.bones-skeleton:not\\(\\.bones-wrap > \\.bones-skeleton\\)\\s*\\{[^}]*--bones-color:"
+    "\\.bones-wrap,\\s*\\.bones-skeleton:not\\(\\.bones-wrap > \\.bones-skeleton\\)\\s*\\{[^}]*--_bones-color:"
   )
   # Not on a skeleton inside a wrapper: that would be stronger than the
   # colours from bones_defaults(), which are on the wrapper.
-  expect_false(grepl("(^|\\n)\\.bones-skeleton\\s*\\{[^}]*--bones-color:", css))
+  expect_false(grepl("(^|\\n)\\.bones-skeleton\\s*\\{[^}]*--_bones-color:", css))
 })
 
-test_that("the colours come from the text colour of the theme", {
-  css <- paste(
-    readLines(system.file("www", "bones.css", package = "bones"), warn = FALSE),
-    collapse = "\n"
+test_that("bones never declares an input, so the app can set it anywhere", {
+  # An input declared by bones on the wrapper would be stronger than the
+  # same input that the app sets on :root or on a container.
+  css <- bones_css_text()
+  inputs <- c("color", "highlight", "stripe", "sweep", "radius", "text", "surface")
+  for (name in inputs) {
+    expect_false(grepl(paste0("(^|[^_])--bones-", name, "\\s*:"), css), label = name)
+  }
+})
+
+test_that("the colours come from the inputs, then the text colour of the theme", {
+  css <- bones_css_text()
+  expect_match(css, "--_bones-text: var(--bones-text, var(--bs-body-color, currentColor));", fixed = TRUE)
+  expect_match(
+    css,
+    "--_bones-color: var(--bones-color, color-mix(in srgb, var(--_bones-text) 10%, transparent));",
+    fixed = TRUE
   )
-  expect_match(css, "color-mix(in srgb, var(--bs-body-color, #808080) 10%, transparent)", fixed = TRUE)
   # A browser with no color-mix() keeps the plain greys.
   expect_match(css, "@supports (color: color-mix(", fixed = TRUE)
 })
