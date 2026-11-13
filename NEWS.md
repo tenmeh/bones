@@ -62,10 +62,6 @@
   name (#29).
 * With `stale = FALSE`, old content stays visible until the skeleton appears.
   Fast recalculations no longer flash a blank box (#42).
-* Learned shapes are more robust. A render while the output is hidden, or
-  a silent `req()` while a value waits for `min_time`, no longer deletes
-  the stored shape. Striped rows of a reactable table, buttons, and boxes
-  with a clear `color()` background are no longer drawn as cards.
 
 # bones 0.1.1
 
