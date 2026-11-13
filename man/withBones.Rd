@@ -12,25 +12,27 @@ withBones(
   lines = 3L,
   n = 3L,
   height = NULL,
-  animation = NULL,
-  stale = NULL,
-  delay = NULL,
-  min_time = NULL,
-  remember = NULL,
+  animation = getOption("bones.animation", "wave"),
+  stale = getOption("bones.stale", TRUE),
+  delay = getOption("bones.delay", 300),
+  min_time = getOption("bones.min_time", 500),
+  remember = getOption("bones.remember", TRUE),
   skeleton = NULL,
-  error = NULL,
-  learn = NULL
+  error = getOption("bones.error", bones_error()),
+  learn = getOption("bones.learn", TRUE),
+  retry = NULL,
+  hold = NULL,
+  speed = getOption("bones.speed"),
+  color = getOption("bones.color")
 )
 }
 \arguments{
 \item{ui}{A Shiny output, such as \code{plotOutput("chart")}.}
 
-\item{type}{The shape of the skeleton: \code{"text"}, \code{"table"}, \code{"plot"},
-\code{"cards"}, \code{"value"}, a chart shape (\code{"bar"}, \code{"line"}, \code{"scatter"},
-\code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"},
-\code{"timeline"}, \code{"wordcloud"}), or a table package shape (\code{"dt"},
-\code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}). \code{NULL} (the default) gets the
-shape from \code{ui}.}
+\item{type}{The shape of the skeleton:
+\code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"}, \code{"value"}, \code{"bar"}, \code{"line"}, \code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"}, \code{"timeline"}, \code{"wordcloud"}, \code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}.
+\code{NULL} (the default) gets the shape from \code{ui}.
+Use \code{\link[=bones_shapes]{bones_shapes()}} to list shapes by group.}
 
 \item{rows, cols}{The number of body rows and columns, when \code{type} is
 \code{"table"} or a table package shape.}
@@ -42,7 +44,9 @@ shape from \code{ui}.}
 
 \item{height}{A CSS height for the placeholder, or a number of pixels, as
 in Shiny. \code{NULL} uses the height of the output. If the output has no
-height, \code{NULL} uses a default for the type.}
+height, \code{NULL} uses a default for the type. With \code{skeleton} and an
+output that has no height, \code{NULL} uses the natural height of your
+skeleton in the browser. A height that you give always wins.}
 
 \item{animation}{\code{"wave"}, \code{"pulse"}, \code{"cascade"}, \code{"sweep"} or
 \code{"none"}. See \code{\link[=bones_defaults]{bones_defaults()}} for what each one does. \code{NULL} uses the
@@ -73,13 +77,16 @@ output itself, is exact already. The height is kept per page and per
 output id, and it is used only when the output has almost the same
 width as when it was measured. For a plotly, echarts4r or highcharter
 output, \code{remember} also stores the kind of the chart (see "Shape").
-It also turns on \code{learn}.
+It also allows \code{learn}. With \code{skeleton}, its measured height is an
+estimate too. \code{remember = FALSE} disables learning, even if \code{learn = TRUE}.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
 
 \item{skeleton}{Your own placeholder, in place of a built-in shape: a tag
 or a tag list, made of \code{\link[=bones_block]{bones_block()}} blocks and any layout around
-them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.}
+them. See "Your own placeholder". Give \code{type} or \code{skeleton}, not both.
+It keeps its own look by default. Give \code{learn = TRUE} explicitly to
+use it only until the browser has learned the content for a later visit.}
 
 \item{error}{A panel for a failed output: a tag or a tag list.
 \code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or \code{\link[=bones_error]{bones_error()}} if unset.
@@ -91,9 +98,32 @@ the old content stays dimmed with the panel as a banner.}
 user, and the first skeleton of the next visit has that shape. Only
 numbers are stored: the place and the size of each line of text, image
 and frame. It applies only when you do not give \code{type}, \code{rows}, \code{cols},
-\code{lines}, \code{n} or \code{skeleton}, and not to charts. It needs \code{remember}.
+\code{lines} or \code{n}, and not to charts. With \code{skeleton}, only an explicit
+\code{learn = TRUE} enables learning; a session default does not. Unused
+shape arguments do not prevent a custom skeleton from learning.
+It needs \code{remember = TRUE}. A custom skeleton gives a warning if
+learning is requested with \code{remember = FALSE} or for a chart.
 \code{NULL} uses the value from \code{\link[=bones_defaults]{bones_defaults()}}, which is \code{TRUE} if you
 did not set it.}
+
+\item{retry}{A single non-empty input id, or \code{NULL} for no retry button.
+Adds "Try again" after the error panel content. The output must read
+this input to run again. Cannot be used with \code{error = FALSE}.}
+
+\item{hold}{Input ids that show the skeleton at once when they change,
+or \code{NULL}. Use \code{ns()} for ids inside modules, for both arguments.
+A hold hides content but keeps its space, overrides \code{stale} and \code{delay},
+and respects \code{min_time} when the load finishes. If this output does not
+start calculating, the hold releases when Shiny is idle.
+In JavaScript, \code{Bones.hold(el)} holds until the next finished load or
+until \code{Bones.release(el)}, even across idle events. \code{el} can be the
+wrapper, the output element, or its id string.}
+
+\item{speed}{The time of one animation cycle for this output, in
+seconds. \code{NULL} uses \code{\link[=bones_defaults]{bones_defaults()}}, or 1.4 seconds if unset.}
+
+\item{color}{The colour of this placeholder, as a CSS colour. \code{NULL}
+uses \code{\link[=bones_defaults]{bones_defaults()}}, or the theme of the page if unset.}
 }
 \value{
 \code{ui}, in a placeholder container.
@@ -111,6 +141,10 @@ shape of a chart, \code{tableOutput()} gets rows and columns, and
 \code{textOutput()} gets lines of text. Use \code{type} to set a different shape.
 You must do this for \code{uiOutput()}, because its content is not known
 before it arrives.
+If you give \code{rows}, \code{cols}, \code{lines} or \code{n} to a shape that does not use
+it, a warning names the unused argument. The shape known in R decides
+this, before any chart kind is found in the browser. None of these
+arguments apply to a custom \code{skeleton}.
 
 A \code{plotOutput()} gets the shape of a bar chart. If the chart is of
 another kind, give that kind: \code{"line"}, \code{"scatter"}, \code{"area"},

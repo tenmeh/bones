@@ -96,3 +96,67 @@ test_that("speed = NA is rejected with the usual message", {
   # TRUE/FALSE needed".
   expect_error(bones_defaults(speed = NA_real_), "positive")
 })
+test_that("session options are visible in the signature", {
+  expected <- alist(
+    animation = getOption("bones.animation", "wave"),
+    stale = getOption("bones.stale", TRUE),
+    delay = getOption("bones.delay", 300),
+    min_time = getOption("bones.min_time", 500),
+    remember = getOption("bones.remember", TRUE),
+    error = getOption("bones.error", bones_error()),
+    learn = getOption("bones.learn", TRUE)
+  )
+  expect_identical(as.list(formals(withBones))[names(expected)], expected)
+})
+
+test_that("reading defaults uses fallbacks and changes no options", {
+  withr::local_options(list(
+    bones.animation = NULL, bones.color = NULL, bones.highlight = NULL,
+    bones.radius = NULL, bones.speed = NULL, bones.stale = NULL,
+    bones.delay = NULL, bones.min_time = NULL, bones.remember = NULL,
+    bones.error = NULL, bones.learn = NULL
+  ))
+  before <- options()
+  expect_equal(bones_defaults(), list(
+    animation = "wave", color = NULL, highlight = NULL, radius = NULL,
+    speed = 1.4, stale = TRUE, delay = 300, min_time = 500,
+    remember = TRUE, error = bones_error(), learn = TRUE
+  ))
+  expect_identical(options(), before)
+
+  bones_defaults(delay = 42, animation = "pulse", error = FALSE)
+  before <- options()
+  current <- bones_defaults()
+  expect_equal(current$delay, 42)
+  expect_equal(current$animation, "pulse")
+  expect_identical(current$error, FALSE)
+  expect_identical(options(), before)
+  expect_length(bones_defaults(delay = NULL), 0L)
+})
+
+test_that("NULL forwarded by bones_auto still uses session defaults", {
+  withr::local_options(list(
+    bones.animation = "pulse", bones.stale = FALSE, bones.delay = 42,
+    bones.min_time = 75, bones.remember = FALSE, bones.error = FALSE,
+    bones.learn = FALSE
+  ))
+  ui <- fake_output("shiny-table-output")
+  expect_equal(
+    bones_auto(ui, animation = NULL, stale = NULL, delay = NULL,
+               min_time = NULL, remember = NULL, error = NULL, learn = NULL),
+    bones_auto(ui)
+  )
+})
+
+test_that("the defaults in the signature match the built-in defaults", {
+  # The signature repeats the values so the help page shows them.
+  withr::local_options(bones.animation = NULL, bones.stale = NULL,
+                       bones.delay = NULL, bones.min_time = NULL,
+                       bones.remember = NULL, bones.error = NULL,
+                       bones.learn = NULL)
+  f <- formals(withBones)
+  builtin <- builtin_defaults()
+  for (name in c("animation", "stale", "delay", "min_time", "remember", "error", "learn")) {
+    expect_equal(eval(f[[name]], asNamespace("bones")), builtin[[name]], info = name)
+  }
+})

@@ -18,7 +18,10 @@ test_that("an output does not learn when the developer sets its shape", {
   expect_false(learns(withBones(table_out(), rows = 8)))
   expect_false(learns(withBones(table_out(), cols = 3)))
   expect_false(learns(withBones(fake_output("shiny-text-output"), lines = 2)))
-  expect_false(learns(withBones(fake_output("shiny-html-output"), n = 4)))
+  expect_warning(
+    expect_false(learns(withBones(fake_output("shiny-html-output"), n = 4))),
+    '`n` has no effect on the "text" shape.', fixed = TRUE
+  )
   expect_false(learns(withBones(table_out(), type = "table")))
   expect_false(learns(withBones(table_out(), skeleton = bones_block())))
 })

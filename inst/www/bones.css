@@ -123,7 +123,8 @@
   gap: 0.4rem;
 }
 
-.bones-wrap.bones-errored > .bones-skeleton {
+/* A held wrapper keeps its skeleton. */
+.bones-wrap.bones-errored:not(.bones-held) > .bones-skeleton {
   display: none;
 }
 
@@ -158,12 +159,40 @@
   overflow-wrap: anywhere;
 }
 
-.bones-wrap.bones-loaded > .bones-skeleton {
+.bones-retry {
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--bones-highlight);
+  border-radius: var(--bones-radius);
+  background: var(--bones-color);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.bones-retry:hover {
+  background: var(--bones-highlight);
+}
+
+.bones-retry:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.bones-wrap.bones-loaded:not(.bones-held) > .bones-skeleton {
   display: none;
 }
 
 .bones-wrap.bones-loaded > .bones-content {
   visibility: visible;
+}
+
+/* Keep the old content until the skeleton appears. A fast recalculation
+   cancels this animation before it can hide the content. Errors retain
+   their own banner and dimmed content, without a delay. */
+.bones-wrap.bones-has-loaded:not(.bones-loaded):not(.bones-errored):not(.bones-held) > .bones-content {
+  visibility: visible;
+  animation: bones-disappear 1ms step-start var(--bones-delay) forwards;
 }
 
 /* The output calculates again, and the old content stays on the screen. */
@@ -191,7 +220,7 @@
 }
 
 /* The pulse is also an animation, so the two go in one declaration. */
-.bones-wrap.bones-anim-pulse:not(.bones-loaded) > .bones-skeleton {
+.bones-wrap.bones-anim-pulse:not(.bones-loaded):not(.bones-held) > .bones-skeleton {
   animation:
     bones-appear 1ms linear var(--bones-delay) both,
     bones-pulse var(--bones-speed) ease-in-out var(--bones-delay) infinite;
@@ -200,6 +229,33 @@
 @keyframes bones-appear {
   from { visibility: hidden; }
   to   { visibility: visible; }
+}
+
+@keyframes bones-disappear {
+  from { visibility: visible; }
+  to   { visibility: hidden; }
+}
+
+/* A hold bypasses the appearance animation, including its hidden first
+   frame. Keep the content and any error banner in flow to preserve size.
+   Each skeleton keeps its own display: the rules that hide it skip a hold. */
+.bones-wrap.bones-held > .bones-skeleton {
+  visibility: visible;
+  animation: none;
+}
+
+.bones-wrap.bones-held.bones-anim-pulse > .bones-skeleton {
+  animation: bones-pulse var(--bones-speed) ease-in-out infinite;
+}
+
+/* The has-loaded selector matches the specificity of the errored banner
+   rule, which shows old content, so a hold over a banner still hides it. */
+.bones-wrap.bones-held.bones-has-loaded > .bones-content,
+.bones-wrap.bones-held > .bones-content,
+.bones-wrap.bones-held > .bones-error {
+  visibility: hidden;
+  animation: none;
+  transition: none;
 }
 
 /* Shiny also dims an output while it calculates. Inside a stale wrapper,
@@ -235,6 +291,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Measure the natural content height without the wrapper's absolute inset. */
+.bones-wrap > .bones-skeleton-custom.bones-measuring {
+  position: relative;
+  inset: auto;
+  height: auto;
 }
 
 /* bones_block(shape = "circle"), such as an avatar. */
@@ -835,6 +898,7 @@
 /* A user who asks the system to reduce motion does not want a placeholder
    that moves. Show a still placeholder instead. */
 @media (prefers-reduced-motion: reduce) {
+  .bones-wrap.bones-held.bones-anim-pulse > .bones-skeleton,
   .bones-anim-wave .bones-bar,
   .bones-anim-wave .bones-axis,
   .bones-anim-pulse .bones-skeleton,
@@ -858,8 +922,14 @@
     transition: opacity 0s linear var(--bones-delay);
   }
 
+  /* The content still waits for the skeleton. This changes visibility
+     only, so it also applies when motion is reduced. */
+  .bones-wrap.bones-has-loaded:not(.bones-loaded):not(.bones-errored):not(.bones-held) > .bones-content {
+    animation: bones-disappear 1ms step-start var(--bones-delay) forwards;
+  }
+
   /* The skeleton still waits for the delay, but does not pulse. */
-  .bones-wrap.bones-anim-pulse:not(.bones-loaded) > .bones-skeleton {
+  .bones-wrap.bones-anim-pulse:not(.bones-loaded):not(.bones-held) > .bones-skeleton {
     animation: bones-appear 1ms linear var(--bones-delay) both;
   }
 }

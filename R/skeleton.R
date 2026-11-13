@@ -7,12 +7,14 @@
 #' shape while you design a page.
 #'
 #' The skeleton uses the animation and the colours from [bones_defaults()].
+#' If you give `rows`, `cols`, `lines` or `n` to a shape that does not use
+#' it, a warning names the unused argument.
 #'
 #' # Chart shapes
 #'
-#' A chart has a shape for each common kind: `"bar"`, `"line"`,
-#' `"scatter"`, `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`,
-#' `"network"`, `"timeline"` and `"wordcloud"`. `"plot"` is the same as
+#' The chart shapes are
+#' `r shapes_md("chart")`.
+#' `"plot"` is the same as
 #' `"bar"`. [withBones()] finds the shape of a map, network, timeline or
 #' word cloud widget from its output. `plotOutput()` cannot say which kind it will
 #' hold, because `renderPlot()` decides that later, on the server. So you
@@ -20,12 +22,14 @@
 #'
 #' # Table shapes
 #'
-#' A table from a table package has a shape that copies that package:
-#' `"dt"`, `"reactable"`, `"gt"` and `"rhandsontable"`. [withBones()] finds
-#' it from the output by itself.
+#' The table shapes are
+#' `r shapes_md("table")`.
+#' A table from a table package has a shape that copies that package.
+#' [withBones()] finds it from the output by itself.
 #'
-#' @param type The shape: `"text"`, `"table"`, `"plot"`, `"cards"`,
-#'   `"value"`, or one of the chart or table shapes above.
+#' @param type The shape:
+#'   `r shapes_md()`.
+#'   Use [bones_shapes()] to list shapes by group.
 #' @param rows The number of body rows, for `type = "table"` and the table
 #'   package shapes.
 #' @param cols The number of columns, for `type = "table"` and the table
@@ -59,6 +63,10 @@ bones_skeleton <- function(type = "text",
   check_count(lines, "lines")
   check_count(n, "n")
   height <- as_css_length(height, "height")
+  warn_unused_shape_args(type, c(
+    rows = !missing(rows), cols = !missing(cols),
+    lines = !missing(lines), n = !missing(n)
+  ))
 
   # On its own, a skeleton takes space like any other element, so it needs
   # a height. The plot shape sets the height of its columns as a percentage
@@ -67,7 +75,7 @@ bones_skeleton <- function(type = "text",
 
   # With no wrapper, the skeleton itself must carry what a wrapper carries:
   # the animation class and the colours from bones_defaults().
-  animation <- getOption("bones.animation", "wave")
+  animation <- bones_option("animation")
   check_choice(animation, animation_types(), "animation")
 
   htmltools::attachDependencies(
@@ -93,29 +101,7 @@ bones_skeleton <- function(type = "text",
 #' @noRd
 skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
                          class = NULL, style = character(0)) {
-  body <- switch(
-    type,
-    text      = skel_text(lines),
-    table     = skel_table(rows, cols),
-    dt            = skel_dt(rows, cols),
-    reactable     = skel_reactable(rows, cols),
-    gt            = skel_gt(rows, cols),
-    rhandsontable = skel_rhandsontable(rows, cols),
-    plot      = skel_bar(),
-    bar       = skel_bar(),
-    histogram = skel_histogram(),
-    line      = skel_line(),
-    area      = skel_area(),
-    scatter   = skel_scatter(),
-    pie       = skel_pie(),
-    heatmap   = skel_heatmap(),
-    map       = skel_map(),
-    network   = skel_network(),
-    timeline  = skel_timeline(),
-    wordcloud = skel_wordcloud(),
-    cards     = skel_cards(n),
-    value     = skel_value(n)
-  )
+  body <- eval(shape_calls()[[type]])
 
   # All the chart shapes share the layout of a chart: the marks fill the
   # height, and an axis is at the bottom.
@@ -136,6 +122,64 @@ skeleton_tag <- function(type, rows, cols, lines, n, height = NULL,
   )
 }
 
+
+# These calls build the shapes and define which count arguments they use.
+# Keep heatmap's fixed dimensions: rows and cols do not reach that builder.
+shape_calls <- function() {
+  # quote(), not alist(): R CMD check knows that quote() does not evaluate,
+  # so the count arguments are not reported as undefined globals.
+  list(
+    text = quote(skel_text(lines)),
+    table = quote(skel_table(rows, cols)),
+    dt = quote(skel_dt(rows, cols)),
+    reactable = quote(skel_reactable(rows, cols)),
+    gt = quote(skel_gt(rows, cols)),
+    rhandsontable = quote(skel_rhandsontable(rows, cols)),
+    plot = quote(skel_bar()),
+    bar = quote(skel_bar()),
+    histogram = quote(skel_histogram()),
+    line = quote(skel_line()),
+    area = quote(skel_area()),
+    scatter = quote(skel_scatter()),
+    pie = quote(skel_pie()),
+    heatmap = quote(skel_heatmap()),
+    map = quote(skel_map()),
+    network = quote(skel_network()),
+    timeline = quote(skel_timeline()),
+    wordcloud = quote(skel_wordcloud()),
+    cards = quote(skel_cards(n)),
+    value = quote(skel_value(n))
+  )
+}
+
+shape_arguments <- function() {
+  lapply(shape_calls(), all.vars)
+}
+
+warn_unused_shape_args <- function(type, supplied, custom = FALSE) {
+  uses <- shape_arguments()
+  used <- if (custom) character(0) else uses[[type]]
+  for (arg in setdiff(names(supplied)[supplied], used)) {
+    if (custom) {
+      warning(sprintf(
+        "`%s` has no effect with a custom `skeleton`. None of `rows`, `cols`, `lines` or `n` apply.",
+        arg
+      ), call. = FALSE)
+    } else {
+      shapes <- names(uses)[vapply(uses, function(x) arg %in% x, logical(1))]
+      warning(sprintf(
+        '`%s` has no effect on the "%s" shape. It applies to %s.',
+        arg, type, and_list(sprintf('"%s"', shapes))
+      ), call. = FALSE)
+    }
+  }
+}
+
+# "a", "a and b", "a, b and c".
+and_list <- function(x) {
+  if (length(x) < 2L) return(paste(x, collapse = ""))
+  paste(paste(x[-length(x)], collapse = ", "), "and", x[length(x)])
+}
 
 # --- shapes ---------------------------------------------------------------
 

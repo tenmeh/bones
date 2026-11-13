@@ -32,6 +32,7 @@
 #' @param ... Arguments for [withBones()], used for every output that is
 #'   wrapped: for example `stale = FALSE` or `animation = "pulse"`. Not
 #'   `type`, because each output gets the shape of its own kind.
+#'   Shape arguments that do not apply to an output do not give a warning.
 #' @param exclude The ids of outputs to leave alone.
 #'
 #' @return `ui`, with each output in a placeholder container. A page keeps
@@ -73,6 +74,23 @@ bones_auto <- function(ui, ..., exclude = NULL) {
 
   # Check the arguments for withBones() once, here, so a bad one gives one
   # message and not one message for each output.
+  valid_names <- union(names(formals(withBones)), names(formals(bones_auto)))
+  valid_names <- setdiff(valid_names, "...")
+  unknown <- setdiff(names(args), valid_names)
+  if (length(unknown) > 0L) {
+    name <- unknown[[1L]]
+    msg <- sprintf("`%s` is not an argument of bones_auto() or withBones().", name)
+    hint <- choice_hint(name, valid_names)
+    if (!is.null(hint)) {
+      msg <- paste(msg, sprintf("Did you mean `%s`?", hint))
+    }
+    stop(msg, call. = FALSE)
+  }
+  # A shape argument here is meant for some outputs only, so an output that
+  # does not use it must not warn. An internal option, not an argument, so
+  # the signature of withBones() stays clean.
+  old <- options(bones.quiet_shape_args = TRUE)
+  on.exit(options(old), add = TRUE)
   do.call(withBones, c(list(htmltools::tags$div()), args))
 
   wrap_outputs(ui, args, exclude)

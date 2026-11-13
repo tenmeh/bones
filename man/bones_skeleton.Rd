@@ -14,8 +14,9 @@ bones_skeleton(
 )
 }
 \arguments{
-\item{type}{The shape: \code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"},
-\code{"value"}, or one of the chart or table shapes above.}
+\item{type}{The shape:
+\code{"text"}, \code{"table"}, \code{"plot"}, \code{"cards"}, \code{"value"}, \code{"bar"}, \code{"line"}, \code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"}, \code{"timeline"}, \code{"wordcloud"}, \code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}.
+Use \code{\link[=bones_shapes]{bones_shapes()}} to list shapes by group.}
 
 \item{rows}{The number of body rows, for \code{type = "table"} and the table
 package shapes.}
@@ -44,11 +45,13 @@ shape while you design a page.
 }
 \details{
 The skeleton uses the animation and the colours from \code{\link[=bones_defaults]{bones_defaults()}}.
+If you give \code{rows}, \code{cols}, \code{lines} or \code{n} to a shape that does not use
+it, a warning names the unused argument.
 }
 \section{Chart shapes}{
-A chart has a shape for each common kind: \code{"bar"}, \code{"line"},
-\code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"},
-\code{"network"}, \code{"timeline"} and \code{"wordcloud"}. \code{"plot"} is the same as
+The chart shapes are
+\code{"plot"}, \code{"bar"}, \code{"line"}, \code{"scatter"}, \code{"area"}, \code{"histogram"}, \code{"pie"}, \code{"heatmap"}, \code{"map"}, \code{"network"}, \code{"timeline"}, \code{"wordcloud"}.
+\code{"plot"} is the same as
 \code{"bar"}. \code{\link[=withBones]{withBones()}} finds the shape of a map, network, timeline or
 word cloud widget from its output. \code{plotOutput()} cannot say which kind it will
 hold, because \code{renderPlot()} decides that later, on the server. So you
@@ -56,9 +59,10 @@ name the kind yourself.
 }
 
 \section{Table shapes}{
-A table from a table package has a shape that copies that package:
-\code{"dt"}, \code{"reactable"}, \code{"gt"} and \code{"rhandsontable"}. \code{\link[=withBones]{withBones()}} finds
-it from the output by itself.
+The table shapes are
+\code{"table"}, \code{"dt"}, \code{"reactable"}, \code{"gt"}, \code{"rhandsontable"}.
+A table from a table package has a shape that copies that package.
+\code{\link[=withBones]{withBones()}} finds it from the output by itself.
 }
 
 \examples{

@@ -13,6 +13,10 @@
 #' `textOutput()` gets lines of text. Use `type` to set a different shape.
 #' You must do this for `uiOutput()`, because its content is not known
 #' before it arrives.
+#' If you give `rows`, `cols`, `lines` or `n` to a shape that does not use
+#' it, a warning names the unused argument. The shape known in R decides
+#' this, before any chart kind is found in the browser. None of these
+#' arguments apply to a custom `skeleton`.
 #'
 #' A `plotOutput()` gets the shape of a bar chart. If the chart is of
 #' another kind, give that kind: `"line"`, `"scatter"`, `"area"`,
@@ -66,12 +70,10 @@
 #' the content arrives, the content sets the height.
 #'
 #' @param ui A Shiny output, such as `plotOutput("chart")`.
-#' @param type The shape of the skeleton: `"text"`, `"table"`, `"plot"`,
-#'   `"cards"`, `"value"`, a chart shape (`"bar"`, `"line"`, `"scatter"`,
-#'   `"area"`, `"histogram"`, `"pie"`, `"heatmap"`, `"map"`, `"network"`,
-#'   `"timeline"`, `"wordcloud"`), or a table package shape (`"dt"`,
-#'   `"reactable"`, `"gt"`, `"rhandsontable"`). `NULL` (the default) gets the
-#'   shape from `ui`.
+#' @param type The shape of the skeleton:
+#'   `r shapes_md()`.
+#'   `NULL` (the default) gets the shape from `ui`.
+#'   Use [bones_shapes()] to list shapes by group.
 #' @param rows,cols The number of body rows and columns, when `type` is
 #'   `"table"` or a table package shape.
 #' @param lines The number of lines, when `type` is `"text"`.
@@ -79,7 +81,9 @@
 #'   `"value"`.
 #' @param height A CSS height for the placeholder, or a number of pixels, as
 #'   in Shiny. `NULL` uses the height of the output. If the output has no
-#'   height, `NULL` uses a default for the type.
+#'   height, `NULL` uses a default for the type. With `skeleton` and an
+#'   output that has no height, `NULL` uses the natural height of your
+#'   skeleton in the browser. A height that you give always wins.
 #' @param animation `"wave"`, `"pulse"`, `"cascade"`, `"sweep"` or
 #'   `"none"`. See [bones_defaults()] for what each one does. `NULL` uses the
 #'   value from [bones_defaults()].
@@ -105,12 +109,15 @@
 #'   output id, and it is used only when the output has almost the same
 #'   width as when it was measured. For a plotly, echarts4r or highcharter
 #'   output, `remember` also stores the kind of the chart (see "Shape").
-#'   It also turns on `learn`.
+#'   It also allows `learn`. With `skeleton`, its measured height is an
+#'   estimate too. `remember = FALSE` disables learning, even if `learn = TRUE`.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
 #' @param skeleton Your own placeholder, in place of a built-in shape: a tag
 #'   or a tag list, made of [bones_block()] blocks and any layout around
 #'   them. See "Your own placeholder". Give `type` or `skeleton`, not both.
+#'   It keeps its own look by default. Give `learn = TRUE` explicitly to
+#'   use it only until the browser has learned the content for a later visit.
 #' @param error A panel for a failed output: a tag or a tag list.
 #'   `NULL` uses [bones_defaults()], or [bones_error()] if unset.
 #'   `FALSE` keeps the error text of Shiny. Silent `req()` errors and
@@ -120,9 +127,28 @@
 #'   user, and the first skeleton of the next visit has that shape. Only
 #'   numbers are stored: the place and the size of each line of text, image
 #'   and frame. It applies only when you do not give `type`, `rows`, `cols`,
-#'   `lines`, `n` or `skeleton`, and not to charts. It needs `remember`.
+#'   `lines` or `n`, and not to charts. With `skeleton`, only an explicit
+#'   `learn = TRUE` enables learning; a session default does not. Unused
+#'   shape arguments do not prevent a custom skeleton from learning.
+#'   It needs `remember = TRUE`. A custom skeleton gives a warning if
+#'   learning is requested with `remember = FALSE` or for a chart.
 #'   `NULL` uses the value from [bones_defaults()], which is `TRUE` if you
 #'   did not set it.
+#' @param retry A single non-empty input id, or `NULL` for no retry button.
+#'   Adds "Try again" after the error panel content. The output must read
+#'   this input to run again. Cannot be used with `error = FALSE`.
+#' @param hold Input ids that show the skeleton at once when they change,
+#'   or `NULL`. Use `ns()` for ids inside modules, for both arguments.
+#'   A hold hides content but keeps its space, overrides `stale` and `delay`,
+#'   and respects `min_time` when the load finishes. If this output does not
+#'   start calculating, the hold releases when Shiny is idle.
+#'   In JavaScript, `Bones.hold(el)` holds until the next finished load or
+#'   until `Bones.release(el)`, even across idle events. `el` can be the
+#'   wrapper, the output element, or its id string.
+#' @param speed The time of one animation cycle for this output, in
+#'   seconds. `NULL` uses [bones_defaults()], or 1.4 seconds if unset.
+#' @param color The colour of this placeholder, as a CSS colour. `NULL`
+#'   uses [bones_defaults()], or the theme of the page if unset.
 #'
 #' @return `ui`, in a placeholder container.
 #'
@@ -158,20 +184,25 @@ withBones <- function(ui, # nolint: object_name_linter.
                       lines = 3L,
                       n = 3L,
                       height = NULL,
-                      animation = NULL,
-                      stale = NULL,
-                      delay = NULL,
-                      min_time = NULL,
-                      remember = NULL,
+                      animation = getOption("bones.animation", "wave"),
+                      stale = getOption("bones.stale", TRUE),
+                      delay = getOption("bones.delay", 300),
+                      min_time = getOption("bones.min_time", 500),
+                      remember = getOption("bones.remember", TRUE),
                       skeleton = NULL,
-                      error = NULL,
-                      learn = NULL) {
+                      error = getOption("bones.error", bones_error()),
+                      learn = getOption("bones.learn", TRUE),
+                      retry = NULL,
+                      hold = NULL,
+                      speed = getOption("bones.speed"),
+                      color = getOption("bones.color")) {
 
   # Which arguments set the shape. rows and cols have defaults, so missing()
   # is the only way to tell that the developer gave them. An output whose
   # shape the developer set does not learn its shape.
   shaped <- !missing(rows) || !missing(cols) || !missing(lines) || !missing(n) ||
     !is.null(type) || !is.null(skeleton)
+  custom_learn <- !is.null(skeleton) && !missing(learn) && isTRUE(learn)
 
   # --- Validate inputs ---
   if (is.null(ui)) stop("`ui` must be a Shiny output, not NULL.", call. = FALSE)
@@ -201,41 +232,77 @@ withBones <- function(ui, # nolint: object_name_linter.
     check_choice(type, skeleton_types(), "type")
   }
 
-  animation <- animation %||% getOption("bones.animation", "wave")
+  animation <- animation %||% bones_option("animation")
   check_choice(animation, animation_types(), "animation")
-  stale <- stale %||% getOption("bones.stale", TRUE)
+  stale <- stale %||% bones_option("stale")
   check_flag(stale, "stale")
-  delay <- delay %||% getOption("bones.delay", 300)
+  delay <- delay %||% bones_option("delay")
   check_ms(delay, "delay")
-  min_time <- min_time %||% getOption("bones.min_time", 500)
+  min_time <- min_time %||% bones_option("min_time")
   check_ms(min_time, "min_time")
-  remember <- remember %||% getOption("bones.remember", TRUE)
+  remember <- remember %||% bones_option("remember")
   check_flag(remember, "remember")
-  error <- error %||% getOption("bones.error", bones_error())
+  error <- error %||% bones_option("error")
   check_error(error)
+  if (!is.null(speed)) check_speed(speed)
+  if (!is.null(color)) check_css_value(color, "color")
+  if (!is.null(retry)) check_ids(retry, "retry", single = TRUE)
+  if (!is.null(hold)) check_ids(hold, "hold")
+  if (!is.null(retry) && identical(error, FALSE)) {
+    stop("`retry` cannot be used with `error = FALSE`.", call. = FALSE)
+  }
   if (!identical(error, FALSE) && !is_error_panel(error)) {
     error <- htmltools::tags$div(class = "bones-error", role = "alert", error)
   }
-  learn <- learn %||% getOption("bones.learn", TRUE)
+  if (!is.null(retry)) {
+    error <- htmltools::tagAppendChild(error, htmltools::tags$button(
+      type = "button", class = "bones-retry", "Try again"
+    ))
+  }
+  learn <- learn %||% bones_option("learn")
   check_flag(learn, "learn")
-  learnable <- isTRUE(remember) && isTRUE(learn) && !shaped &&
+  if (custom_learn && !isTRUE(remember)) {
+    warning("`learn = TRUE` with `skeleton` needs `remember = TRUE`. The skeleton does not learn.",
+            call. = FALSE)
+  }
+  if (custom_learn && !type %in% learnable_types()) {
+    warning(sprintf(paste(
+      "`learn = TRUE` has no effect: a \"%s\" output cannot learn its shape.",
+      "The custom skeleton keeps its shape."
+    ), type), call. = FALSE)
+  }
+  learnable <- isTRUE(remember) && isTRUE(learn) && (!shaped || custom_learn) &&
     type %in% learnable_types()
+
+  if (!isTRUE(getOption("bones.quiet_shape_args"))) {
+    warn_unused_shape_args(type, c(
+      rows = !missing(rows), cols = !missing(cols),
+      lines = !missing(lines), n = !missing(n)
+    ), custom = !is.null(skeleton))
+  }
 
   # --- Height to keep until the content arrives ---
   # Only an estimated height can be improved by the real one, so only an
   # estimate is marked for bones.js to remember.
   estimated <- FALSE
+  # A custom skeleton with no height to go on is measured in the browser.
+  # The height of the output itself, when it has one, still wins.
+  measure_custom <- FALSE
   if (is.null(height)) {
     height <- find_inline_height(ui)
+    measure_custom <- !is.null(skeleton) && is.na(height)
     if (is.na(height)) {
-      height <- default_height(type, rows = rows, lines = lines, n = n)
+      height <- if (!is.null(skeleton)) {
+        default_height(type)
+      } else {
+        default_height(type, rows = rows, lines = lines, n = n)
+      }
       estimated <- TRUE
     }
   }
 
   # No height here. Inside the wrapper, the skeleton fills the wrapper. The
-  # height of the output, or the default for the shape of the output, still
-  # sets the space, also for your own placeholder.
+  # browser measures a custom skeleton before restoring a remembered height.
   custom <- !is.null(skeleton)
   skeleton <- if (custom) {
     custom_skeleton_tag(skeleton)
@@ -264,9 +331,17 @@ withBones <- function(ui, # nolint: object_name_linter.
     `data-bones-type` = if (custom) "custom" else type,
     `data-bones-stale` = if (isTRUE(stale)) "true" else "false",
     `data-bones-error` = if (!identical(error, FALSE)) "true",
+    `data-bones-retry` = retry,
+    # Encode each id separately so spaces and punctuation survive unchanged.
+    `data-bones-hold` = if (!is.null(hold)) paste(
+      vapply(enc2utf8(hold), utils::URLencode, character(1),
+             reserved = TRUE, repeated = TRUE),
+      collapse = " "
+    ),
     `data-bones-min-time` = format(min_time, scientific = FALSE),
     # Read by bones.js: store the real height, and use it next time.
     `data-bones-remember` = if (estimated && isTRUE(remember)) "true",
+    `data-bones-measure-custom` = if (measure_custom) "true",
     # Read by bones.js: find the chart kind from the value, and with
     # remember, store it for the next visit.
     `data-bones-detect` = na_to_null(detect),
@@ -283,7 +358,7 @@ withBones <- function(ui, # nolint: object_name_linter.
     `data-bones-style` = paste(c(
       sprintf("--bones-reserve: %s;", height),
       sprintf("--bones-delay: %sms;", format(delay, scientific = FALSE)),
-      css_vars()
+      css_vars(color = color, speed = speed)
     ), collapse = " "),
     skeleton,
     if (!is.na(detect)) kind_templates(),
@@ -312,6 +387,8 @@ is_fill_item <- function(ui) {
 #' Sets the defaults that [withBones()] uses for the rest of the session.
 #' An argument that is `NULL` does not change its default. An argument that
 #' you give to [withBones()] is stronger than a default from here.
+#' Call it before you build the UI, for example in `global.R`.
+#' The options are read when the UI is built.
 #'
 #' @param animation How the placeholder moves:
 #'   * `"wave"`: a band of light moves along each bar.
@@ -341,7 +418,10 @@ is_fill_item <- function(ui) {
 #'   `NULL` leaves the option unchanged. Use `FALSE` for the error text of Shiny.
 #' @param learn The default for the `learn` argument of [withBones()].
 #'
-#' @return The old values, invisibly, in the form that [options()] uses.
+#' @return With no arguments, a named list of current values. Unset options
+#'   use the built-in defaults. `NULL` for `color`, `highlight` and `radius`
+#'   means that the stylesheet uses the page theme.
+#'   With arguments, the old values, invisibly, in the form that [options()] uses.
 #'   Give them to `options()` to restore them. Do not give them to
 #'   `bones_defaults()`: `NULL` there means "do not change", so an option
 #'   that had no value before would keep the new value.
@@ -363,15 +443,17 @@ bones_defaults <- function(animation = NULL,
                            remember = NULL,
                            error = NULL,
                            learn = NULL) {
+  if (nargs() == 0L) {
+    current <- lapply(names(builtin_defaults()), bones_option)
+    names(current) <- names(builtin_defaults())
+    return(current)
+  }
 
   # --- Validate inputs ---
   if (!is.null(animation)) {
     check_choice(animation, animation_types(), "animation")
   }
-  if (!is.null(speed) &&
-        (!is.numeric(speed) || length(speed) != 1L || is.na(speed) || speed <= 0)) {
-    stop("`speed` must be a single positive number of seconds.", call. = FALSE)
-  }
+  if (!is.null(speed)) check_speed(speed)
   if (!is.null(stale)) check_flag(stale, "stale")
   if (!is.null(delay)) check_ms(delay, "delay")
   if (!is.null(min_time)) check_ms(min_time, "min_time")
@@ -379,18 +461,9 @@ bones_defaults <- function(animation = NULL,
   if (!is.null(error)) check_error(error)
   if (!is.null(learn)) check_flag(learn, "learn")
 
-  # These values go into an inline style attribute. A value with a ";"
-  # would end the declaration and start another one.
-  css_values <- list(color = color, highlight = highlight, radius = radius)
-  for (name in names(css_values)) {
-    value <- css_values[[name]]
-    if (is.null(value)) next
-    if (!is.character(value) || length(value) != 1L || is.na(value) ||
-          !nzchar(value) || grepl("[;{}]", value)) {
-      stop(sprintf("`%s` must be a single CSS value, with no \";\", \"{\" or \"}\".", name),
-           call. = FALSE)
-    }
-  }
+  if (!is.null(color)) check_css_value(color, "color")
+  if (!is.null(highlight)) check_css_value(highlight, "highlight")
+  if (!is.null(radius)) check_css_value(radius, "radius")
 
   # --- Set only the options that were given ---
   new <- list(
@@ -415,15 +488,13 @@ bones_defaults <- function(animation = NULL,
 #' Make the colour and shape options into inline CSS custom properties
 #' @keywords internal
 #' @noRd
-css_vars <- function() {
+css_vars <- function(color = getOption("bones.color"),
+                     speed = getOption("bones.speed")) {
   pairs <- list(
-    `--bones-color`     = getOption("bones.color"),
+    `--bones-color`     = color,
     `--bones-highlight` = getOption("bones.highlight"),
     `--bones-radius`    = getOption("bones.radius"),
-    `--bones-speed`     = {
-      s <- getOption("bones.speed")
-      if (is.null(s)) NULL else sprintf("%ss", s)
-    }
+    `--bones-speed`     = if (!is.null(speed)) sprintf("%ss", format(speed, scientific = FALSE))
   )
   pairs <- pairs[!vapply(pairs, is.null, logical(1))]
   if (length(pairs) == 0L) return(character(0))

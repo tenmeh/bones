@@ -11,7 +11,8 @@ bones_auto(ui, ..., exclude = NULL)
 
 \item{...}{Arguments for \code{\link[=withBones]{withBones()}}, used for every output that is
 wrapped: for example \code{stale = FALSE} or \code{animation = "pulse"}. Not
-\code{type}, because each output gets the shape of its own kind.}
+\code{type}, because each output gets the shape of its own kind.
+Shape arguments that do not apply to an output do not give a warning.}
 
 \item{exclude}{The ids of outputs to leave alone.}
 }

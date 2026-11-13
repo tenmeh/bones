@@ -107,3 +107,31 @@ test_that("bad arguments give a clear message", {
   # A bad argument for withBones() fails once, with the message of withBones().
   expect_error(bones_auto(out, stale = "yes"), "stale", fixed = TRUE)
 })
+
+test_that("unknown argument names give short errors with hints", {
+  ui <- shiny::fluidPage(shiny::plotOutput("a"))
+  error <- expect_error(bones_auto(ui, exlude = "a"))
+  expect_identical(
+    conditionMessage(error),
+    "`exlude` is not an argument of bones_auto() or withBones(). Did you mean `exclude`?"
+  )
+  expect_null(conditionCall(error))
+  expect_error(bones_auto(ui, animaton = "pulse"),
+               "Did you mean `animation`?", fixed = TRUE)
+  error <- expect_error(bones_auto(shiny::tags$div(), zzzzzz = TRUE))
+  expect_identical(conditionMessage(error),
+                   "`zzzzzz` is not an argument of bones_auto() or withBones().")
+  expect_null(conditionCall(error))
+})
+
+test_that("unnamed extra arguments give a short error", {
+  ui <- shiny::plotOutput("a")
+  for (args in list(list(FALSE), list(stale = FALSE, "pulse"))) {
+    error <- expect_error(do.call(bones_auto, c(list(ui), args)))
+    expect_identical(
+      conditionMessage(error),
+      "Each argument in `...` must have a name, such as `stale = FALSE`."
+    )
+    expect_null(conditionCall(error))
+  }
+})

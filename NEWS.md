@@ -1,5 +1,32 @@
 # bones (development version)
 
+* `withBones()` gains `speed` and `color`, for one output. `bones_defaults()`
+  still sets them for the whole session.
+* `bones_animations()` lists the valid animations.
+* `withBones(retry = "id")` adds a Try again button to the error panel (#20).
+* `withBones(hold = "refresh")` shows the skeleton when an input changes.
+  JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
+
+* `withBones()` reserves the natural height of a custom skeleton when no
+  `height` is given. An explicit `learn = TRUE` replaces it with the learned
+  content shape on later visits. Custom skeletons keep their look by default
+  (#43).
+
+* `withBones()` and `bones_skeleton()` warn about unused shape arguments.
+  A new warning may appear in code that passed an unused argument.
+  `bones_auto()` does not give these warnings (#25).
+* `withBones()` shows session options in its defaults. `bones_defaults()`
+  with no arguments returns current values. Call it before you build the
+  UI, when the options are read (#28).
+
+* `bones_auto()` gives a short error and a hint for a misspelt argument
+  name (#29).
+* `bones_shapes()` lists all valid shapes, or the shapes in the basic,
+  chart or table group (#26).
+
+* With `stale = FALSE`, old content stays visible until the skeleton appears.
+  Fast recalculations no longer flash a blank box (#42).
+
 * bones works under a strict Content-Security-Policy, such as
   `style-src 'self'` with no `'unsafe-inline'`. It writes no `style`
   attribute any more, which such a policy blocks. The sizes, positions and
