@@ -12,6 +12,11 @@
 * `withBones(hold = "refresh")` shows the skeleton when an input changes.
   JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
 
+* Learned shapes are more robust. A render while the output is hidden, or
+  a silent `req()` while a value waits for `min_time`, no longer deletes
+  the stored shape. Striped rows of a reactable table, buttons, and boxes
+  with a clear `color()` background are no longer drawn as cards.
+
 * `withBones()` reserves the natural height of a custom skeleton when no
   `height` is given. An explicit `learn = TRUE` replaces it with the learned
   content shape on later visits. Custom skeletons keep their look by default

@@ -231,7 +231,11 @@
     // widget has finished drawing.
     if (wrap._bonesSaveHeight) {
       wrap._bonesSaveHeight = false;
+      // A new load can start in the 250ms. Its content is not this value,
+      // so measure nothing: that load stores its own value when it ends.
+      var load = wrap._bonesLoadCount;
       window.setTimeout(function () {
+        if (wrap._bonesLoadCount !== load) return;
         saveHeight(wrap);
         saveLayout(wrap);
       }, 250);
@@ -393,6 +397,13 @@
   var BAR = 0;
   var FRAME = 1;
   var TABLE_PARTS = /^(TABLE|THEAD|TBODY|TFOOT|TR|TH|TD)$/;
+  // The same parts in a table made of divs, as reactable makes.
+  var TABLE_ROLES = /^(table|grid|treegrid|rowgroup|row|cell|gridcell|columnheader|rowheader)$/;
+  // Controls are bars already (see recordLayout), so never frames too.
+  var CONTROLS = /^(BUTTON|INPUT|SELECT|TEXTAREA)$/;
+  // recordLayout() gives this when the content has no size, such as in a
+  // hidden tab. There is nothing to measure, so the record stays.
+  var UNMEASURED = {};
 
   function learns(wrap) {
     return wrap.getAttribute("data-bones-learn") === "true";
@@ -438,14 +449,20 @@
     return !!el.closest(".bones-skeleton");
   }
 
+  /* A colour that is not wholly clear. A clear colour has an alpha of 0:
+   * "rgba(0, 0, 0, 0)", or "color(srgb 1 0 0 / 0)" from color-mix() and
+   * the newer colour forms. */
   function hasAlpha(color) {
-    return color && color !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(color);
+    return !!color && color !== "transparent" &&
+      !/^rgba\(.*,\s*0(\.0*)?\)$|\/\s*0(\.0*)?%?\s*\)$/.test(color);
   }
 
   /* A card or a value box: a border on all four sides, or a background of
-   * its own. Never a part of a table: a striped row is not a card. */
+   * its own. Never a part of a table: a striped row is not a card. Never a
+   * control: it is a bar. */
   function isFrame(el) {
-    if (TABLE_PARTS.test(el.tagName)) return false;
+    if (TABLE_PARTS.test(el.tagName) || CONTROLS.test(el.tagName)) return false;
+    if (TABLE_ROLES.test(el.getAttribute("role") || "")) return false;
     var style = window.getComputedStyle(el);
     var sides = ["Top", "Right", "Bottom", "Left"];
     var bordered = true;
@@ -473,12 +490,13 @@
   var recordStamp = 0;
 
   /* The boxes of the content of `wrap`, relative to the content, or null
-   * when nothing should be stored. */
+   * when nothing should be stored, or UNMEASURED when the content has no
+   * size now. */
   function recordLayout(wrap) {
     var content = wrap.querySelector(":scope > .bones-content");
     if (!content) return null;
     var origin = content.getBoundingClientRect();
-    if (!(origin.width > 0 && origin.height > 0)) return null;
+    if (!(origin.width > 0 && origin.height > 0)) return UNMEASURED;
     var stamp = ++recordStamp;
     var raw = [];
 
@@ -580,6 +598,7 @@
     var key = layoutKey(wrap);
     if (!key) return;
     var record = recordLayout(wrap);
+    if (record === UNMEASURED) return;
     try {
       if (record) {
         window.localStorage.setItem(key, JSON.stringify(record));
@@ -1038,6 +1057,11 @@
     wrap.classList.remove("bones-errored");
     wrap._bonesErrorPending = null;
     if (wrap._bonesHold) wrap._bonesHold.finished = false;
+    // A value that waited for min_time is not the end of this load. Only a
+    // value of this load is stored: a silent req() must not store an empty
+    // output.
+    wrap._bonesSaveHeight = false;
+    wrap._bonesLoadCount = (wrap._bonesLoadCount || 0) + 1;
 
     // A new load starts. An end that waited for min_time is not the end of
     // this load. The skeleton or the dimming stays on, so the time that it
