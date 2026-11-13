@@ -2,22 +2,30 @@
 
 /* --- Colours ----------------------------------------------------------------
 
-   The colours come from the theme of the page. They are the text colour of
+   Two layers of custom properties.
+
+   1. Inputs, for the app to set: --bones-color, --bones-highlight,
+      --bones-stripe, --bones-sweep and --bones-radius set one colour each.
+      --bones-text and --bones-surface set the two colours that the others
+      are made from: the text colour and the background of the page. Set
+      them anywhere: on :root, on a container such as a dark card, or on
+      one wrapper. bones never declares an input, so a value set by the app
+      is never overwritten. bones_defaults() and withBones() write inputs
+      into the style attribute of a wrapper.
+
+   2. Working values, for bones itself: --_bones-color and the others. Do
+      not set them. They are computed on each wrapper, and on each skeleton
+      that has no wrapper, from the inputs if they are set, else from the
+      theme. They are NOT computed on :root. A value on :root is resolved
+      one time, at the root, so a dark card inside a light page would get
+      the colours of the light page.
+
+   With no input set, the colours come from the theme: the text colour of
    Bootstrap (--bs-body-color) mixed with transparency, so a skeleton takes
-   the tint of a bslib theme, and turns light on a dark theme, with no
-   bones_defaults() call. On a page with no such variable, such as
-   fluidPage() with Bootstrap 3, the text colour falls back to a mid grey.
-
-   The colours are set on each wrapper, and on each skeleton that has no
-   wrapper. They are NOT set on :root. A value on :root is resolved one time,
-   at the root, so a dark card inside a light page would get the colours of
-   the light page. On each element, the colours follow the theme of the part
-   of the page where the element is.
-
-   They are NOT set on a skeleton inside a wrapper. A declaration on the
-   skeleton itself would be stronger than the values that it gets from the
-   style attribute of its wrapper, which is where bones_defaults() puts
-   them.
+   the tint of a bslib theme, and turns light on a dark theme. On a page
+   with no Bootstrap 5, the text colour is the colour of the text where the
+   skeleton is (currentColor), so a dark page with light text gets light
+   skeletons too.
 
    The first block is for browsers with no color-mix(): plain greys that
    work on light and on dark themes. */
@@ -28,35 +36,39 @@
 
 .bones-wrap,
 .bones-skeleton:not(.bones-wrap > .bones-skeleton) {
-  --bones-color: rgba(128, 128, 128, 0.18);
-  --bones-highlight: rgba(128, 128, 128, 0.34);
-  --bones-stripe: rgba(128, 128, 128, 0.07);
-  --bones-sweep: rgba(255, 255, 255, 0.45);
-  --bones-radius: 0.28rem;
+  --_bones-color: var(--bones-color, rgba(128, 128, 128, 0.18));
+  --_bones-highlight: var(--bones-highlight, rgba(128, 128, 128, 0.34));
+  --_bones-stripe: var(--bones-stripe, rgba(128, 128, 128, 0.07));
+  --_bones-sweep: var(--bones-sweep, rgba(255, 255, 255, 0.45));
+  --_bones-radius: var(--bones-radius, 0.28rem);
+  --_bones-surface: var(--bones-surface, var(--bs-body-bg, Canvas));
 }
 
 @supports (color: color-mix(in srgb, red 50%, transparent)) {
   .bones-wrap,
   .bones-skeleton:not(.bones-wrap > .bones-skeleton) {
+    --_bones-text: var(--bones-text, var(--bs-body-color, currentColor));
     /* The same lightness as the greys above on a white page with dark
        text: 10%, 19% and 4% of the text colour. */
-    --bones-color: color-mix(in srgb, var(--bs-body-color, #808080) 10%, transparent);
-    --bones-highlight: color-mix(in srgb, var(--bs-body-color, #808080) 19%, transparent);
-    --bones-stripe: color-mix(in srgb, var(--bs-body-color, #808080) 4%, transparent);
+    --_bones-color: var(--bones-color, color-mix(in srgb, var(--_bones-text) 10%, transparent));
+    --_bones-highlight: var(--bones-highlight, color-mix(in srgb, var(--_bones-text) 19%, transparent));
+    --_bones-stripe: var(--bones-stripe, color-mix(in srgb, var(--_bones-text) 4%, transparent));
     /* The band of the sweep animation: the colour of the page, half clear.
        On a light page that is a band of light. */
-    --bones-sweep: color-mix(in srgb, var(--bs-body-bg, #ffffff) 55%, transparent);
+    --_bones-sweep: var(--bones-sweep, color-mix(in srgb, var(--bones-surface, var(--bs-body-bg, #ffffff)) 55%, transparent));
     /* Round the bars a little less than the theme rounds its controls. */
-    --bones-radius: calc(var(--bs-border-radius, 0.375rem) * 0.75);
+    --_bones-radius: var(--bones-radius, calc(var(--bs-border-radius, 0.375rem) * 0.75));
   }
 
   /* On a dark page the colour of the page is dark, so its band would be a
      shadow. The band of light there comes from the text colour, which is
      light. data-bs-theme is on the page or on one part of it, such as a
-     card, so each part gets the band of its own theme. */
+     card, so each part gets the band of its own theme. A dark page with no
+     Bootstrap sets --bones-sweep, or --bones-surface to its light text
+     colour. */
   [data-bs-theme="dark"] .bones-wrap,
   [data-bs-theme="dark"] .bones-skeleton:not(.bones-wrap > .bones-skeleton) {
-    --bones-sweep: color-mix(in srgb, var(--bs-body-color, #dee2e6) 16%, transparent);
+    --_bones-sweep: var(--bones-sweep, color-mix(in srgb, var(--bones-text, var(--bs-body-color, #dee2e6)) 16%, transparent));
   }
 }
 
@@ -109,10 +121,10 @@
   position: absolute;
   inset: 0;
   padding: 0.75rem;
-  border: 1px solid var(--bones-highlight);
-  border-radius: var(--bones-radius);
+  border: 1px solid var(--_bones-highlight);
+  border-radius: var(--_bones-radius);
   color: currentColor;
-  background: var(--bs-body-bg, Canvas);
+  background: var(--_bones-surface);
   overflow: auto;
 }
 
@@ -162,16 +174,16 @@
 .bones-retry {
   align-self: flex-start;
   padding: 0.35rem 0.75rem;
-  border: 1px solid var(--bones-highlight);
-  border-radius: var(--bones-radius);
-  background: var(--bones-color);
+  border: 1px solid var(--_bones-highlight);
+  border-radius: var(--_bones-radius);
+  background: var(--_bones-color);
   color: inherit;
   font: inherit;
   cursor: pointer;
 }
 
 .bones-retry:hover {
-  background: var(--bones-highlight);
+  background: var(--_bones-highlight);
 }
 
 .bones-retry:focus-visible {
@@ -274,13 +286,13 @@
 
 .bones-bar {
   height: 0.75rem;
-  border-radius: var(--bones-radius);
-  background-color: var(--bones-color);
+  border-radius: var(--_bones-radius);
+  background-color: var(--_bones-color);
   flex: none;
 }
 
 .bones-bar-strong {
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
 }
 
 /* --- your own placeholder ------------------------------------------------ */
@@ -324,8 +336,8 @@
 
 .bones-learned-frame {
   box-sizing: border-box;
-  border: 1px solid var(--bones-color);
-  border-radius: var(--bones-radius);
+  border: 1px solid var(--_bones-color);
+  border-radius: var(--_bones-radius);
 }
 
 /* --- table --------------------------------------------------------------- */
@@ -363,14 +375,14 @@
 .bones-bar-column {
   flex: 1 1 0;
   height: 50%;
-  border-radius: var(--bones-radius) var(--bones-radius) 0 0;
+  border-radius: var(--_bones-radius) var(--_bones-radius) 0 0;
 }
 
 .bones-axis {
   height: 2px;
   margin-top: 0.4rem;
   border-radius: 1px;
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
 }
 
 /* --- map ------------------------------------------------------------------- */
@@ -382,17 +394,17 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  border-radius: calc(var(--bones-radius) * 2);
-  background-color: var(--bones-stripe);
+  border-radius: calc(var(--_bones-radius) * 2);
+  background-color: var(--_bones-stripe);
   background-image:
-    linear-gradient(var(--bones-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bones-color) 1px, transparent 1px);
+    linear-gradient(var(--_bones-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--_bones-color) 1px, transparent 1px);
   background-size: 25% 25%;
 }
 
 .bones-svg-road {
   fill: none;
-  stroke: var(--bones-color);
+  stroke: var(--_bones-color);
   stroke-width: 6px;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -412,7 +424,7 @@
 .bones-map-zoom-button {
   width: 1.6rem;
   height: 1.6rem;
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
 }
 
 /* A pin: a square with three round corners, turned so that the sharp corner
@@ -423,7 +435,7 @@
   height: 1.4rem;
   border-radius: 50% 50% 50% 0;
   transform: translate(-50%, -100%) rotate(-45deg);
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
 }
 
 /* --- network ---------------------------------------------------------------- */
@@ -435,13 +447,13 @@
 }
 
 .bones-svg-edge {
-  stroke: var(--bones-color);
+  stroke: var(--_bones-color);
   stroke-width: 2px;
   vector-effect: non-scaling-stroke;
 }
 
 .bones-svg-node {
-  fill: var(--bones-highlight);
+  fill: var(--_bones-highlight);
 }
 
 /* --- timeline --------------------------------------------------------------- */
@@ -482,7 +494,7 @@
 }
 
 .bones-word {
-  border-radius: calc(var(--bones-radius) * 1.5);
+  border-radius: calc(var(--_bones-radius) * 1.5);
 }
 
 /* --- DT ------------------------------------------------------------------ */
@@ -523,8 +535,8 @@
 .bones-dt-input {
   width: 9rem;
   height: 1.6rem;
-  border: 1px solid var(--bones-highlight);
-  border-radius: var(--bones-radius);
+  border: 1px solid var(--_bones-highlight);
+  border-radius: var(--_bones-radius);
 }
 
 .bones-dt-page {
@@ -540,11 +552,11 @@
 /* DT shades the 2nd, 4th and 6th body rows. The header is child 1, so
    these are the odd children after it. */
 .bones-dt-row:nth-child(odd):not(.bones-dt-head) {
-  background-color: var(--bones-stripe);
+  background-color: var(--_bones-stripe);
 }
 
 .bones-dt-head {
-  border-bottom: 2px solid var(--bones-highlight);
+  border-bottom: 2px solid var(--_bones-highlight);
 }
 
 /* --- reactable ----------------------------------------------------------- */
@@ -552,11 +564,11 @@
 /* reactable rows are 38px tall, with a thin line under each one. */
 .bones-rt-row {
   padding: 0.8rem 0.5rem;
-  border-bottom: 1px solid var(--bones-color);
+  border-bottom: 1px solid var(--_bones-color);
 }
 
 .bones-rt-head {
-  border-bottom: 2px solid var(--bones-highlight);
+  border-bottom: 2px solid var(--_bones-highlight);
 }
 
 .bones-rt-pages {
@@ -580,7 +592,7 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.6rem 0 0.9rem;
-  border-bottom: 2px solid var(--bones-highlight);
+  border-bottom: 2px solid var(--_bones-highlight);
 }
 
 .bones-gt-spanner-row,
@@ -611,23 +623,23 @@
   display: flex;
   justify-content: center;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--bones-highlight);
+  border-bottom: 1px solid var(--_bones-highlight);
 }
 
 /* gt rows are about 38px tall. */
 .bones-gt-row {
   padding-top: 0.8rem;
   padding-bottom: 0.8rem;
-  border-bottom: 1px solid var(--bones-color);
+  border-bottom: 1px solid var(--_bones-color);
 }
 
 .bones-gt-labels {
-  border-bottom: 2px solid var(--bones-highlight);
+  border-bottom: 2px solid var(--_bones-highlight);
 }
 
 .bones-gt-note {
   padding: 0.6rem 0.3rem;
-  border-top: 1px solid var(--bones-highlight);
+  border-top: 1px solid var(--_bones-highlight);
 }
 
 /* --- rhandsontable ------------------------------------------------------- */
@@ -637,23 +649,23 @@
   display: grid;
   grid-auto-rows: 24px;
   align-content: start;
-  border-top: 1px solid var(--bones-color);
-  border-left: 1px solid var(--bones-color);
+  border-top: 1px solid var(--_bones-color);
+  border-left: 1px solid var(--_bones-color);
 }
 
 .bones-hot > div {
   display: flex;
   align-items: center;
   padding: 0 0.35rem;
-  border-right: 1px solid var(--bones-color);
-  border-bottom: 1px solid var(--bones-color);
+  border-right: 1px solid var(--_bones-color);
+  border-bottom: 1px solid var(--_bones-color);
 }
 
 .bones-hot-corner,
 .bones-hot-colhead,
 .bones-hot-rowhead {
   justify-content: center;
-  background-color: var(--bones-stripe);
+  background-color: var(--_bones-stripe);
 }
 
 /* --- histogram ----------------------------------------------------------- */
@@ -676,7 +688,7 @@
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 50%;
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
   transform: translate(-50%, 50%);
 }
 
@@ -694,7 +706,7 @@
 
 .bones-svg-line {
   fill: none;
-  stroke: var(--bones-highlight);
+  stroke: var(--_bones-highlight);
   stroke-width: 3px;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -702,7 +714,7 @@
 }
 
 .bones-svg-fill {
-  fill: var(--bones-color);
+  fill: var(--_bones-color);
   stroke: none;
 }
 
@@ -757,7 +769,7 @@
 .bones-heat-cell {
   height: auto;
   border-radius: 2px;
-  background-color: var(--bones-highlight);
+  background-color: var(--_bones-highlight);
 }
 
 /* --- cards --------------------------------------------------------------- */
@@ -774,8 +786,8 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  border-radius: calc(var(--bones-radius) * 2);
-  border: 1px solid var(--bones-color);
+  border-radius: calc(var(--_bones-radius) * 2);
+  border: 1px solid var(--_bones-color);
 }
 
 /* --- value boxes --------------------------------------------------------- */
@@ -800,9 +812,9 @@
 .bones-anim-wave .bones-axis {
   background-image: linear-gradient(
     90deg,
-    var(--bones-color) 25%,
-    var(--bones-highlight) 37%,
-    var(--bones-color) 63%
+    var(--_bones-color) 25%,
+    var(--_bones-highlight) 37%,
+    var(--_bones-color) 63%
   );
   background-size: 400% 100%;
   animation: bones-wave var(--bones-speed) ease-in-out infinite;
@@ -850,8 +862,8 @@
 .bones-anim-cascade .bones-bar:nth-child(8n + 8) { animation-delay: calc(var(--bones-speed) * -0.125); }
 
 @keyframes bones-cascade {
-  0%, 100% { background-color: var(--bones-color); }
-  50%      { background-color: var(--bones-highlight); }
+  0%, 100% { background-color: var(--_bones-color); }
+  50%      { background-color: var(--_bones-highlight); }
 }
 
 /* Sweep: one band of light crosses the whole placeholder, over every mark
@@ -872,7 +884,7 @@
   background-image: linear-gradient(
     100deg,
     transparent 20%,
-    var(--bones-sweep) 50%,
+    var(--_bones-sweep) 50%,
     transparent 80%
   );
   transform: translateX(-100%);

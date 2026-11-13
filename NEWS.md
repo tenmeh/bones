@@ -3,6 +3,11 @@
 * `withBones()` gains `speed` and `color`, for one output. `bones_defaults()`
   still sets them for the whole session.
 * `bones_animations()` lists the valid animations.
+* The colours can be set in CSS, with or without Bootstrap. `--bones-color`,
+  `--bones-radius` and the other properties now work on `:root` and on a
+  container. Two new properties, `--bones-text` and `--bones-surface`, set
+  the colours that the others are made from. With no Bootstrap 5 theme, the
+  skeleton takes the text colour of the page, not a fixed grey.
 * `withBones(retry = "id")` adds a Try again button to the error panel (#20).
 * `withBones(hold = "refresh")` shows the skeleton when an input changes.
   JavaScript can also use `Bones.hold(el)` and `Bones.release(el)` (#44).
