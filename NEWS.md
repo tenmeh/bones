@@ -1,3 +1,9 @@
+# bones (development version)
+
+* A wrapped fill output, such as `DT::DTOutput()`, outside a fill layout now
+  keeps its own height. Before, the wrapper made DT hold the table at 400px,
+  and the rows spilled over the next element.
+
 # bones 0.2.0
 
 ## Breaking changes
