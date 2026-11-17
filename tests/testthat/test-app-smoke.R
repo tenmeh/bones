@@ -828,6 +828,41 @@ test_that("the faults of the second review stay fixed", {
 
   expect_no_shiny_errors(app)
 })
+test_that("a wrapped fill table keeps the height of a plain one, in and out of a fill layout", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("bslib")
+  skip_if_not_installed("DT")
+
+  app <- local_app_driver(
+    test_path("apps", "fill"),
+    name         = "bones-fill-smoke",
+    load_timeout = 45000L,
+    timeout      = 15000L
+  )
+  app$wait_for_js("document.querySelectorAll('.bones-wrap.bones-loaded').length === 2", timeout = 30000)
+  app$wait_for_js("document.querySelectorAll('.datatables tbody tr').length === 200", timeout = 30000)
+  Sys.sleep(0.5)
+  boxes <- app$get_js("
+    ['plain', 'wrapped', 'card_plain', 'card_wrapped'].map(function (id) {
+      var el = document.getElementById(id);
+      return {height: Math.round(el.getBoundingClientRect().height),
+              content: Math.round(el.scrollHeight)};
+    })
+  ")
+  names(boxes) <- c("plain", "wrapped", "card_plain", "card_wrapped")
+
+  # --- outside a fill layout: the table sets its own height ----------------
+  expect_gt(boxes$plain$height, 400)      # 50 rows, not the 400px fill basis
+  expect_equal(boxes$wrapped$height, boxes$plain$height)
+  expect_lte(boxes$wrapped$content, boxes$wrapped$height + 1)
+
+  # --- in a fillable card: the table fills the card as a plain table does --
+  expect_lt(boxes$card_plain$height, 300)
+  expect_equal(boxes$card_wrapped$height, boxes$card_plain$height)
+
+  expect_no_shiny_errors(app)
+})
+
 test_that("sweep keeps a first load error state", {
   skip_on_cran()
   app <- local_app_driver(test_path("apps", "errors"), name = "error-sweep")

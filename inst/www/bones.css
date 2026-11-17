@@ -76,6 +76,17 @@
   position: relative;
 }
 
+/* withBones() passes the fill role of a fill output on, because it cannot
+   know the parent. Outside a fill container there is nothing to pass on, so
+   the wrapper and the content are plain blocks, as the output alone would
+   be. As flex containers they switch on fill rules that the output alone
+   does not get: DT gives a table a 400px flex basis, and the rows spill
+   over the next element. */
+:not(.html-fill-container) > .bones-wrap.html-fill-container,
+:not(.html-fill-container) > .bones-wrap > .bones-content.html-fill-container {
+  display: block;
+}
+
 /* Keep the space of the content until the content arrives for the first
    time. Then let the content set the height. withBones() puts the estimate
    in --bones-reserve.
